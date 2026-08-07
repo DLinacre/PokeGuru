@@ -101,14 +101,14 @@ export default function CardDetailPage() {
     image: card.images?.large || card.images?.small,
     category: 'Trading Card Game > Pokémon TCG',
     brand: { '@type': 'Brand', name: 'Pokémon TCG' },
-    url: `https://lin4cre.github.io/PokeGuru/card/${card.id}`,
+    url: `https://dlinacre.github.io/PokeGuru/card/${card.id}`,
     ...(priceGbp > 0 ? {
       offers: {
         '@type': 'Offer',
         priceCurrency: 'GBP',
         price: priceGbp.toFixed(2),
         availability: 'https://schema.org/InStock',
-        url: `https://lin4cre.github.io/PokeGuru/card/${card.id}`,
+        url: `https://dlinacre.github.io/PokeGuru/card/${card.id}`,
       },
     } : {}),
   } : null;

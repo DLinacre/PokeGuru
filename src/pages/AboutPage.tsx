@@ -150,7 +150,7 @@ export default function AboutPage() {
             </ul>
             <div className="mt-8 pt-8 border-t border-[var(--border)]">
               <a
-                href="https://github.com/LIN4CRE/PokeGuru"
+                href="https://github.com/DLinacre/PokeGuru"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[var(--text)] py-3 text-sm font-black uppercase tracking-widest text-[var(--bg)] hover:opacity-90 transition-all active:scale-95 shadow-2xl"

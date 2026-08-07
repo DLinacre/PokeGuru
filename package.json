@@ -6,8 +6,8 @@
   "author": "LIN4CRE",
   "license": "MIT",
   "repository": "github:LIN4CRE/PokeGuru",
-  "bugs": "https://github.com/LIN4CRE/PokeGuru/issues",
-  "homepage": "https://lin4cre.github.io/PokeGuru",
+  "bugs": "https://github.com/DLinacre/PokeGuru/issues",
+  "homepage": "https://dlinacre.github.io/PokeGuru",
   "type": "module",
   "overrides": {
     "esbuild": "0.28.1"

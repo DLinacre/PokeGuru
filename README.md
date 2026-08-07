@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <a href="https://lin4cre.github.io/PokeGuru/"><img src="https://img.shields.io/badge/live-PokeGuru-F59E0B?style=for-the-badge&logo=google-chrome&logoColor=white"></a>
+  <a href="https://dlinacre.github.io/PokeGuru/"><img src="https://img.shields.io/badge/live-PokeGuru-F59E0B?style=for-the-badge&logo=google-chrome&logoColor=white"></a>
   <img src="https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB">
   <img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white">
   <img src="https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white">
@@ -43,7 +43,7 @@
 
 ```bash
 # Clone repository
-git clone https://github.com/LIN4CRE/PokeGuru.git
+git clone https://github.com/DLinacre/PokeGuru.git
 cd PokeGuru
 
 # Install dependencies
