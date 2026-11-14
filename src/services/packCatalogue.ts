@@ -49,6 +49,9 @@ interface RawSetDetail {
   releaseDate?: string;
 }
 
+/** Product ids that are boxed play products rather than booster sets. */
+const NON_BOOSTER_IDS = new Set(["mfb"]);
+
 const DATE_ENRICH_LIMIT = 40;
 const DATE_CONCURRENCY = 5;
 
@@ -79,7 +82,7 @@ export function buildCatalogue(
     if (!isBoosterSeries(detail.seriesId)) continue;
     for (const raw of detail.sets) {
       if (!raw.id || !raw.name || seen.has(raw.id)) continue;
-      if (!isBoosterSet(raw.name)) continue;
+      if (!isBoosterSet(raw.name) || NON_BOOSTER_IDS.has(raw.id)) continue;
       const official = raw.cardCount?.official ?? raw.cardCount?.total ?? 0;
       if (official < MIN_CARDS) continue;
 

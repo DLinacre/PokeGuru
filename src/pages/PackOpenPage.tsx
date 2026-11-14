@@ -221,12 +221,17 @@ export default function PackOpenPage() {
           <div className="mt-5 rounded-xl border border-[var(--border)] bg-[var(--bg-soft)]/50 p-3">
             <h2 className="text-[10px] font-black uppercase tracking-[0.16em] text-[var(--muted-dim)]">What&apos;s inside</h2>
             <ul className="mt-2 grid gap-1 text-xs text-[var(--text-soft)] sm:grid-cols-2">
-              {config.slots.map((slot) => (
-                <li key={slot.id} className="flex items-center gap-2">
-                  <span className="inline-flex h-5 min-w-5 items-center justify-center rounded bg-[var(--bg-card)] px-1 text-[10px] font-black tabular-nums">
+              {(odds?.slotSummary ?? []).map((slot) => (
+                <li key={slot.slot} className="flex items-start gap-2">
+                  <span className="mt-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded bg-[var(--bg-card)] px-1 text-[10px] font-black tabular-nums">
                     {slot.count}
                   </span>
-                  {slot.label}
+                  <span className="min-w-0">
+                    {slot.label}
+                    {slot.tiers.length > 0 && (
+                      <span className="block text-[10px] leading-tight text-[var(--muted)]">{slot.tiers.join(" · ")}</span>
+                    )}
+                  </span>
                 </li>
               ))}
             </ul>

@@ -194,8 +194,15 @@ function slotTiers(slot: PackSlotRule, pool: PackPool, config: PackConfig): Rari
       for (const card of cards) tiers.add(card.tier);
       return [...tiers];
     }
-    case "energy":
+    case "energy": {
+      if (pool.tiers.other?.length) return ["other"];
+      // Energy cards the database files under another rarity still fill the
+      // slot from a common; report the tier that will actually be drawn.
+      for (const tier of FALLBACK_ORDER[slot.fallback ?? "common"]) {
+        if (pool.tiers[tier]?.length) return [tier];
+      }
       return ["other"];
+    }
     default:
       return tierWeightTable(slot.weights, pool).map((entry) => entry.tier);
   }
@@ -449,7 +456,9 @@ export function computePackOdds(pool: PackPool, config: PackConfig): PackOdds {
 
     slotSummary.push({
       slot: slot.id,
+      label: slot.label,
       count: slot.count,
+      tiers: tiers.map((tier) => TIER_LABELS[tier]),
       detail: `${slot.label}: ${slot.count} card${slot.count === 1 ? "" : "s"}${
         tiers.length ? ` · ${tiers.map((tier) => TIER_LABELS[tier]).join(", ")}` : ""
       }`,

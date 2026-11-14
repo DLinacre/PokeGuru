@@ -8,6 +8,7 @@ const sets = [
   { id: "sv09", name: "Journey Together", cardCount: { official: 190 } },
   { id: "sv03.5", name: "151", cardCount: { official: 165 } },
   { id: "tiny", name: "Tiny Promo Deck", cardCount: { official: 5 } },
+  { id: "mfb", name: "My First Battle", cardCount: { official: 48 } },
 ];
 
 const releaseDates = (name: string) => (name === "Shrouded Fable" ? "2024-08-02" : undefined);
@@ -22,6 +23,7 @@ describe("pack catalogue", () => {
     expect(ids).not.toContain("svp");
     expect(ids).not.toContain("sve");
     expect(ids).not.toContain("tiny");
+    expect(ids).not.toContain("mfb");
   });
 
   it("resolves each expansion to its era rule", () => {
