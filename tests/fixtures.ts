@@ -6,6 +6,8 @@ export const SET_BRIEF = {
   logo: "https://assets.tcgdex.net/en/swsh/swsh3/logo",
   symbol: "https://assets.tcgdex.net/univ/swsh/swsh3/symbol",
   cardCount: { total: 201, official: 189 },
+  releaseDate: "2020-08-14",
+  serie: { id: "swsh", name: "Sword & Shield" },
 };
 
 export const CARD_BRIEF = {

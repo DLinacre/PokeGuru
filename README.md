@@ -52,6 +52,12 @@ and keeps a private collection vault in the browser.
   confirm the match; nothing is added silently.
 - **UK pricing** — EUR→GBP conversion uses live [Frankfurter](https://frankfurter.dev/)
   rates (cached for 12 h) with the rate date and marketplace update date shown.
+- **Pack Opening Simulator** — open unlimited virtual boosters from every era,
+  generated from the real card pool of the chosen expansion with era-specific
+  pack structures. Every pack panel states whether its structure is documented
+  or estimated, shows the modelled tier odds with sources, and keeps simulated
+  pulls in their own store (`pokeguru_pack_sim_v1`) so they can never leak into
+  your real collection or its valuation.
 - **Offline-tolerant PWA** — app shell cached, clearly labelled cached data, and
   a safe update prompt that never traps you on an old version.
 
@@ -111,6 +117,35 @@ so never put secrets in them.
 
 > There is no real donation destination configured in this repository by
 > default. If you fork PokeGuru, set `VITE_BUY_ME_A_PACK_URL` to your own page.
+
+---
+
+## 🎁 Pack Opening Simulator
+
+| Piece | Where |
+| --- | --- |
+| Era rules & rarity taxonomy | `src/data/packRules.ts` |
+| Catalogue (one cached request per TCGdex series) | `src/services/packCatalogue.ts` |
+| Card-pool builder (rarity-filtered briefs) | `src/services/packPools.ts` |
+| Random generation engine + odds | `src/services/packEngine.ts` |
+| Simulated collection store | `src/services/simStore.ts` |
+| Opening experience | `src/components/Packs/*`, `src/pages/PackOpenPage.tsx` |
+| Catalogue & collection pages | `src/pages/PacksPage.tsx`, `src/pages/SimCollectionPage.tsx` |
+
+**What is real:** card ids, names, images, expansion membership and rarity all
+come from TCGdex. Pools are built by asking for card briefs per rarity, so a
+pack never contains a card from another expansion or a card whose rarity we do
+not know (unmapped cards are counted and reported on the pack page).
+
+**What is modelled:** TCGdex does not publish booster artwork or per-rarity pull
+odds. Wrappers are PokeGuru illustrations built from each set's logo and series
+palette, labelled on every pack. Tier odds are derived from the documented pack
+size and that set's own rarity mix, and are labelled *estimated* — only the
+Scarlet & Violet ten-card structure is marked *documented* (Pokémon's published
+contents). There is no pity timer, no boost and no rigged outcome.
+
+**Isolation:** simulated pulls live under `pokeguru_pack_sim_v1`, are never
+priced, and are never read by the collection vault, valuation or export code.
 
 ---
 
@@ -188,7 +223,7 @@ card.
 ```bash
 npm run lint        # ESLint (typescript-eslint + react-hooks)
 npm run typecheck   # strict TypeScript
-npm test            # 64 tests / 9 files
+npm test            # 124 tests / 15 files
 npm run build       # production build smoke test
 ```
 
@@ -204,8 +239,24 @@ Covered:
 - Search param parsing/serialisation (filters, pagination, sort).
 - Collection persistence, legacy pokemontcg.io migration, subscription updates.
 - OCR text parsing, candidate scoring and rejection of rules text.
+- Pack rules: every era rule totals its configured pack size, every booster
+  series resolves to a rule, only Scarlet & Violet is marked *documented*, and
+  promo/energy/deck products are excluded.
+- Pack engine: cards only come from the selected set, sizes and guaranteed slots
+  hold, rarities stay inside their slot, no duplicate cards, reverse/holo
+  finishes, deterministic seeds, statistical weight tolerance, honest fallbacks
+  and a hard failure when the pool has no usable cards.
+- Pack catalogue + pool builder: series-based catalogue, promo filtering,
+  curated release-date joins, leaky upstream responses rejected, missing
+  rarity data reported instead of guessed, network failures surfaced.
+- Simulated collection store: duplicate counts, persistence, history cap, rapid
+  openings, corrupt-storage recovery, and a guarantee that the real collection
+  key is never touched.
+- Opening experience: sealed → open → summary flow, batch opening, no cards
+  generated before the user opens the pack.
 - Route rendering for deep links (`/card/:id`, `/search?q=`, `/collection`,
-  unknown routes) with mocked network fixtures that are never shipped.
+  `/packs`, `/packs/collection`, unknown routes) with mocked network fixtures
+  that are never shipped.
 
 Fixtures live in `tests/` and are only used by Vitest.
 

@@ -1,7 +1,8 @@
-import { useMemo, useState, type FormEvent } from "react";
+import { lazy, Suspense, useMemo, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowRight, Book, Camera, Layers, Search, Sparkles, Wallet } from "lucide-react";
+import { ArrowRight, Book, Camera, Layers, PackageOpen, Search, Sparkles, Wallet } from "lucide-react";
 import { useCardSearch, useExchangeRate, useSets } from "../hooks/useApi";
+
 import { usePageMeta } from "../hooks/usePageMeta";
 import { useCollection } from "../hooks/useCollection";
 import CardGrid from "../components/Cards/CardGrid";
@@ -20,6 +21,8 @@ const QUICK_LINKS = [
   { label: "Illustration rares", to: "/search?rarity=Illustration%20rare&sort=newest" },
 ];
 
+const HomePackTeaser = lazy(() => import("../components/Packs/HomePackTeaser"));
+
 const CHASE_FILTERS = {
   query: "",
   category: "Pokemon",
@@ -31,6 +34,7 @@ const CHASE_FILTERS = {
 };
 
 const FEATURES = [
+  { to: "/packs", icon: PackageOpen, title: "Pack simulator", copy: "Open unlimited virtual boosters from every era — free, no ads." },
   { to: "/search", icon: Search, title: "Card search", copy: "Name, set, collector number, rarity or illustrator." },
   { to: "/sets", icon: Layers, title: "Every expansion", copy: "Complete set index, ordered by real release dates." },
   { to: "/collection", icon: Wallet, title: "The vault", copy: "Track and value your cards privately in this browser." },
@@ -146,6 +150,14 @@ export default function HomePage() {
         </div>
       </section>
 
+      <Suspense
+        fallback={
+          <div className="mb-14 h-64 animate-shimmer rounded-3xl border border-[var(--border)] bg-[var(--bg-card)]/50" aria-hidden="true" />
+        }
+      >
+        <HomePackTeaser />
+      </Suspense>
+
       <section aria-labelledby="recent-heading" className="mb-14">
         <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
           <div>
@@ -255,7 +267,7 @@ export default function HomePage() {
         <h2 id="explore-heading" className="sr-only">
           Explore PokeGuru
         </h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           {FEATURES.map(({ to, icon: Icon, title, copy }) => (
             <Link key={to} to={to} className="surface group flex flex-col gap-3 p-5 no-underline transition-transform hover:-translate-y-0.5 hover:no-underline">
               <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--bg-soft)] text-[var(--accent-text)]">

@@ -8,6 +8,7 @@ import {
   Layers,
   LineChart,
   Lock,
+  PackageOpen,
   Smartphone,
   Zap,
 } from "lucide-react";
@@ -38,6 +39,12 @@ const FEATURES = [
     title: "Fast by design",
     copy: "Route-level code splitting, cached API responses and right-sized images keep the app quick on mobile data.",
     accent: "text-[var(--link)]",
+  },
+  {
+    icon: PackageOpen,
+    title: "Pack simulator",
+    copy: "Open unlimited virtual booster packs from every era. Pulls are generated from the real card pool and kept apart from your vault.",
+    accent: "text-[var(--accent-2)]",
   },
   {
     icon: Layers,
@@ -212,6 +219,60 @@ export default function AboutPage() {
                 </li>
               ))}
             </ul>
+          </section>
+
+          <section aria-labelledby="simulator">
+            <div className="mb-4 flex items-center gap-3">
+              <span className="h-7 w-1.5 rounded-full bg-[var(--accent-2)]" aria-hidden="true" />
+              <h2 id="simulator" className="text-2xl font-black uppercase tracking-tight">
+                Pack Opening Simulator
+              </h2>
+            </div>
+            <div className="space-y-3 text-sm leading-relaxed text-[var(--muted)]">
+              <p>
+                The simulator opens virtual Pokémon TCG booster packs. It is free and unlimited, with no currency, no
+                ads, no account and no purchase — and the pulls are entertainment only.
+              </p>
+              <p>
+                <strong className="text-[var(--text)]">Pack contents are real.</strong> Cards are drawn from the chosen
+                expansion&apos;s actual card list and rarity data in TCGdex, including Trainer Gallery, Shiny Vault and
+                Galarian Gallery subsets, which are physically found inside the same packs. TCGdex does not publish
+                booster-specific card associations, so the simulator never claims that a pack reproduces a specific
+                product variant. Cards whose rarity the database does not report are excluded rather than guessed, and the
+                pack panel shows how many were left out.
+              </p>
+              <p>
+                <strong className="text-[var(--text)]">Structures differ by era.</strong> Wizards-era boosters, nine-card
+                EX packs and modern ten-card packs do not share a format, so each era has its own rule. A rule is marked{" "}
+                <em>documented</em> when the pack structure comes from product guidance — Scarlet &amp; Violet&apos;s
+                ten-card structure is — and <em>estimated</em> when the pack size is documented but the slot split and
+                tier weights are PokeGuru&apos;s model.
+              </p>
+              <p>
+                <strong className="text-[var(--text)]">Odds are honest.</strong> Pokémon does not publish per-rarity pull
+                odds for individual expansions, and we have no measured community sample to cite. Every percentage in the
+                simulator is therefore derived from the documented pack size and that set&apos;s own rarity mix, and is
+                labelled as an estimate. There is no pity timer, no hidden boost and no rigged &ldquo;exciting&rdquo; pull;
+                random outcomes use the browser&apos;s cryptographic generator, and a reported seed reproduces the same
+                pack.
+              </p>
+              <p>
+                <strong className="text-[var(--text)]">Kept separate.</strong> Simulated pulls live under their own
+                storage key, are never added to your collection, never priced, and are excluded from every valuation. The
+                reset button clears only simulated data.
+              </p>
+              <p>
+                <strong className="text-[var(--text)]">Artwork.</strong> TCGdex does not publish product-wrapper images,
+                so every wrapper is a PokeGuru illustration built from the expansion&apos;s logo and series colours. It is
+                labelled as such and is never presented as an official product image.
+              </p>
+              <p className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-4 text-xs leading-relaxed">
+                PokeGuru is an unofficial fan-made Pokémon TCG companion. Pack openings are virtual simulations for
+                entertainment only. No physical cards or products are supplied, and simulated pulls have no real-world
+                ownership or monetary value. Pull rates are estimates unless explicitly identified otherwise. PokeGuru is
+                not affiliated with or endorsed by The Pokémon Company, Nintendo, Creatures Inc. or GAME FREAK.
+              </p>
+            </div>
           </section>
 
           <BuyMeAPackPanel />
