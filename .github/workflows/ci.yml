@@ -6,8 +6,16 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
-  build:
+  verify:
+    name: Typecheck, test, build
     runs-on: ubuntu-latest
 
     steps:
@@ -18,5 +26,42 @@ jobs:
           node-version: 22
           cache: npm
 
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Production build
+        run: npm run build
+
+      - name: Check build output
+        run: |
+          set -euo pipefail
+          test -f dist/index.html
+          test -f dist/sw.js
+          test -f dist/offline.html
+          test -f dist/manifest.webmanifest
+          test -f dist/icons/icon-192.png
+          test -f dist/icons/icon-512.png
+          # Production sourcemaps must not ship.
+          if find dist -name '*.map' | grep -q .; then
+            echo "Unexpected sourcemap in dist" >&2
+            exit 1
+          fi
+
+  audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
       - run: npm ci
-      - run: npm run build
+      - run: npm audit --omit=dev

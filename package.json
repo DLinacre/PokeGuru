@@ -15,8 +15,13 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview",
-    "deploy": "npm run build && npx gh-pages -d dist -m \"deploy: $(git log --oneline -1)\""
+    "build:pages": "DEPLOY_TARGET=github-pages vite build",
+    "preview": "vite preview --port 4173",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "icons": "node scripts/generate-icons.mjs",
+    "deploy": "npm run build:pages && npx gh-pages -d dist -m \"deploy: $(git log --oneline -1)\""
   },
   "dependencies": {
     "clsx": "2.1.1",
@@ -29,13 +34,17 @@
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.1",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/react": "^16.3.3",
     "@types/node": "22.19.17",
     "@types/react": "19.2.7",
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "^6.0.2",
     "gh-pages": "^6.3.0",
+    "jsdom": "^31.0.1",
     "tailwindcss": "4.1.17",
     "typescript": "5.9.3",
-    "vite": "^8.0.16"
+    "vite": "^8.0.16",
+    "vitest": "^5.1.0"
   }
 }
