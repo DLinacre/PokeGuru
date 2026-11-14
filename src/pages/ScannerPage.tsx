@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { usePageMeta } from "../hooks/usePageMeta";
 import { OcrUnavailableError, recogniseCard, type OcrCandidateMatch, type OcrProgress } from "../services/ocr";
+import CardArtwork from "../components/Cards/CardArtwork";
 
 type ScanState = "idle" | "working" | "results" | "no-text" | "error";
 
@@ -317,20 +318,12 @@ export default function ScannerPage() {
                           className="block w-full text-left"
                           aria-label={`Open ${card.name} from ${card.set.name || "unknown set"}`}
                         >
-                          {card.images.small ? (
-                            <img
-                              src={card.images.small}
-                              alt={`${card.name} card`}
-                              width={245}
-                              height={337}
-                              loading="lazy"
-                              className="mx-auto w-full max-w-[140px] rounded-md"
-                            />
-                          ) : (
-                            <div className="flex aspect-[245/337] items-center justify-center rounded-md bg-[var(--bg)] text-[11px] text-[var(--muted)]">
-                              No image
-                            </div>
-                          )}
+                          <CardArtwork
+                            card={card}
+                            alt={`${card.name} card`}
+                            emptyLabel="No artwork"
+                            className="mx-auto aspect-[245/337] w-full max-w-[140px] rounded-md"
+                          />
                           <p className="mt-2 truncate text-sm font-bold text-[var(--text)]">{card.name}</p>
                           <p className="truncate text-[11px] text-[var(--muted)]">
                             {card.set.name || "Set not listed"} {card.localId ? `· #${card.localId}` : ""}

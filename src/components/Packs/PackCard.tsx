@@ -1,4 +1,5 @@
 import { cn } from "../../utils/cn";
+import CardArtwork from "../Cards/CardArtwork";
 import type { PulledCard } from "../../types/packs";
 import { TIER_LABELS, tierRank } from "../../data/packRules";
 
@@ -34,23 +35,17 @@ export default function PackCard({
   const chase = CHASE_TIERS.has(pull.tier);
   const face = (
     <div className={cn("relative h-full w-full overflow-hidden rounded-[10px] bg-[var(--bg-soft)]", tierTreatmentClasses(pull))}>
-      {pull.image ? (
-        <img
-          src={revealed ? pull.image : undefined}
-          data-src={pull.image}
-          alt={revealed ? `${pull.name} from ${pull.setName}` : ""}
-          loading={priority ? "eager" : "lazy"}
-          decoding="async"
-          width={245}
-          height={337}
-          className="h-full w-full object-contain"
-          draggable={false}
+      {revealed ? (
+        <CardArtwork
+          card={{ id: pull.id, name: pull.name, imageBase: pull.imageBase ?? pull.image }}
+          size="thumb"
+          priority={priority}
+          alt={`${pull.name} from ${pull.setName}`}
+          emptyLabel="No artwork"
+          imgClassName="rounded-[9px]"
         />
       ) : (
-        <div className="flex h-full w-full flex-col items-center justify-center gap-1 bg-gradient-to-br from-[var(--bg-elevated)] to-[var(--bg-soft)] p-2 text-center">
-          <span className="text-[10px] font-bold leading-tight text-[var(--text)]">{pull.name}</span>
-          <span className="text-[8px] uppercase tracking-widest text-[var(--muted)]">Image unavailable</span>
-        </div>
+        <div className="h-full w-full" aria-hidden="true" />
       )}
 
       {(chase || pull.treatment !== "normal") && (

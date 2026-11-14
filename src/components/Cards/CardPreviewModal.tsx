@@ -7,6 +7,7 @@ import { formatGbp, getCardValueGbp, pickCardmarketQuote, formatUpdatedAt } from
 import { NoData } from "../UI/EmptyState";
 import { rarityLabel } from "../../utils/search";
 import { useExchangeRate } from "../../hooks/useApi";
+import CardArtwork from "./CardArtwork";
 
 interface CardPreviewModalProps {
   card: TcgCard;
@@ -70,20 +71,12 @@ export default function CardPreviewModal({
 
         <div className="grid gap-6 p-5 sm:grid-cols-[220px_1fr] sm:p-6">
           <div className="mx-auto w-full max-w-[220px]">
-            {card.images.large || card.images.small ? (
-              <img
-                src={card.images.large || card.images.small}
-                alt={`${card.name} card`}
-                width={600}
-                height={825}
-                className="w-full rounded-xl shadow-[var(--shadow)]"
-                decoding="async"
-              />
-            ) : (
-              <div className="flex aspect-[245/337] items-center justify-center rounded-xl border border-dashed border-[var(--border)] text-xs text-[var(--muted)]">
-                Image unavailable
-              </div>
-            )}
+            <CardArtwork
+              card={card}
+              size="full"
+              alt={`${card.name} card`}
+              className="aspect-[245/337] w-full rounded-xl shadow-[var(--shadow)]"
+            />
           </div>
 
           <div className="min-w-0">

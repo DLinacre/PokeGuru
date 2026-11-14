@@ -111,7 +111,10 @@ export interface PoolCard {
   setName: string;
   rarity: string;
   tier: RarityTier;
+  /** Full artwork URL (legacy field, kept for saved pools). */
   image?: string;
+  /** TCGdex asset base — preferred by the artwork resolver. */
+  imageBase?: string;
 }
 
 export type PoolsByTier = Partial<Record<RarityTier, PoolCard[]>>;
@@ -141,7 +144,9 @@ export interface PulledCard {
   rarity: string;
   tier: RarityTier;
   treatment: PullTreatment;
+  /** Full artwork URL (legacy) or TCGdex asset base. */
   image?: string;
+  imageBase?: string;
   /** Slot id that produced this card. */
   slot: string;
 }

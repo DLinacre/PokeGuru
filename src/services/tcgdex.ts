@@ -23,6 +23,7 @@ import type {
 } from "../types/pokemon";
 import { ApiError, fetchJson, raceAbort } from "./http";
 import { readCache } from "./cache";
+import { normaliseImageBase } from "./cardImages";
 
 export const TCGDEX_BASE = "https://api.tcgdex.net/v2/en";
 const LANG = "en";
@@ -204,10 +205,10 @@ function baseCardFields(raw: RawCardBrief | RawCard): TcgCard {
     localId: String(raw.localId ?? raw.id.split("-").pop() ?? ""),
     category: "Pokemon",
     images: {
-      small: assetUrl(raw.image, "low"),
-      large: assetUrl(raw.image, "high"),
+      small: normaliseImageBase(raw.image) ? `${normaliseImageBase(raw.image)}/low.webp` : undefined,
+      large: normaliseImageBase(raw.image) ? `${normaliseImageBase(raw.image)}/high.webp` : undefined,
     },
-    imageBase: raw.image ?? undefined,
+    imageBase: normaliseImageBase(raw.image),
     set: { id: setOfCardId(raw.id), name: "" },
     isDetailed: false,
   };

@@ -10,6 +10,7 @@ import PriceConfidenceBadge from "../components/UI/PriceBadge";
 import { NoData } from "../components/UI/EmptyState";
 import { EmptyState } from "../components/UI/EmptyState";
 import type { TcgCard } from "../types/pokemon";
+import CardArtwork from "../components/Cards/CardArtwork";
 
 type SortMode = "value" | "name" | "added";
 
@@ -349,21 +350,11 @@ export default function CollectionPage() {
           <li key={item.card.id} className="group relative">
             <Link to={`/card/${item.card.id}`} className="block no-underline hover:no-underline">
               <div className="overflow-hidden rounded-[var(--radius)] border border-[var(--border)] bg-[#0b0d12]">
-                {item.card.images.small ? (
-                  <img
-                    src={item.card.images.small}
-                    alt={`${item.card.name} card`}
-                    width={245}
-                    height={337}
-                    loading="lazy"
-                    decoding="async"
-                    className="aspect-[245/337] w-full object-contain transition-transform duration-300 group-hover:scale-105 motion-reduce:transform-none"
-                  />
-                ) : (
-                  <div className="flex aspect-[245/337] items-center justify-center text-xs text-[var(--muted)]">
-                    Image unavailable
-                  </div>
-                )}
+                <CardArtwork
+                  card={item.card}
+                  alt={`${item.card.name} card`}
+                  className="aspect-[245/337] w-full object-contain transition-transform duration-300 group-hover:scale-105 motion-reduce:transform-none"
+                />
               </div>
               <div className="mt-2 px-0.5">
                 <h2 className="truncate text-sm font-bold text-[var(--text)]">{item.card.name}</h2>

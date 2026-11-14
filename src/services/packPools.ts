@@ -260,7 +260,8 @@ export async function buildPackPool(
           setName: nameById.get(job.setId) ?? set.name,
           rarity: job.rarity,
           tier,
-          image: brief.image ? `${brief.image}/low.webp` : undefined,
+          // Store the asset base; the artwork resolver appends the derivative.
+          image: brief.image ?? undefined,
         };
         (pools[tier] ??= []).push(card);
       }
@@ -287,7 +288,8 @@ export async function buildPackPool(
           setName: set.name,
           rarity: "Energy",
           tier: "other",
-          image: brief.image ? `${brief.image}/low.webp` : undefined,
+          // Store the asset base; the artwork resolver appends the derivative.
+          image: brief.image ?? undefined,
         });
       }
       done += 1;

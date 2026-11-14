@@ -7,6 +7,7 @@ import type { TcgCard } from "../../types/pokemon";
 import BuyMeAPack from "../UI/BuyMeAPack";
 import Brand from "./Brand";
 import { cn } from "../../utils/cn";
+import CardArtwork from "../Cards/CardArtwork";
 
 const NAV_ITEMS = [
   { to: "/search", label: "Search", icon: Search },
@@ -201,18 +202,12 @@ export default function Header() {
                     index === selectedIndex ? "bg-[var(--accent)]/10 text-[var(--text)]" : "text-[var(--muted)] hover:bg-[var(--bg-soft)]"
                   )}
                 >
-                  {card.images.small ? (
-                    <img
-                      src={card.images.small}
-                      alt=""
-                      width={32}
-                      height={44}
-                      loading="lazy"
-                      className="h-11 w-8 shrink-0 rounded object-contain"
-                    />
-                  ) : (
-                    <span className="h-11 w-8 shrink-0 rounded bg-[var(--bg-soft)]" aria-hidden="true" />
-                  )}
+                  <CardArtwork
+                    card={card}
+                    alt=""
+                    emptyLabel=""
+                    className="h-11 w-8 shrink-0 rounded object-contain"
+                  />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-semibold text-[var(--text)]">{card.name}</span>
                     <span className="block truncate text-[11px] text-[var(--muted)]">

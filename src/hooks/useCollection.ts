@@ -54,6 +54,7 @@ function normaliseLegacyCard(raw: unknown): TcgCard | null {
       small: typeof images.small === "string" ? images.small : undefined,
       large: typeof images.large === "string" ? images.large : undefined,
     },
+    imageBase: typeof value.imageBase === "string" ? value.imageBase : undefined,
     set: {
       id: setId,
       name: typeof legacySet.name === "string" ? legacySet.name : "",

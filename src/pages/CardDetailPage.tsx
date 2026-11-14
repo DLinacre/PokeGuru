@@ -31,6 +31,8 @@ import { NoData } from "../components/UI/EmptyState";
 import { rarityLabel } from "../utils/search";
 import { getWikiMeta } from "../utils/setMeta";
 import type { TcgCard } from "../types/pokemon";
+import CardArtwork from "../components/Cards/CardArtwork";
+import { preferredCardImage } from "../services/cardImages";
 
 function TypeBadge({ label }: { label: string }) {
   return (
@@ -86,7 +88,7 @@ export default function CardDetailPage() {
       : "Pokémon TCG card details, attacks and Cardmarket reference prices.",
     path: id ? `/card/${id}` : "/search",
     type: "article",
-    image: card?.images.large,
+    image: card ? preferredCardImage(card, "full") : undefined,
   });
 
   const related = useCardSearch({
@@ -119,7 +121,7 @@ export default function CardDetailPage() {
       "@context": "https://schema.org",
       "@type": "Product",
       name: `${card.name}${card.set.name ? ` — ${card.set.name}` : ""}`,
-      image: card.images.large || card.images.small,
+      image: preferredCardImage(card, "full"),
       category: "Trading Card Game > Pokémon TCG",
       brand: { "@type": "Brand", name: "Pokémon TCG" },
       url,
@@ -218,21 +220,13 @@ export default function CardDetailPage() {
       <div className="grid gap-8 lg:grid-cols-[minmax(220px,340px)_1fr]">
         <div>
           <div className="sticky top-24">
-            {card.images.large || card.images.small ? (
-              <img
-                src={card.images.large || card.images.small}
-                alt={`${card.name}${card.set.name ? ` from ${card.set.name}` : ""} card`}
-                width={600}
-                height={825}
-                fetchPriority="high"
-                decoding="async"
-                className="w-full rounded-2xl shadow-[var(--shadow)]"
-              />
-            ) : (
-              <div className="flex aspect-[245/337] items-center justify-center rounded-2xl border border-dashed border-[var(--border)] text-sm text-[var(--muted)]">
-                Image unavailable
-              </div>
-            )}
+            <CardArtwork
+              card={card}
+              size="full"
+              priority
+              alt={`${card.name}${card.set.name ? ` from ${card.set.name}` : ""} card`}
+              className="aspect-[245/337] w-full rounded-2xl shadow-[var(--shadow)]"
+            />
             <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-[var(--muted)]">
               <a
                 href={cardmarketSearch}
