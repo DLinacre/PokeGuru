@@ -8,6 +8,7 @@ import ScrollToTop from "../UI/ScrollToTop";
 import BackToTop from "../UI/BackToTop";
 import PageSkeleton from "../UI/PageSkeleton";
 import UpdatePrompt from "../UI/UpdatePrompt";
+import InstallPrompt from "../UI/InstallPrompt";
 import { useOnlineStatus } from "../../hooks/useOnline";
 
 export default function Layout() {
@@ -45,6 +46,7 @@ export default function Layout() {
       <MobileNav />
       <BackToTop />
       <UpdatePrompt />
+      <InstallPrompt />
     </div>
   );
 }

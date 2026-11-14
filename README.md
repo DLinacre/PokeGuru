@@ -58,8 +58,13 @@ and keeps a private collection vault in the browser.
   or estimated, shows the modelled tier odds with sources, and keeps simulated
   pulls in their own store (`pokeguru_pack_sim_v1`) so they can never leak into
   your real collection or its valuation.
-- **Offline-tolerant PWA** — app shell cached, clearly labelled cached data, and
-  a safe update prompt that never traps you on an old version.
+- **Printable 5 × 7 in flyer** — one-click, vector, print-ready PDF
+  (`PokeGuru-5x7-QR-Flyer.pdf`) with a QR code that always points at the live
+  production site, plus a Print option that opens your print dialogue. Linked
+  from the footer, the homepage “Share PokeGuru” panel and the About page.
+- **Offline-tolerant PWA** — app shell cached, clearly labelled cached data, a
+  safe update prompt that never traps you on an old version, and an optional
+  install invitation (“Take PokeGuru with you!”).
 
 ---
 
@@ -111,12 +116,48 @@ so never put secrets in them.
 
 | Variable | Required | Purpose |
 | --- | --- | --- |
-| `VITE_PUBLIC_SITE_URL` | no | Canonical origin used for canonical/OG tags, `sitemap.xml` and absolute `robots.txt` entries, e.g. `https://pokeguru.example.com` (no trailing slash). Empty = derive from the browser and skip the sitemap. When set, the build asks TCGdex for the live set list so every `/set/:id` page is listed (static routes only if the API is unreachable). |
+| `VITE_PUBLIC_SITE_URL` | **yes for the flyer** | Canonical origin used for canonical/OG tags, `sitemap.xml`, absolute `robots.txt` entries **and the QR code on the printable flyer**, e.g. `https://pokeguru.example.com` (no trailing slash). Empty = derive from the browser and skip the sitemap; for the flyer the served origin is used only when it looks like a real production address (see below). When set, the build asks TCGdex for the live set list so every `/set/:id` page is listed (static routes only if the API is unreachable). |
 | `VITE_BUY_ME_A_PACK_URL` | no | A real support/payment page for “Buy Me a Pack”. When empty the call-to-action renders in a clearly labelled *not configured* state — no fabricated link is ever shown. |
 | `DEPLOY_TARGET` | no | `github-pages` builds with the `/PokeGuru/` base path. Leave unset for Vercel and other root-hosted deployments. |
 
 > There is no real donation destination configured in this repository by
 > default. If you fork PokeGuru, set `VITE_BUY_ME_A_PACK_URL` to your own page.
+
+---
+
+## 🎴 Printable flyer
+
+Every page footer, the homepage “Share PokeGuru” panel and the About page offer
+**🎴 Download PokeGuru Flyer** (and **Print flyer**).
+
+- **File:** `PokeGuru-5x7-QR-Flyer.pdf` — exactly one page, exactly **5 × 7 in
+  portrait (127 × 177.8 mm = 360 × 504 pt)**. The PDF is generated in the browser
+  on demand, so it is never a stale checked-in binary: one current design, one
+  download, no server work.
+- **Everything is vector** — text uses the standard Helvetica faces, the artwork
+  is native PDF paths and the QR code is one rectangle per module, so it stays
+  sharp at any print resolution.
+- **The QR code is verified.** `tests/flyer.test.ts` decodes the generated
+  matrix with the independent `jsqr` decoder and asserts the payload is the
+  production URL, and also re-opens the produced PDF to assert the page count
+  and page box.
+- **The production address is enforced.** `src/services/flyer/qr.ts` accepts
+  `VITE_PUBLIC_SITE_URL` (or, if unset, the origin the app is served from) only
+  when it is `https`, has no path/query/hash, and is not `localhost`, `127.x`,
+  `*.local`, a sandbox preview (`*.e2b.app`) or a Vercel preview/branch
+  deployment. If nothing passes, the buttons show a **configuration warning**
+  instead of generating a QR code that would not work once printed — no dummy
+  URLs, ever.
+- **Printing:** choose 100% / “Actual size” (never “Fit to page”). The design is
+  full-bleed dark, so a slightly heavier paper stock keeps it crisp.
+- **Wording:** the flyer advertises only shipped features (search, set archive,
+  collection, real market prices, free virtual packs) and carries an unofficial
+  fan-project disclaimer. No official artwork, logos, character images or
+  partnership claims are used.
+
+To point the flyer at your own domain, set `VITE_PUBLIC_SITE_URL` (for example
+in the Vercel project’s environment variables) and redeploy; Google Fonts, the
+sitemap, canonical tags and the printed QR code all follow that one value.
 
 ---
 
@@ -215,6 +256,14 @@ card.
 - Cached/offline data is labelled in the UI.
 - Updates are non-blocking: a prompt appears, and `SKIP_WAITING` swaps versions
   on your next action instead of pinning an old build.
+- **Install invitation** (`src/components/UI/InstallPrompt.tsx`): a branded
+  “Take PokeGuru with you!” card appears ~7 s after load, only when the browser
+  can actually install the app (`beforeinstallprompt` has fired) or on iOS,
+  where it explains the Safari “Add to Home Screen” route instead of pretending
+  a one-tap prompt exists. The browser’s own install dialogue is opened **only**
+  after the visitor chooses *Install PokeGuru*; *Maybe later* or a dismissal is
+  remembered in `localStorage` for 60 days, and the card never appears when the
+  app is already installed (standalone display mode).
 
 ---
 
