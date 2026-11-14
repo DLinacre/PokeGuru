@@ -338,16 +338,10 @@ function setIdLength(cardId: string): number {
 }
 
 /** All cards that can appear in a reverse-holo slot for a config. */
-export function reversePool(pool: PackPool, config: PackConfig): PoolCard[] {
+export function reversePool(pool: PackPool, _config?: PackConfig): PoolCard[] {
+  // Reverse foils are only printed for the set's standard rarity range, so a
+  // reverse slot must never hand back a secret/illustration/hyper rare.
   const allowed: RarityTier[] = ["common", "uncommon", "rare", "holoRare"];
-  for (const slot of config.slots) {
-    if (slot.kind === "hit" && slot.weights) {
-      allowed.push(...(Object.keys(slot.weights) as RarityTier[]));
-    }
-    if (slot.kind === "wildcard" && slot.weights) {
-      allowed.push(...(Object.keys(slot.weights) as RarityTier[]));
-    }
-  }
   const seen = new Set<string>();
   const cards: PoolCard[] = [];
   for (const tier of [...new Set(allowed)]) {

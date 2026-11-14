@@ -23,6 +23,7 @@ import type {
   PackSlotRule,
   RarityTier,
   RuleConfidence,
+  TierWeightBasis,
 } from "../types/packs";
 
 /** Human labels for the rarity buckets. */
@@ -195,7 +196,7 @@ const SV_SOURCE = {
   label: "Pokémon support: Scarlet & Violet booster pack contents",
   url: "https://support.pokemon.com/hc/en-us/articles/15417984157332",
   note:
-    "Pokémon states that Scarlet & Violet boosters contain 10 game cards (4 common, 3 uncommon and 3 foil, with at least one rare or higher), an Energy card and a code card. PokeGuru models the 10 game cards only: 4 common, 3 uncommon, 1 reverse foil, 1 guaranteed rare-or-better foil and 1 wildcard foil. Energy and code cards are not simulated.",
+    "Pokémon states that Scarlet & Violet boosters contain 10 game cards (4 common, 3 uncommon and 3 foil, with at least one rare or higher), an Energy card and a code card. PokeGuru models the 10 game cards only: 4 common, 3 uncommon, 1 guaranteed rare-or-better foil and 2 reverse foils (the second one is the slot players call the wildcard). Energy and code cards are not simulated.",
 };
 
 const MODERN_PACK_SOURCE = {
@@ -213,10 +214,10 @@ function uncommon(count: number): PackSlotRule {
   return { id: "uncommon", label: "Uncommon", kind: "uncommon", count };
 }
 
-function reverse(count = 1): PackSlotRule {
+function reverse(count = 1, id = "reverse", label = "Reverse holo"): PackSlotRule {
   return {
-    id: "reverse",
-    label: "Reverse holo",
+    id,
+    label,
     kind: "reverse",
     count,
     treatment: "reverse",
@@ -228,36 +229,65 @@ function rare(weights: Partial<Record<RarityTier, number>>, label = "Rare"): Pac
   return { id: "rare", label, kind: "rare", count: 1, weights, treatment: "normal" };
 }
 
+/**
+ * Scarlet & Violet tier weights, expressed as relative shares of the single
+ * "rare or better" foil slot.
+ *
+ * The shares are the measured per-pack rates published by the TCGplayer
+ * Authentication Center (8,000+ packs for Scarlet & Violet base, per-set
+ * articles through the era): Double rare 13.8%, Ultra rare 6.6%,
+ * Illustration rare 7.7%, Special illustration rare 3.1%, Hyper rare 1.9%,
+ * with the remainder the regular rare. ACE SPEC (a late-era addition) and the
+ * shiny tiers (special sets only) keep estimated shares because the published
+ * studies did not break them out per set.
+ */
 const SV_HIT_WEIGHTS: Partial<Record<RarityTier, number>> = {
-  rare: 1,
-  holoRare: 0.9,
-  doubleRare: 1,
-  ultraRare: 0.6,
-  aceSpec: 0.35,
-  illustrationRare: 0.55,
-  specialIllustrationRare: 0.28,
-  hyperRare: 0.22,
-  shinyRare: 0.5,
-  shinyUltraRare: 0.18,
-  secretRare: 0.22,
+  rare: 68,
+  doubleRare: 13.8,
+  illustrationRare: 7.7,
+  ultraRare: 6.6,
+  specialIllustrationRare: 3.1,
+  hyperRare: 1.9,
+  aceSpec: 6,
+  shinyRare: 8,
+  shinyUltraRare: 2.5,
+  secretRare: 1.9,
+};
+
+const MEASURED_SV_BASIS: TierWeightBasis = {
+  kind: "measured",
+  label: "TCGplayer Authentication Center — measured booster openings",
+  detail:
+    "Tier shares come from TCGplayer's published opening studies (8,000+ Scarlet & Violet packs for the base set, plus the per-set articles for later expansions): Double rare 13.8%, Ultra rare 6.6%, Illustration rare 7.7%, Special illustration rare 3.1%, Hyper rare 1.9%. ACE SPEC and shiny-tier shares are PokeGuru estimates because the studies do not break them out per set.",
+  url: "https://www.tcgplayer.com/content/article/Pok%C3%A9mon-TCG-Scarlet-Violet%E2%80%94151-Pull-Rates/b237df74-fbb0-40d0-9e13-d69ee6e804d9/",
+  sampleSize: "8,000+ packs",
+  checkedAt: "2026-11-14",
+};
+
+const ESTIMATED_BASIS: TierWeightBasis = {
+  kind: "estimated",
+  label: "PokeGuru estimate",
+  detail:
+    "No measured opening study is bundled for this era, so the tier shares are modelled: the slot's own rarity mix sets the order, and every step up the rarity ladder is deliberately rarer than the one below. The pack structure on the same page is separate from these weights.",
+  checkedAt: "2026-11-14",
 };
 
 const SWSH_HIT_WEIGHTS: Partial<Record<RarityTier, number>> = {
-  rare: 1,
-  holoRare: 1,
-  ultraRare: 0.55,
-  amazingRare: 0.4,
-  radiant: 0.4,
-  shinyRare: 0.35,
-  shinyUltraRare: 0.16,
-  secretRare: 0.2,
+  rare: 100,
+  holoRare: 42,
+  ultraRare: 18,
+  amazingRare: 4,
+  radiant: 4,
+  shinyRare: 5,
+  shinyUltraRare: 2,
+  secretRare: 2,
 };
 
 const SM_HIT_WEIGHTS: Partial<Record<RarityTier, number>> = {
-  rare: 1,
-  holoRare: 1,
-  ultraRare: 0.5,
-  secretRare: 0.18,
+  rare: 100,
+  holoRare: 42,
+  ultraRare: 18,
+  secretRare: 2,
 };
 
 /**
@@ -290,6 +320,7 @@ export const PACK_CONFIGS: PackConfig[] = [
       note:
         "Wizards-era boosters contained 11 cards. The 6/3/1 split plus one basic Energy matches the Base Set packaging; later WotC sets vary slightly, so the split is modelled. TCGdex records the first WotC sets' holofoil rares as plain 'Rare' (holofoil is a printing variant there), so those sets draw the rare slot from one combined rare pool instead of separating holo from non-holo.",
     },
+    weightsBasis: ESTIMATED_BASIS,
     checkedAt: CHECKED_AT,
     notes: "Sets with no basic Energy cards in the database fall back to an extra common.",
   },
@@ -307,6 +338,7 @@ export const PACK_CONFIGS: PackConfig[] = [
       note:
         "Legendary Collection was the first English set with a reverse holo in every pack. The exact common/uncommon split is modelled.",
     },
+    weightsBasis: ESTIMATED_BASIS,
     checkedAt: CHECKED_AT,
   },
   {
@@ -322,6 +354,7 @@ export const PACK_CONFIGS: PackConfig[] = [
       label: "Community-documented 9-card e-Card booster",
       note: "Nine-card packs with one reverse holo. Slot split modelled by PokeGuru.",
     },
+    weightsBasis: ESTIMATED_BASIS,
     checkedAt: CHECKED_AT,
   },
   {
@@ -343,6 +376,7 @@ export const PACK_CONFIGS: PackConfig[] = [
       note:
         "EX boosters held nine cards. EX-era ultra rares (ex cards) are modelled as a small share of the rare slot.",
     },
+    weightsBasis: ESTIMATED_BASIS,
     checkedAt: CHECKED_AT,
   },
   {
@@ -360,6 +394,7 @@ export const PACK_CONFIGS: PackConfig[] = [
     boxPacks: 36,
     confidence: "estimated",
     source: MODERN_PACK_SOURCE,
+    weightsBasis: ESTIMATED_BASIS,
     checkedAt: CHECKED_AT,
   },
   {
@@ -377,6 +412,7 @@ export const PACK_CONFIGS: PackConfig[] = [
     boxPacks: 36,
     confidence: "estimated",
     source: MODERN_PACK_SOURCE,
+    weightsBasis: ESTIMATED_BASIS,
     checkedAt: CHECKED_AT,
   },
   {
@@ -394,6 +430,7 @@ export const PACK_CONFIGS: PackConfig[] = [
     boxPacks: 36,
     confidence: "estimated",
     source: MODERN_PACK_SOURCE,
+    weightsBasis: ESTIMATED_BASIS,
     checkedAt: CHECKED_AT,
   },
   {
@@ -411,6 +448,7 @@ export const PACK_CONFIGS: PackConfig[] = [
     boxPacks: 36,
     confidence: "estimated",
     source: MODERN_PACK_SOURCE,
+    weightsBasis: ESTIMATED_BASIS,
     checkedAt: CHECKED_AT,
   },
   {
@@ -429,6 +467,7 @@ export const PACK_CONFIGS: PackConfig[] = [
     boxPacks: 36,
     confidence: "estimated",
     source: MODERN_PACK_SOURCE,
+    weightsBasis: ESTIMATED_BASIS,
     checkedAt: CHECKED_AT,
     notes:
       "Sun & Moon packs varied through the era (GX, Prism Star and Tag Team products). The extra hit slot is modelled, not documented per set.",
@@ -449,6 +488,7 @@ export const PACK_CONFIGS: PackConfig[] = [
     boxPacks: 36,
     confidence: "estimated",
     source: MODERN_PACK_SOURCE,
+    weightsBasis: ESTIMATED_BASIS,
     checkedAt: CHECKED_AT,
   },
   {
@@ -469,21 +509,15 @@ export const PACK_CONFIGS: PackConfig[] = [
         weights: SV_HIT_WEIGHTS,
         treatment: "holo",
       },
-      {
-        id: "wildcard",
-        label: "Wildcard foil",
-        kind: "wildcard",
-        count: 1,
-        weights: { ...SV_HIT_WEIGHTS, rare: 3 },
-        treatment: "holo",
-      },
+      reverse(1, "wildcard", "Second reverse foil"),
     ],
     boxPacks: 36,
     confidence: "documented",
     source: SV_SOURCE,
+    weightsBasis: MEASURED_SV_BASIS,
     checkedAt: CHECKED_AT,
     notes:
-      "Special sets (for example Crown Zenith, 151 or Prismatic Evolutions) were sold in different products; the same 10-card game-card model is used and labelled as a PokeGuru estimate in the odds panel.",
+      "Special sets (for example Crown Zenith, 151 or Prismatic Evolutions) were sold in different products; the same 10-card game-card model is used. 151 in particular has different foil placement, so treat the slot split as an estimate even though the era's tier weights are measured.",
   },
 ];
 

@@ -66,6 +66,20 @@ export interface PackRuleSource {
   note: string;
 }
 
+/**
+ * How a configuration's tier weights were obtained. The UI shows this next to
+ * the odds so a modelled number is never mistaken for a published one.
+ */
+export interface TierWeightBasis {
+  kind: "documented" | "measured" | "estimated";
+  label: string;
+  detail: string;
+  url?: string;
+  /** e.g. "8,000+ packs". Only present when the source states it. */
+  sampleSize?: string;
+  checkedAt?: string;
+}
+
 export interface PackConfig {
   id: string;
   label: string;
@@ -81,6 +95,8 @@ export interface PackConfig {
   boxPacks?: number;
   confidence: RuleConfidence;
   source: PackRuleSource;
+  /** Where the slot tier weights come from, when the rule uses them. */
+  weightsBasis?: TierWeightBasis;
   /** ISO date the rule was last reviewed. */
   checkedAt: string;
   notes?: string;
@@ -200,6 +216,7 @@ export interface PackOdds {
   rows: OddsRow[];
   slotSummary: { slot: string; count: number; detail: string }[];
   source: PackRuleSource;
+  weightsBasis?: TierWeightBasis;
   checkedAt: string;
   notes?: string;
   /** True when modelled numbers were derived from a thin pool. */

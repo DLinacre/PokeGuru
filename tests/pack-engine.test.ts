@@ -238,6 +238,34 @@ describe("pack odds", () => {
     expect(Math.abs(observed - (rareRow?.perPack ?? 0))).toBeLessThan(0.12);
   });
 
+  it("keeps measured Scarlet & Violet tier shares inside the published range", () => {
+    // TCGplayer Authentication Center (8,000+ packs): Double rare 13.8%,
+    // Ultra rare 6.6%, Illustration rare 7.7%, SIR 3.1%, Hyper rare 1.9%.
+    const odds = computePackOdds(pool(), SV);
+    const chance = (tier: RarityTier) => odds.rows.find((row) => row.tier === tier)?.perPack ?? 0;
+
+    expect(chance("doubleRare")).toBeGreaterThan(0.1);
+    expect(chance("doubleRare")).toBeLessThan(0.18);
+    expect(chance("ultraRare")).toBeGreaterThan(0.03);
+    expect(chance("ultraRare")).toBeLessThan(0.09);
+    expect(chance("illustrationRare")).toBeGreaterThan(0.04);
+    expect(chance("illustrationRare")).toBeLessThan(0.1);
+    expect(chance("specialIllustrationRare")).toBeLessThan(0.05);
+    expect(chance("hyperRare")).toBeLessThan(0.03);
+    expect(odds.weightsBasis?.kind).toBe("measured");
+    expect(odds.weightsBasis?.url).toContain("tcgplayer.com");
+  });
+
+  it("never lets a reverse holo land on a chase rarity", () => {
+    const testPool = pool();
+    for (let index = 0; index < 300; index += 1) {
+      const result = generatePack({ pool: testPool, config: SV, seed: `reverse-${index}` });
+      for (const card of result.cards.filter((entry) => entry.treatment === "reverse")) {
+        expect(["common", "uncommon", "rare", "holoRare"]).toContain(card.tier);
+      }
+    }
+  });
+
   it("flags a thin pool instead of hiding it", () => {
     const thin = computePackOdds(pool({ specialIllustrationRare: 1 }), SV);
     expect(thin.thin).toBe(true);
