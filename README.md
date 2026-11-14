@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/banner.svg" alt="PokeGuru Banner" width="100%">
+  <img src="assets/banner.jpg" alt="PokeGuru — open Pokémon TCG card database with GBP reference prices" width="100%">
 </p>
 
 <p align="center">
@@ -14,12 +14,13 @@
 
 ---
 
-# 🃏 PokeGuru — Pokémon TCG card database & collection vault
+<h1 align="center">PokeGuru</h1>
+<p align="center"><strong>Every card. Every set. Honest GBP pricing.</strong></p>
 
 PokeGuru is a fast, installable Pokémon TCG web app for UK collectors. It searches
 the full English card database from [TCGdex](https://tcgdex.dev/), shows
-**reference** marketplace prices in GBP, and keeps a personal collection vault in
-the browser.
+**printing-aware** Cardmarket reference prices in GBP with a dated exchange rate,
+and keeps a private collection vault in the browser.
 
 > **Pricing honesty:** PokeGuru does **not** invent values, sales, trends or
 > history. Every price comes from a dated marketplace snapshot, and anything the
@@ -31,17 +32,21 @@ the browser.
 
 ## ✨ Features
 
-- **Search & filter** every English card by name, rarity, category, illustrator,
-  set and card number. Filters and pagination are stored in the URL, so results
-  survive refresh, deep links and the Back button.
+- **Search & filter** every English card by name, set, collector number,
+  illustrator, rarity and category. Price-range and printing filters apply to the
+  loaded page (the search API returns no prices in list results) and say so.
+  Filters and pagination live in the URL, so results survive refresh, deep links
+  and the Back button.
 - **Card pages** with large artwork, set/series metadata, illustrator, rarity,
-  regulation marks, variants, and Cardmarket (EUR → GBP) plus optional TCGplayer
-  (USD) reference pricing.
+  regulation marks, variants, every published Cardmarket band, a confidence
+  rating for the headline figure, and optional TCGplayer (USD) reference prices.
 - **Set archive** — browse expansions by series with card counts, release dates
-  and set logos.
-- **Collection vault** — add/remove cards, quantities and condition notes.
-  Stored in `localStorage` (`pokeguru_collection`) on your device only, and old
-  v1.6 collections migrate automatically.
+  and set logos. A set's total reference value can be computed on demand from
+  each card's own marketplace snapshot.
+- **Collection vault** — add, remove, search, sort and value cards; import and
+  export JSON. Stored in `localStorage` (`pokeguru_collection`) on your device
+  only, and old v1.6 collections migrate automatically. Importing merges and
+  never deletes existing cards.
 - **Card scanner** — real on-device OCR with Tesseract.js, loaded only when you
   scan. The recognised text is matched against the live database and **you**
   confirm the match; nothing is added silently.
@@ -116,15 +121,26 @@ deprecated Pokémon TCG API (pokemontcg.io), which retires on 1 March 2027.
 
 **Prices** — TCGdex embeds marketplace snapshots on each full card:
 
-- **Cardmarket (EUR)** is the primary source: `trend`, falling back to `avg`,
-  then `low`. `low` and 30-day fields are shown only as reference figures.
-- **TCGplayer (USD)** is optional; TCGdex has reported gaps in this feed since
-  October 2026, so missing values are shown as *No Data Available*.
-- **Currency** — the EUR→GBP rate comes from Frankfurter and is cached for 12
-  hours under `pokeguru:fx:eur-gbp:v1`. The app never uses a hard-coded rate; if
-  the rate cannot be fetched, GBP values are withheld rather than guessed.
-- Every price block shows the marketplace’s update date and the FX date, so you
-  can judge how fresh it is.
+- **Cardmarket (EUR)** is the primary source. Its standard print and holofoil
+  print are separate bands, and PokeGuru resolves which printing a card has
+  before reading a price. A non-holo card is never valued with the holofoil
+  band; when a card carries both printings, the other band is shown separately
+  as an alternate printing.
+- **Headline figure** — Cardmarket `trend`, then `avg`, then 30-day `avg30`, then
+  `low`. Every published band (`trend`, `avg`, `low`, 1/7/30-day) is listed with
+  its EUR source value and the GBP conversion.
+- **Confidence** — each price is labelled `Verified` (fresh trend/average),
+  `Indicative` (undated, 7–30 days old, or printing unconfirmed), `Stale` (>30
+  days), `Price Unverified` (lowest-listing-only), or `No Data Available`. The
+  tooltip always explains the reason.
+- **TCGplayer (USD)** is optional and shown in USD only, never silently
+  converted. TCGdex has reported gaps in this feed since October 2026, so missing
+  values are shown as *No Data Available*.
+- **Currency** — the EUR→GBP rate comes from Frankfurter and is cached under
+  `pokeguru:fx:eur-gbp:v1`. The app never uses a hard-coded rate; if the rate
+  cannot be fetched, GBP values are withheld (`fx-missing`) rather than guessed.
+- Every price block shows the marketplace update date, the FX rate date, the
+  matched card id and the matched printing.
 
 **What PokeGuru deliberately does not do:** graded/PSA valuations, price
 history charts, “market trends”, sales feeds or estimated portfolio returns.
@@ -170,8 +186,9 @@ card.
 ## 🧪 Testing
 
 ```bash
+npm run lint        # ESLint (typescript-eslint + react-hooks)
 npm run typecheck   # strict TypeScript
-npm test            # 47 tests / 8 files
+npm test            # 63 tests / 9 files
 npm run build       # production build smoke test
 ```
 
@@ -180,7 +197,10 @@ Covered:
 - TCGdex adapter mapping, search filters/URL construction, pagination and sort
   fallback, abort handling, error kinds.
 - Frankfurter rate parsing, caching, stale-rate fallback, EUR→GBP conversion.
-- Price selection/formatting, including “No Data Available”.
+- Pricing engine: printing resolution, no cross-printing leakage, band
+  selection, confidence ratings (verified/indicative/stale/unverified/
+  unavailable), missing-FX handling, alternate printings, formatting and
+  “No Data Available”.
 - Search param parsing/serialisation (filters, pagination, sort).
 - Collection persistence, legacy pokemontcg.io migration, subscription updates.
 - OCR text parsing, candidate scoring and rejection of rules text.
@@ -207,6 +227,8 @@ Production build, before → after this upgrade:
 | Production sourcemaps | 1.68 MB `.map` shipped | none |
 | Route chunks | single bundle | 15 lazy chunks (search 2.72 kB, set pages ≈2.5 kB, scanner 6.02 kB gzip) |
 | Image requests | full-size artwork in every tile | 245×337 WebP thumbnails, with a fallback chain if a variant is missing |
+| JS entry after V3 (gzip) | 98.40 kB | **79.52 kB** |
+| CSS after V3 (gzip) | 9.80 kB | 11.91 kB (design-system tokens, still one file) |
 | Cards fetched per search | 250 | 24 |
 | Requests per search | 1 huge list | 1 page + throttled detail hydration (concurrency 5) |
 
@@ -235,14 +257,15 @@ The project is deployed at **https://pokeguru.vercel.app** (production alias).
    canonical tags, `sitemap.xml` and `robots.txt` are generated for the real
    origin.
 
-**Git auto-deploy note:** the Vercel project exists, but the connected Vercel
-GitHub account only has access to the `LIN4CRE` GitHub account, not
-`DLinacre/PokeGuru`, so Vercel cannot yet create its own Git deployments.
-Until the Vercel GitHub app is granted access to `DLinacre/PokeGuru`, deploys
-must be triggered through the Vercel API/CLI. Once access is granted:
+`VITE_PUBLIC_SITE_URL` is already set to `https://pokeguru.vercel.app` in the
+project, so canonical tags, `robots.txt` and `sitemap.xml` are generated for the
+real origin.
 
-1. Vercel → Project → Settings → Git → connect `DLinacre/PokeGuru`.
-2. Keep the production branch as `main` and leave preview deployments enabled.
+**Git auto-deploy note:** the project is connected to `DLinacre/PokeGuru` and
+production deployments have been produced from `main` commits. If a new commit
+does not trigger a deployment, check Vercel → Project → Settings → Git and
+confirm the GitHub app still has access to `DLinacre/PokeGuru`, with `main` as
+the production branch and preview deployments enabled.
 3. Set `VITE_PUBLIC_SITE_URL` (already present) in all environments.
 
 ## GitHub Pages (secondary)

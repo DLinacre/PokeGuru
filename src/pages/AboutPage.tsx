@@ -121,7 +121,19 @@ export default function AboutPage() {
                   TCGdex
                 </a>
                 , a free community API. Prices are <strong className="text-[var(--text)]">Cardmarket reference
-                values</strong> (lowest listing, trend, averages) — the same numbers Cardmarket publishes to the API.
+                values</strong> — the same numbers Cardmarket publishes to the API, never re-derived.
+              </p>
+              <p>
+                <strong className="text-[var(--text)]">Printing matters.</strong> Cardmarket publishes a standard
+                band and a holofoil band. PokeGuru first works out which printing a card has, then reads only that
+                band, so a non-holo card is never valued using holofoil prices. When both printings exist, the second
+                value is shown separately and labelled as an alternate printing.
+              </p>
+              <p>
+                The headline figure uses Cardmarket&apos;s trend price, then average asking price, then the 30-day
+                average, then the lowest listing — always one published band, never an average of unrelated numbers.
+                Each figure carries a confidence label (<strong className="text-[var(--text)]">Verified</strong>,
+                Indicative, Stale, Price Unverified or No Data Available) and a tooltip explaining exactly why.
               </p>
               <p>
                 Euro prices are converted to GBP using{" "}

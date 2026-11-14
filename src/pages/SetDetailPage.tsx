@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, ArrowUpDown, CalendarDays, Layers, Search, Wallet } from "lucide-react";
-import { useSet } from "../hooks/useApi";
+import { ArrowLeft, ArrowUpDown, CalendarDays, Layers, Search, Tag, Wallet } from "lucide-react";
+import { useExchangeRate, useSet } from "../hooks/useApi";
 import { usePageMeta } from "../hooks/usePageMeta";
 import { useCollection } from "../hooks/useCollection";
 import CardGrid from "../components/Cards/CardGrid";
@@ -11,7 +11,20 @@ import Pagination from "../components/UI/Pagination";
 import { CachedBadge } from "../components/UI/DataBadges";
 import { EmptyState, NoData } from "../components/UI/EmptyState";
 import { enrichSetWithWikiMeta } from "../utils/setMeta";
+import { formatGbp, getCardPrice } from "../services/pricing";
+import { loadCardDetails } from "../services/tcgdex";
 import type { TcgCard } from "../types/pokemon";
+
+interface SetValuation {
+  status: "idle" | "loading" | "done" | "error";
+  done: number;
+  total: number;
+  priced: number;
+  totalGbp: number;
+  stale: number;
+}
+
+const IDLE_VALUATION: SetValuation = { status: "idle", done: 0, total: 0, priced: 0, totalGbp: 0, stale: 0 };
 
 const PAGE_SIZE = 60;
 
@@ -30,9 +43,61 @@ export default function SetDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { data: rawSet, loading, error, source, cachedAt, retry } = useSet(id);
   const { collection } = useCollection();
+  const { rate } = useExchangeRate();
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortMode>("number");
   const [page, setPage] = useState(1);
+  const [valuation, setValuation] = useState<SetValuation>(IDLE_VALUATION);
+  const valuationAbort = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    return () => valuationAbort.current?.abort();
+  }, []);
+
+  const valueSet = async () => {
+    if (!set) return;
+    valuationAbort.current?.abort();
+    const controller = new AbortController();
+    valuationAbort.current = controller;
+
+    const ids = (set.cards ?? []).map((card) => card.id);
+    if (!ids.length) {
+      setValuation({ ...IDLE_VALUATION, status: "done" });
+      return;
+    }
+
+    let done = 0;
+    let priced = 0;
+    let totalGbp = 0;
+    let stale = 0;
+    setValuation({ status: "loading", done: 0, total: ids.length, priced: 0, totalGbp: 0, stale: 0 });
+
+    try {
+      await loadCardDetails(ids, {
+        concurrency: 4,
+        signal: controller.signal,
+        onCard: (card) => {
+          const price = getCardPrice(card, rate);
+          if (price?.headlineGbp != null) {
+            priced += 1;
+            totalGbp += price.headlineGbp;
+            if (price.confidence === "stale" || price.confidence === "unverified") stale += 1;
+          }
+          done += 1;
+          if (done % 8 === 0 || done === ids.length) {
+            setValuation({ status: "loading", done, total: ids.length, priced, totalGbp, stale });
+          }
+        },
+      });
+      if (!controller.signal.aborted) {
+        setValuation({ status: "done", done, total: ids.length, priced, totalGbp, stale });
+      }
+    } catch {
+      if (!controller.signal.aborted) {
+        setValuation({ status: "error", done, total: ids.length, priced, totalGbp, stale });
+      }
+    }
+  };
 
   const set = useMemo(() => (rawSet ? enrichSetWithWikiMeta(rawSet) : null), [rawSet]);
 
@@ -174,10 +239,61 @@ export default function SetDetailPage() {
         </div>
       </div>
 
-      <p className="mb-4 text-xs text-[var(--muted)]">
-        Showing {visible.length} of {cards.length} cards. Open any card for marketplace pricing — prices are not fetched for
-        the whole set at once, so this page stays fast.
-      </p>
+      <div className="mb-4 rounded-xl border border-[var(--border)] bg-[var(--bg-card)]/60 p-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-xs text-[var(--muted)]">
+            Showing {visible.length} of {cards.length} cards. Prices are not fetched for the whole set while browsing, so
+            this page stays fast.
+          </p>
+          <button
+            type="button"
+            onClick={() => void valueSet()}
+            disabled={valuation.status === "loading" || !rate}
+            className="btn btn-secondary px-3 py-1.5 text-xs"
+            title={rate ? "Fetch each card's own marketplace snapshot and total it" : "Waiting for the exchange rate"}
+          >
+            <Tag size={13} aria-hidden="true" />
+            {valuation.status === "loading"
+              ? `Valuing ${valuation.done}/${valuation.total}…`
+              : valuation.status === "done"
+                ? "Re-value this set"
+                : "Value this set"}
+          </button>
+        </div>
+
+        {valuation.status === "loading" && (
+          <div className="mt-3" aria-live="polite">
+            <div className="h-1.5 overflow-hidden rounded-full bg-[var(--bg-inset)]">
+              <div
+                className="h-full rounded-full bg-[var(--accent)] transition-all"
+                style={{ width: `${valuation.total ? Math.round((valuation.done / valuation.total) * 100) : 0}%` }}
+              />
+            </div>
+            <p className="mt-1.5 text-[11px] text-[var(--muted)]">
+              Reading {valuation.done} of {valuation.total} card snapshots — you can keep browsing.
+            </p>
+          </div>
+        )}
+
+        {valuation.status === "done" && (
+          <p className="mt-3 text-[11px] leading-relaxed text-[var(--muted)]" aria-live="polite">
+            <strong className="text-[var(--text)]">{formatGbp(valuation.totalGbp) ?? "No Data Available"}</strong> across{" "}
+            {valuation.priced.toLocaleString()} of {valuation.total.toLocaleString()} cards with a published Cardmarket
+            price
+            {valuation.total - valuation.priced > 0
+              ? ` · ${(valuation.total - valuation.priced).toLocaleString()} unpriced and excluded, not estimated`
+              : ""}
+            {valuation.stale > 0 ? ` · ${valuation.stale} priced from a dated or stale snapshot` : ""}
+            {rate ? ` · FX ${rate.date}` : ""}. Reference prices per card, not sold prices.
+          </p>
+        )}
+
+        {valuation.status === "error" && (
+          <p className="mt-3 text-[11px] text-[var(--accent)]" role="alert">
+            Some card snapshots could not be loaded, so no set value is shown. Try again later.
+          </p>
+        )}
+      </div>
 
       {visible.length === 0 ? (
         <EmptyState

@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   verify:
-    name: Typecheck, test, build
+    name: Lint, typecheck, test, build
     runs-on: ubuntu-latest
 
     steps:
@@ -29,6 +29,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Lint
+        run: npm run lint
+
       - name: Typecheck
         run: npm run typecheck
 
@@ -37,6 +40,10 @@ jobs:
 
       - name: Production build
         run: npm run build
+        env:
+          # Mirrors the Vercel project so robots.txt/sitemap.xml are generated
+          # and verified in CI.
+          VITE_PUBLIC_SITE_URL: https://pokeguru.vercel.app
 
       - name: Check build output
         run: |
@@ -47,6 +54,8 @@ jobs:
           test -f dist/manifest.webmanifest
           test -f dist/icons/icon-192.png
           test -f dist/icons/icon-512.png
+          test -f dist/robots.txt
+          test -f dist/sitemap.xml
           # Production sourcemaps must not ship.
           if find dist -name '*.map' | grep -q .; then
             echo "Unexpected sourcemap in dist" >&2

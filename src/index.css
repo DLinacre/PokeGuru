@@ -337,6 +337,11 @@ a:hover {
   }
 }
 
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
 @keyframes shimmer {
   0% {
     transform: translateX(-100%);
@@ -352,6 +357,10 @@ a:hover {
 
 .animate-spin-slow {
   animation: spin 0.9s linear infinite;
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 1.8s ease-in-out infinite;
 }
 
 .animate-shimmer::after {
