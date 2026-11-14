@@ -192,6 +192,20 @@ describe("TCGdex adapter", () => {
     expect(card.pricing?.cardmarket?.holo).toMatchObject({ trend: 15.61, low: 8, avg: 18.16 });
     expect(card.pricing?.cardmarket?.normal).toBeUndefined();
     expect(card.pricing?.tcgplayer?.variants.holofoil.market).toBe(19.43);
+
+    const { getCardPrice } = await import("../src/services/pricing");
+    const price = getCardPrice(card, {
+      rate: 0.86,
+      date: "2026-11-14",
+      base: "EUR",
+      quote: "GBP",
+      fetchedAt: Date.now(),
+      source: "network",
+    });
+    expect(price?.basis).toBe("trend");
+    expect(price?.variant).toBe("holo");
+    expect(price?.headlineGbp).toBeCloseTo(15.61 * 0.86, 4);
+    expect(price?.confidence).toBe("verified");
   });
 
   it("surfaces 404s as a not-found API error", async () => {
