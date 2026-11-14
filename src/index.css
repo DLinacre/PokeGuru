@@ -195,6 +195,12 @@ a:hover {
   transform: translateY(1px);
 }
 
+.btn-compact {
+  min-height: 34px;
+  padding: 0.35rem 0.7rem;
+  border-radius: 10px;
+}
+
 .btn:disabled {
   opacity: 0.55;
   cursor: not-allowed;
