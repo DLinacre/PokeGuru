@@ -41,10 +41,31 @@ const STATIC_ROUTES = [
  */
 function deploymentFiles(options: { base: string; siteUrl: string; isPages: boolean; version: string }): Plugin {
   const { base, siteUrl, isPages, version } = options;
+  /** Set ids discovered from the public API at build time (never invented). */
+  let setIds: string[] = [];
 
   return {
     name: "pokeguru-deployment-files",
     apply: "build",
+    async buildStart() {
+      if (!siteUrl) return;
+      try {
+        const response = await fetch("https://api.tcgdex.net/v2/en/sets", {
+          signal: AbortSignal.timeout(8000),
+          headers: { accept: "application/json" },
+        });
+        if (!response.ok) return;
+        const data: unknown = await response.json();
+        if (Array.isArray(data)) {
+          setIds = data
+            .map((entry) => (entry && typeof entry === "object" ? (entry as { id?: unknown }).id : undefined))
+            .filter((id): id is string => typeof id === "string" && /^[a-z0-9.-]+$/i.test(id));
+          this.warn?.(`[sitemap] ${setIds.length} set pages included from TCGdex`);
+        }
+      } catch {
+        this.warn?.("[sitemap] TCGdex unavailable; sitemap will contain static routes only");
+      }
+    },
     transformIndexHtml(html) {
       let output = html;
       // Strict CSP for static hosts; identical to the Vercel header policy.
@@ -88,12 +109,17 @@ function deploymentFiles(options: { base: string; siteUrl: string; isPages: bool
       this.emitFile({ type: "asset", fileName: "robots.txt", source: robots });
 
       if (siteUrl) {
-        const urls = STATIC_ROUTES.map(
+        const staticUrls = STATIC_ROUTES.map(
           (route) =>
             `  <url><loc>${siteUrl}${base}${route.replace(/^\//, "")}</loc><changefreq>${
               route === "/" ? "daily" : "weekly"
             }</changefreq><priority>${route === "/" ? "1.0" : "0.7"}</priority></url>`
-        ).join("\n");
+        );
+        const setUrls = setIds.map(
+          (id) =>
+            `  <url><loc>${siteUrl}${base}set/${id}</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>`
+        );
+        const urls = [...staticUrls, ...setUrls].join("\n");
         this.emitFile({
           type: "asset",
           fileName: "sitemap.xml",

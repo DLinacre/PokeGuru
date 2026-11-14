@@ -105,7 +105,7 @@ so never put secrets in them.
 
 | Variable | Required | Purpose |
 | --- | --- | --- |
-| `VITE_PUBLIC_SITE_URL` | no | Canonical origin used for canonical/OG tags, `sitemap.xml` and absolute `robots.txt` entries, e.g. `https://pokeguru.example.com` (no trailing slash). Empty = derive from the browser. |
+| `VITE_PUBLIC_SITE_URL` | no | Canonical origin used for canonical/OG tags, `sitemap.xml` and absolute `robots.txt` entries, e.g. `https://pokeguru.example.com` (no trailing slash). Empty = derive from the browser and skip the sitemap. When set, the build asks TCGdex for the live set list so every `/set/:id` page is listed (static routes only if the API is unreachable). |
 | `VITE_BUY_ME_A_PACK_URL` | no | A real support/payment page for “Buy Me a Pack”. When empty the call-to-action renders in a clearly labelled *not configured* state — no fabricated link is ever shown. |
 | `DEPLOY_TARGET` | no | `github-pages` builds with the `/PokeGuru/` base path. Leave unset for Vercel and other root-hosted deployments. |
 
