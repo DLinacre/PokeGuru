@@ -106,7 +106,7 @@ describe("pack opening experience", () => {
   });
 
   it("reveals every card of one pack on one screen, then shows the summary", async () => {
-    const { onComplete } = renderOpening();
+    const { onComplete } = renderOpening({ reduceMotion: false });
     fireEvent.click(screen.getByRole("button", { name: "Open pack" }));
 
     await waitFor(() => expect(onComplete).toHaveBeenCalledTimes(1));
@@ -117,7 +117,11 @@ describe("pack opening experience", () => {
 
     // The whole pack is laid out in one grid: no horizontal filmstrip to swipe
     // through, so no card is ever off-screen.
-    const list = screen.getByRole("list", { name: /Pack 1 contents/ });
+    const list = await screen.findByRole(
+      "list",
+      { name: /Pack 1 contents/ },
+      { timeout: 4000 },
+    );
     expect(list.className).toContain("grid");
     expect(list.className).not.toContain("overflow-x-auto");
     expect(list.className).not.toContain("snap-x");
@@ -127,6 +131,7 @@ describe("pack opening experience", () => {
       screen.getByRole("progressbar", { name: /of 10 cards revealed/ }),
     ).toBeTruthy();
 
+    fireEvent.click(screen.getByRole("button", { name: /Reveal pack/ }));
     fireEvent.click(screen.getByRole("button", { name: /See summary/ }));
 
     expect(
@@ -149,7 +154,7 @@ describe("pack opening experience", () => {
   });
 
   it("opens a batch pack by pack with the same reveal as a single pack", async () => {
-    const { onComplete } = renderOpening({ quantity: 5 });
+    const { onComplete } = renderOpening({ quantity: 5, reduceMotion: false });
     fireEvent.click(screen.getByRole("button", { name: "Open 5 packs" }));
 
     await waitFor(() => expect(onComplete).toHaveBeenCalledTimes(1));
@@ -163,6 +168,14 @@ describe("pack opening experience", () => {
     expect(screen.getAllByRole("listitem")).toHaveLength(SV.cardsPerPack);
 
     for (let pack = 2; pack <= 5; pack += 1) {
+      // Finish the pack on screen, then carry on to the next one.
+      fireEvent.click(
+        await screen.findByRole(
+          "button",
+          { name: /Reveal pack/ },
+          { timeout: 4000 },
+        ),
+      );
       fireEvent.click(
         screen.getByRole("button", {
           name: new RegExp(`Open pack ${pack} of 5`),
@@ -173,6 +186,7 @@ describe("pack opening experience", () => {
       ).toBeTruthy();
     }
 
+    fireEvent.click(screen.getByRole("button", { name: /Reveal pack/ }));
     fireEvent.click(screen.getByRole("button", { name: /See summary/ }));
     expect(
       await screen.findByRole("heading", { name: /5 packs of Test Set/ }),
@@ -196,29 +210,112 @@ describe("pack opening experience", () => {
     ).toBeTruthy();
   });
 
-  it("reveals one card at a time and keeps the next card in view", async () => {
+  it("flips one card at a time onto a growing pile", async () => {
     renderOpening({ reduceMotion: false });
     fireEvent.click(screen.getByRole("button", { name: "Open pack" }));
 
-    // Cards start face down; only the highlighted one can be tapped.
-    const next = await screen.findByRole(
+    // Only the leading face-down card is tappable, so tapping a card can never
+    // flip a different card than the one you touched.
+    const tappable = () =>
+      screen
+        .queryAllByRole("button")
+        .filter((button) =>
+          /^Reveal card /.test(button.getAttribute("aria-label") ?? ""),
+        );
+    await waitFor(() => expect(tappable()).toHaveLength(1), { timeout: 4000 });
+    fireEvent.click(tappable()[0]);
+
+    // The flipped card lands on the pile at the top of the stage.
+    expect(
+      screen.getByRole("img", { name: /Pile of 1 revealed cards/ }),
+    ).toBeTruthy();
+    // The flipped card stays face up in the same single grid and the next card
+    // becomes the only tappable one.
+    expect(screen.getAllByRole("listitem")).toHaveLength(SV.cardsPerPack);
+    expect(screen.getByText("Tap to reveal")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: /Reveal pack/ }));
+    expect(
+      screen.getByRole("img", { name: /Pile of 10 revealed cards/ }),
+    ).toBeTruthy();
+    expect(screen.getByRole("button", { name: /See summary/ })).toBeTruthy();
+    expect(tappable()).toHaveLength(0);
+  });
+
+  it("can be spammed: the stage is one repeated-tap flip target", async () => {
+    renderOpening({ reduceMotion: false });
+    fireEvent.click(screen.getByRole("button", { name: "Open pack" }));
+
+    const stage = await screen.findByRole(
       "button",
-      { name: /Reveal card/ },
+      { name: /Flip next card/ },
       { timeout: 4000 },
     );
-    expect(screen.getAllByRole("button", { name: /Reveal card/ })).toHaveLength(
-      1,
-    );
-    fireEvent.click(next);
+    // Hammer it: one card per tap, no confirmation step in between.
+    for (let index = 0; index < SV.cardsPerPack; index += 1)
+      fireEvent.click(stage);
+    // And past the end, so an over-eager tap cannot overshoot the pack.
+    fireEvent.click(stage);
 
-    fireEvent.click(screen.getByRole("button", { name: /Reveal next/ }));
-    fireEvent.click(screen.getByRole("button", { name: /Reveal pack/ }));
-
-    // Everything is now face up, and the primary action moves on.
-    expect(screen.getByRole("button", { name: /See summary/ })).toBeTruthy();
     expect(
-      screen.queryAllByRole("button", { name: /Reveal card/ }),
-    ).toHaveLength(0);
+      screen.getByRole("img", {
+        name: new RegExp(`Pile of ${SV.cardsPerPack} revealed cards`),
+      }),
+    ).toBeTruthy();
+    expect(screen.getByText("Pack complete")).toBeTruthy();
+    expect(screen.getByRole("button", { name: /See summary/ })).toBeTruthy();
+  });
+
+  it("flips on a repeated arrow or space press without queueing", async () => {
+    renderOpening({ reduceMotion: false });
+    fireEvent.click(screen.getByRole("button", { name: "Open pack" }));
+    await screen.findByRole(
+      "button",
+      { name: /Flip next card/ },
+      { timeout: 4000 },
+    );
+
+    const press = (key: string) =>
+      fireEvent.keyDown(document.body, { key, bubbles: true });
+    for (let index = 0; index < SV.cardsPerPack; index += 1) {
+      press(index % 2 === 0 ? "ArrowRight" : " ");
+    }
+
+    expect(
+      screen.getByRole("img", {
+        name: new RegExp(`Pile of ${SV.cardsPerPack} revealed cards`),
+      }),
+    ).toBeTruthy();
+    expect(screen.getByText("Pack complete")).toBeTruthy();
+  });
+
+  it("calls out rare pulls as they land", async () => {
+    renderOpening({ reduceMotion: false });
+    fireEvent.click(screen.getByRole("button", { name: "Open pack" }));
+    await screen.findByRole(
+      "button",
+      { name: /Flip next card/ },
+      { timeout: 4000 },
+    );
+
+    // Hammer the whole pack and remember every callout that appeared. The test
+    // pool always contains chase tiers, so at least one must have been called
+    // out — commons must never be.
+    const seen = new Set<string>();
+    for (let index = 0; index < SV.cardsPerPack; index += 1) {
+      fireEvent.click(screen.getByRole("button", { name: /Flip next card/ }));
+      const status = screen.queryByRole("status");
+      const copy = status?.textContent?.trim();
+      if (copy) seen.add(copy);
+    }
+
+    expect(seen.size).toBeGreaterThan(0);
+    // Every callout is a notable pull; a plain "Flipped" would fail here.
+    for (const copy of seen) expect(copy).toMatch(/(Nice|Rare|Huge) pull/);
+    // And the pack's best tier is always announced, all the way up to the top.
+    expect([...seen].some((copy) => /(Nice|Rare|Huge) pull/.test(copy))).toBe(
+      true,
+    );
   });
 
   it("never generates cards before the user opens the pack", () => {
