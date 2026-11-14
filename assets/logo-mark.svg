@@ -52,7 +52,4 @@
     <circle cx="282" cy="332" r="9" fill="#0A0C11" fill-opacity="0.14" />
     <path d="M216 366h96" stroke="#0A0C11" stroke-opacity="0.20" stroke-width="8" stroke-linecap="round" />
   </g>
-
-  <!-- signature notch: a small amber tab, like a card in a binder -->
-  <path d="M392 372h34a18 18 0 0 1 18 18v42a26 26 0 0 1-52 0v-60Z" fill="url(#amber)" opacity="0.9" />
 </svg>
