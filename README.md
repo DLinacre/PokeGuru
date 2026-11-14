@@ -223,7 +223,7 @@ card.
 ```bash
 npm run lint        # ESLint (typescript-eslint + react-hooks)
 npm run typecheck   # strict TypeScript
-npm test            # 127 tests / 15 files
+npm test            # 132 tests / 16 files
 npm run build       # production build smoke test
 ```
 
@@ -254,6 +254,8 @@ Covered:
   key is never touched.
 - Opening experience: sealed → open → summary flow, batch opening, no cards
   generated before the user opens the pack.
+- Result highlights: card counts, multi-rare detection and best-tier badges
+  derived only from the cards actually drawn.
 - Route rendering for deep links (`/card/:id`, `/search?q=`, `/collection`,
   `/packs`, `/packs/collection`, unknown routes) with mocked network fixtures
   that are never shipped.

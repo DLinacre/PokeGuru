@@ -71,6 +71,17 @@ function PackTile({ pack }: { pack: PackCatalogueEntry }) {
             {pack.confidence === "documented" ? <ShieldCheck size={9} aria-hidden="true" /> : <TriangleAlert size={9} aria-hidden="true" />}
             {pack.config.cardsPerPack} cards
           </span>
+          <span
+            className={cn(
+              "chip px-1.5 py-0.5 text-[9px]",
+              pack.config.weightsBasis?.kind === "measured"
+                ? "border-[var(--link)]/40 text-[var(--link)]"
+                : "border-[var(--border)] text-[var(--muted-dim)]"
+            )}
+            title={pack.config.weightsBasis?.label ?? "Tier odds are a PokeGuru estimate"}
+          >
+            {pack.config.weightsBasis?.kind === "measured" ? "Measured odds" : "Estimated odds"}
+          </span>
           {pack.cardCount ? (
             <span className="chip px-1.5 py-0.5 text-[9px] text-[var(--muted-dim)]">{pack.cardCount} in set</span>
           ) : null}
