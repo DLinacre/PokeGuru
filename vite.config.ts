@@ -29,6 +29,8 @@ const STATIC_ROUTES = [
   "/wiki",
   "/collection",
   "/scanner",
+  "/packs",
+  "/packs/collection",
   "/about",
 ];
 

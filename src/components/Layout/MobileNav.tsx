@@ -1,10 +1,11 @@
 import { Link, useLocation } from "react-router-dom";
-import { Book, Camera, Layers, Search, Wallet } from "lucide-react";
+import { Book, Camera, Layers, PackageOpen, Search, Wallet } from "lucide-react";
 import { cn } from "../../utils/cn";
 
 const NAV_ITEMS = [
   { to: "/search", icon: Search, label: "Search" },
   { to: "/sets", icon: Layers, label: "Sets" },
+  { to: "/packs", icon: PackageOpen, label: "Packs" },
   { to: "/collection", icon: Wallet, label: "Vault" },
   { to: "/scanner", icon: Camera, label: "Scan" },
   { to: "/wiki", icon: Book, label: "Wiki" },

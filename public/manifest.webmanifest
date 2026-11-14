@@ -2,7 +2,7 @@
   "id": "/",
   "name": "PokeGuru — The Pokémon Card Guru",
   "short_name": "PokeGuru",
-  "description": "Search Pokémon TCG cards, browse sets, check Cardmarket reference prices in GBP and track your collection privately.",
+  "description": "Search Pokémon TCG cards, browse sets, check Cardmarket reference prices in GBP, track your collection privately and open virtual boosters.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
@@ -33,6 +33,7 @@
     }
   ],
   "shortcuts": [
+    { "name": "Open a pack", "url": "./packs", "description": "Open a virtual booster pack" },
     { "name": "Card search", "url": "./search", "description": "Search the Pokémon card database" },
     { "name": "My vault", "url": "./collection", "description": "Open your collection" },
     { "name": "Scan a card", "url": "./scanner", "description": "Scan a card with OCR" }

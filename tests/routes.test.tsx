@@ -13,6 +13,12 @@ function installApi() {
       if (url.startsWith("https://api.frankfurter.dev")) {
         return new Response(JSON.stringify(FX_PAYLOAD), { status: 200 });
       }
+      if (url === `${TCGDEX}/series`) {
+        return new Response(JSON.stringify([{ id: "swsh", name: "Sword & Shield" }]), { status: 200 });
+      }
+      if (url === `${TCGDEX}/series/swsh`) {
+        return new Response(JSON.stringify({ id: "swsh", name: "Sword & Shield", sets: [SET_BRIEF] }), { status: 200 });
+      }
       if (url === `${TCGDEX}/sets`) {
         return new Response(JSON.stringify([SET_BRIEF]), { status: 200 });
       }
@@ -53,6 +59,21 @@ describe("routing and direct navigation", () => {
     expect(await screen.findByRole("heading", { level: 1, name: /Results for/ })).toBeTruthy();
     expect(await screen.findByText("Furret")).toBeTruthy();
     expect(document.title).toContain("pikachu");
+  });
+
+  it("renders the pack simulator catalogue", async () => {
+    window.history.pushState({}, "", "/packs");
+    render(<App />);
+    expect(await screen.findByRole("heading", { level: 1, name: /booster pack from any era/i })).toBeTruthy();
+    expect((await screen.findAllByText("Darkness Ablaze")).length).toBeGreaterThan(0);
+  });
+
+  it("renders an empty simulated collection with the separation notice", async () => {
+    window.history.pushState({}, "", "/packs/collection");
+    render(<App />);
+    expect(await screen.findByRole("heading", { level: 1, name: "Simulated collection" })).toBeTruthy();
+    expect(screen.getByText(/No simulated pulls yet/)).toBeTruthy();
+    expect(screen.getByText(/These are simulated pulls, not physical cards/)).toBeTruthy();
   });
 
   it("shows the not-found page for unknown routes", async () => {

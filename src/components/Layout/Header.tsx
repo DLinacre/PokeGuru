@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { Book, Camera, Layers, Search, Shuffle, Wallet, X } from "lucide-react";
+import { Book, Camera, Layers, PackageOpen, Search, Shuffle, Wallet, X } from "lucide-react";
 import { useState, type FormEvent, useEffect, useRef } from "react";
 import { useDebouncedValue } from "../../hooks/useApi";
 import { getRandomCard, searchCards } from "../../services/tcgdex";
@@ -11,6 +11,7 @@ import { cn } from "../../utils/cn";
 const NAV_ITEMS = [
   { to: "/search", label: "Search", icon: Search },
   { to: "/sets", label: "Sets", icon: Layers },
+  { to: "/packs", label: "Packs", icon: PackageOpen },
   { to: "/wiki", label: "Wiki", icon: Book },
   { to: "/collection", label: "Vault", icon: Wallet },
   { to: "/scanner", label: "Scan", icon: Camera },
