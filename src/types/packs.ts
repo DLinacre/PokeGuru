@@ -214,7 +214,7 @@ export interface PackOdds {
   configId: string;
   confidence: RuleConfidence;
   rows: OddsRow[];
-  slotSummary: { slot: string; count: number; detail: string }[];
+  slotSummary: { slot: string; label: string; count: number; tiers: string[]; detail: string }[];
   source: PackRuleSource;
   weightsBasis?: TierWeightBasis;
   checkedAt: string;

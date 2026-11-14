@@ -184,7 +184,7 @@ export function isBoosterSeries(seriesId: string | undefined): boolean {
  * jumbo cards, boxed reprints). They are excluded from the simulator rather
  * than folded into a neighbouring set.
  */
-const NON_BOOSTER_SET = /promo|energy|jumbo|mcdonald|trainer kit|deck|miscellaneous|sample|play!|league|championship|battle academy|world championship|classic collection|shiny vault|trainer gallery|galarian gallery|radiant collection|celebrations/i;
+const NON_BOOSTER_SET = /promo|energy|jumbo|mcdonald|trainer kit|deck|miscellaneous|sample|play!|league|championship|battle academy|my first battle|world championship|classic collection|shiny vault|trainer gallery|galarian gallery|radiant collection|celebrations/i;
 
 export function isBoosterSet(name: string): boolean {
   return !NON_BOOSTER_SET.test(name);
