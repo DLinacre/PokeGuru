@@ -414,6 +414,7 @@ export default function PackOpening({
         ripCounts={quickCounts}
         quantity={quantity}
         activeSetId={meta.setId}
+        hasSeparateHolo={Boolean(pool.tiers.holoRare?.length)}
       />
     );
   }

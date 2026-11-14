@@ -7,6 +7,7 @@ import PackPicker from "../src/components/Packs/PackPicker";
 import type { PackResult, PulledCard, RarityTier } from "../src/types/packs";
 import type { PackCatalogueEntry } from "../src/hooks/usePacks";
 import { configById } from "../src/data/packRules";
+import { pullCounts } from "../src/utils/packHighlights";
 
 function card(
   tier: RarityTier,
@@ -64,6 +65,9 @@ function catalogueEntry(setId: string, setName: string): PackCatalogueEntry {
 
 describe("pull summary honesty", () => {
   it("shows a base-set Charizard as a real pull instead of a zero", () => {
+    // Base Set's pool has one combined rare tier: TCGdex files its holos as
+    // plain rares, so the summary must not promise a holo tier that cannot
+    // exist there.
     const results = [
       pack(
         [
@@ -88,9 +92,9 @@ describe("pull summary honesty", () => {
 
     // The count is named after the era's own top tier, and the word "no" is
     // only used when nothing hit at all.
-    expect(screen.getAllByText(/no holo rare or better/i).length).toBeGreaterThan(
-      0,
-    );
+    expect(
+      screen.getAllByText(/no holo rare or better/i).length,
+    ).toBeGreaterThan(0);
     // The actual cards are shown as artwork entries, not just a number.
     expect(screen.getByText(/Rare or better pulled/i)).toBeTruthy();
     expect(screen.getAllByText(/Charizard \(Rare\)/).length).toBeGreaterThan(0);
@@ -134,6 +138,37 @@ describe("pull summary honesty", () => {
     expect(
       screen.getAllByText(/Pikachu ex \(Double rare\)/).length,
     ).toBeGreaterThan(0);
+  });
+});
+
+describe("era thresholds", () => {
+  const basePack = pack([card("rare", "Charizard", 4)], 0);
+
+  it("counts a plain rare as a hit when the pool has no separate holo tier", () => {
+    const counts = pullCounts([basePack], { hasSeparateHolo: false });
+    expect(counts.hits).toBe(1);
+    expect(counts.hitLabel).toBe("Rare or better");
+    expect(counts.cards[0].name).toBe("Charizard");
+  });
+
+  it("uses holo as the threshold when the pool does separate holos", () => {
+    const counts = pullCounts([basePack]);
+    expect(counts.hits).toBe(0);
+    expect(counts.hitLabel).toBe("Holo rare or better");
+    // Still shown as a real pull, not buried under the zero.
+    expect(counts.notable).toBe(1);
+  });
+
+  it("uses the modern chase tier for a modern set", () => {
+    const modern = pack(
+      [card("doubleRare", "Pikachu ex", 1, "sv06", "Twilight Masquerade")],
+      0,
+      "sv06",
+      "Twilight Masquerade",
+      "sv",
+    );
+    expect(pullCounts([modern]).hitLabel).toBe("Double rare or better");
+    expect(pullCounts([modern]).hits).toBe(1);
   });
 });
 

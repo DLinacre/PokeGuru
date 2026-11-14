@@ -37,15 +37,32 @@ export interface PullCounts {
  * Chase thresholds differ by era, so the summary never uses modern language on
  * an old set: a Wizards-era pack's excitement is the holo, a Scarlet & Violet
  * pack's is the double rare and above.
+ *
+ * `hasSeparateHolo` matters because the earliest sets do not separate holo from
+ * non-holo in the card database at all — they are one combined rare pool. On
+ * those sets a holo rare is simply not a distinct tier, so the threshold drops
+ * to "rare or better" rather than permanently reporting zero holos.
  */
-export function chaseThreshold(configId: string): {
+export function chaseThreshold(
+  configId: string,
+  hasSeparateHolo = true,
+): {
   rank: number;
   label: string;
 } {
   const modern = /^(sv|swsh|sm|xy|bw|mega)$/i.test(configId);
-  return modern
-    ? { rank: tierRank("doubleRare"), label: "Double rare or better" }
-    : { rank: tierRank("holoRare"), label: "Holo rare or better" };
+  if (modern) {
+    return { rank: tierRank("doubleRare"), label: "Double rare or better" };
+  }
+  return hasSeparateHolo
+    ? { rank: tierRank("holoRare"), label: "Holo rare or better" }
+    : { rank: tierRank("rare"), label: "Rare or better" };
+}
+
+/** Options shared by the counters, so every reader agrees on the threshold. */
+export interface CountOptions {
+  /** False for sets whose pool does not separate holo from non-holo rares. */
+  hasSeparateHolo?: boolean;
 }
 
 /**
@@ -56,7 +73,10 @@ export function chaseThreshold(configId: string): {
  * still contain a plain rare, which is why an opening that shows a Charizard
  * can honestly report zero chase hits: base-set Charizard *is* a plain rare.
  */
-export function pullCounts(results: PackResult[]): PullCounts {
+export function pullCounts(
+  results: PackResult[],
+  options: CountOptions = {},
+): PullCounts {
   const cards: PulledCard[] = [];
   let best: PulledCard | null = null;
 
@@ -69,7 +89,10 @@ export function pullCounts(results: PackResult[]): PullCounts {
 
   cards.sort((a, b) => tierRank(b.tier) - tierRank(a.tier));
 
-  const chase = chaseThreshold(results[0]?.configId ?? "");
+  const chase = chaseThreshold(
+    results[0]?.configId ?? "",
+    options.hasSeparateHolo ?? true,
+  );
   return {
     notable: cards.length,
     hits: cards.filter((card) => tierRank(card.tier) >= chase.rank).length,
@@ -96,8 +119,11 @@ export interface ResultHighlights {
  * Describes an opening without inventing anything: every badge is derived from
  * the cards actually generated, using the tier labels of the era's own rule.
  */
-export function resultHighlights(results: PackResult[]): ResultHighlights {
-  const counts = pullCounts(results);
+export function resultHighlights(
+  results: PackResult[],
+  options: CountOptions = {},
+): ResultHighlights {
+  const counts = pullCounts(results, options);
 
   let topTier: RarityTier | null = null;
   for (const pack of results) {
@@ -107,7 +133,10 @@ export function resultHighlights(results: PackResult[]): ResultHighlights {
     }
   }
 
-  const chase = chaseThreshold(results[0]?.configId ?? "");
+  const chase = chaseThreshold(
+    results[0]?.configId ?? "",
+    options.hasSeparateHolo ?? true,
+  );
   const multiRare = results.some(
     (pack) =>
       pack.cards.filter((card) => tierRank(card.tier) >= chase.rank).length >=
