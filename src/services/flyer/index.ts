@@ -61,23 +61,71 @@ export async function downloadFlyer(): Promise<FlyerFile> {
 }
 
 /**
- * Opens the generated PDF in a new tab so the visitor can use the browser's
- * own print dialogue. Falls back to downloading the file when pop-ups are
- * blocked, so the action never becomes a dead end.
+ * Opens the flyer in a new window and raises the browser's print dialogue.
+ *
+ * Browsers cannot print a PDF file for you, so the print view is the exact same
+ * vector scene rendered as inline SVG on a page whose `@page` size is the flyer
+ * itself (127 × 177.8 mm) — the dialogue therefore defaults to 5 × 7 in, and the
+ * output stays vector. If the pop-up is blocked we download the PDF instead, so
+ * the action never becomes a dead end.
  */
-export async function printFlyer(): Promise<{ printed: boolean; file: FlyerFile }> {
-  const file = await buildFlyerFile();
-  const url = URL.createObjectURL(file.blob);
-  const opened = typeof window !== "undefined" ? window.open(url, "_blank", "noopener,noreferrer") : null;
+export async function printFlyer(): Promise<{ printed: boolean; downloaded: boolean }> {
+  const origin = originOrThrow();
+  const qr = await buildQrMatrix(origin.origin);
+  const scene = buildFlyerScene({ url: origin.origin, host: origin.host, modules: qr.modules, quietZone: qr.quietZone });
+  const svg = sceneToSvg(scene);
 
-  if (!opened) {
+  const printWindow = typeof window !== "undefined" ? window.open("", "_blank") : null;
+  if (!printWindow) {
+    const file = await buildFlyerFile();
     triggerDownload(file.blob, file.fileName);
-    return { printed: false, file };
+    return { printed: false, downloaded: true };
   }
 
-  // Leave the URL alive long enough for the PDF viewer to load it.
-  window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
-  return { printed: true, file };
+  try {
+    printWindow.opener = null;
+  } catch {
+    /* some browsers refuse to clear opener on cross-origin windows */
+  }
+
+  printWindow.document.open();
+  printWindow.document.write(printDocument(svg));
+  printWindow.document.close();
+
+  // Give the new document a frame to lay the page out before printing.
+  await new Promise((resolve) => window.setTimeout(resolve, 350));
+  try {
+    printWindow.focus();
+    printWindow.print();
+  } catch {
+    return { printed: false, downloaded: false };
+  }
+  return { printed: true, downloaded: false };
+}
+
+/** Minimal print view: one 5 × 7 in sheet, no chrome, no scripts. */
+function printDocument(svg: string): string {
+  return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PokeGuru flyer — 5 × 7 in</title>
+<style>
+  @page { size: 127mm 177.8mm; margin: 0; }
+  html, body { margin: 0; padding: 0; background: #ffffff; }
+  .sheet { width: 127mm; height: 177.8mm; }
+  .sheet svg { display: block; width: 127mm; height: 177.8mm; }
+  .hint { font: 13px/1.4 system-ui, sans-serif; color: #4b5563; padding: 12px 16px; }
+  .hint strong { color: #111827; }
+  @media print { .hint { display: none; } .sheet { margin: 0; box-shadow: none; } }
+  @media screen { body { background: #0b0d12; padding: 16px; } .sheet { margin: 0 auto; box-shadow: 0 10px 40px rgba(0,0,0,.55); } .hint { color: #c7cedb; text-align: center; } .hint strong { color: #ffffff; } }
+</style>
+</head>
+<body>
+<p class="hint"><strong>Print at 100% / Actual size</strong> for a true 5 × 7 in (127 × 177.8 mm) flyer. This window can be closed once printed.</p>
+<div class="sheet">${svg}</div>
+</body>
+</html>`;
 }
 
 function triggerDownload(blob: Blob, fileName: string): void {

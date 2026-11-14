@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import jsQR from "jsqr";
 import { PDFDocument } from "pdf-lib";
-import { FLYER_FILE_NAME, buildFlyerFile, buildFlyerSvg, resolveFlyerOrigin } from "../src/services/flyer";
+import { FLYER_FILE_NAME, buildFlyerFile, buildFlyerSvg, printFlyer, resolveFlyerOrigin } from "../src/services/flyer";
 import { buildQrMatrix, isPublicOrigin } from "../src/services/flyer/qr";
 
 const PRODUCTION_URL = "https://pokeguru.vercel.app";
@@ -86,6 +86,34 @@ describe("QR code", () => {
     const image = rasterise(matrix.modules, matrix.quietZone);
     const decoded = jsQR(image.data, image.width, image.height, { inversionAttempts: "dontInvert" });
     expect(decoded?.data).toBe(PRODUCTION_URL);
+  });
+});
+
+function makePrintWindow() {
+  return {
+    document: { open: vi.fn(), write: vi.fn(), close: vi.fn() },
+    focus: vi.fn(),
+    print: vi.fn(),
+    opener: {},
+  };
+}
+
+describe("print view", () => {
+  it("opens the print dialogue on a true 5 × 7 in page", async () => {
+    stubSite(PRODUCTION_URL);
+    const printWindow = makePrintWindow();
+    const open = vi.spyOn(window, "open").mockReturnValue(printWindow as unknown as Window);
+
+    const result = await printFlyer();
+
+    expect(result).toEqual({ printed: true, downloaded: false });
+    expect(open).toHaveBeenCalledTimes(1);
+    const html = printWindow.document.write.mock.calls[0][0] as string;
+    expect(html).toContain("@page { size: 127mm 177.8mm");
+    expect(html).toContain("width: 127mm; height: 177.8mm");
+    expect(html).toContain("pokeguru.vercel.app");
+    expect(html).toContain("<svg");
+    expect(printWindow.print).toHaveBeenCalledTimes(1);
   });
 });
 
