@@ -101,6 +101,9 @@ export function useTopCards(): UseTopCards {
       writeIndex(result.index);
       setRemaining(result.remaining);
       setStatus("ready");
+      if (result.rateLimited) {
+        setError("The card database started refusing requests, so this pass stopped early. Try again in a minute.");
+      }
     } catch (err) {
       if (runRef.current !== runId) return;
       if (controller.signal.aborted) return;

@@ -303,7 +303,7 @@ export function entryFromCard(card: TcgCard): TopCardEntry | null {
 export async function enrichIndex(
   index: TopIndex,
   options: EnrichOptions
-): Promise<{ index: TopIndex; remaining: number; priced: number; attempted: number }> {
+): Promise<{ index: TopIndex; remaining: number; priced: number; attempted: number; rateLimited: boolean }> {
   const { budget, concurrency = 5, signal, onCard, onProgress } = options;
   const done = new Set(index.done);
   const pending = index.candidates.filter((id) => !done.has(id));
@@ -312,27 +312,47 @@ export async function enrichIndex(
   const entries = { ...index.entries };
   const scanned: string[] = [];
   let priced = 0;
+  let consecutiveErrors = 0;
+  let rateLimited = false;
 
-  if (batch.length) {
-    await loadCardDetails(batch, {
-      concurrency,
-      signal,
-      onCard: (card) => {
-        const entry = entryFromCard(card);
-        if (entry) {
-          entries[card.id] = entry;
-          priced += 1;
-        }
-        scanned.push(card.id);
-        onCard?.(entry);
-      },
-      onError: (id) => {
-        // Unpriceable/unreachable: mark as done so we do not retry it forever,
-        // but do not invent a value for it.
-        scanned.push(id);
-        onCard?.(null);
-      },
-    });
+  // A pass can be stopped by the caller or by the API refusing us: burning the
+  // whole budget on failing requests would be rude and pointless.
+  const guard = new AbortController();
+  const linkAbort = () => guard.abort();
+  if (signal?.aborted) guard.abort();
+  else signal?.addEventListener("abort", linkAbort);
+
+  try {
+    if (batch.length && !guard.signal.aborted) {
+      await loadCardDetails(batch, {
+        concurrency,
+        signal: guard.signal,
+        onCard: (card) => {
+          consecutiveErrors = 0;
+          const entry = entryFromCard(card);
+          if (entry) {
+            entries[card.id] = entry;
+            priced += 1;
+          }
+          scanned.push(card.id);
+          onCard?.(entry);
+        },
+        onError: (id) => {
+          // Unpriceable/unreachable: mark as done so we do not retry it forever,
+          // but never invent a value for it.
+          consecutiveErrors += 1;
+          if (consecutiveErrors > 25) {
+            rateLimited = true;
+            guard.abort();
+            return;
+          }
+          scanned.push(id);
+          onCard?.(null);
+        },
+      });
+    }
+  } finally {
+    signal?.removeEventListener("abort", linkAbort);
   }
 
   const nextDone = [...index.done, ...scanned.filter((id) => !done.has(id))];
@@ -349,6 +369,7 @@ export async function enrichIndex(
     remaining: nextIndex.candidates.filter((id) => !new Set(nextIndex.done).has(id)).length,
     priced,
     attempted: scanned.length,
+    rateLimited,
   };
 }
 
