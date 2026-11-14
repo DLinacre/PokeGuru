@@ -3,8 +3,9 @@ name: Deploy to GitHub Pages
 # Secondary mirror only: Vercel is PokeGuru's primary host and deploys
 # automatically from `main` through its Git integration.
 on:
-  push:
-    branches: [main]
+  # Paused for automatic pushes until the `github-pages` environment is
+  # allowed to deploy from `main` (a repository admin must add the branch
+  # policy; the Actions token cannot). See README → Deployment.
   workflow_dispatch:
 
 permissions:

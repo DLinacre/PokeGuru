@@ -413,12 +413,14 @@ export function formatUpdatedAt(value: string | number | undefined): string | nu
   if (value == null) return null;
   const date = typeof value === "number" ? new Date(value < 1e12 ? value * 1000 : value) : new Date(value);
   if (Number.isNaN(date.getTime())) return null;
-  return date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+  // Marketplace timestamps and ECB rate dates are UTC; format them in UTC so
+  // a date is never shown a day early for users west of Greenwich.
+  return date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 }
 
 export function formatUpdatedAtLong(value: string | number | undefined): string | null {
   if (value == null) return null;
   const date = typeof value === "number" ? new Date(value < 1e12 ? value * 1000 : value) : new Date(value);
   if (Number.isNaN(date.getTime())) return null;
-  return date.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+  return date.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
 }

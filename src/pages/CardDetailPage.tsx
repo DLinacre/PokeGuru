@@ -298,7 +298,7 @@ export default function CardDetailPage() {
                       <dd className="font-semibold text-[var(--text)]">
                         {formatUpdatedAtLong(price.updatedAt) ?? "Not published"}
                         {price.ageDays != null && (
-                          <span className="ml-1 font-normal text-[var(--muted)]">({price.ageDays === 0 ? "today" : `${price.ageDays}d ago`})</span>
+                          <span className="ml-1 font-normal text-[var(--muted)]">({price.ageDays === 0 ? "under a day" : `${price.ageDays}d ago`})</span>
                         )}
                       </dd>
                     </div>

@@ -111,7 +111,10 @@ function normaliseSetImages(raw: { logo?: string | null; symbol?: string | null 
   };
 }
 
-function normaliseCardmarket(raw: Record<string, unknown> | undefined): CardPricing["cardmarket"] {
+function normaliseCardmarket(
+  raw: Record<string, unknown> | undefined,
+  variants?: RawCard["variants"]
+): CardPricing["cardmarket"] {
   if (!raw) return undefined;
   // Cardmarket publishes 0 for cards with no active listings. That is not a
   // price, so treat anything non-positive as missing data.
@@ -134,17 +137,28 @@ function normaliseCardmarket(raw: Record<string, unknown> | undefined): CardPric
     avg30: num(raw[`avg30${suffix}`]),
   });
 
-  const normal = band("");
-  const holo = band("-holo");
   const bandHasData = (b: CardmarketBand) => [b.low, b.trend, b.avg].some((v) => v !== undefined);
 
-  if (!bandHasData(normal) && !bandHasData(holo)) return undefined;
+  /**
+   * TCGdex puts the card's primary printing in the un-suffixed fields and an
+   * optional alternate holofoil print in the `-holo` fields. For a card that
+   * only exists as holofoil, the un-suffixed fields *are* the holofoil price
+   * and `-holo` is usually 0 — labelling them "standard" would hide the only
+   * real price, so map them to the holofoil band instead.
+   */
+  const holoOnly = Boolean(variants?.holo && !variants?.normal);
+
+  const normal = holoOnly ? ({} as CardmarketBand) : band("");
+  const holo = holoOnly ? band("") : band("-holo");
+  const holoFallback = holoOnly && bandHasData(holo) === false ? band("-holo") : holo;
+
+  if (!bandHasData(normal) && !bandHasData(holoFallback)) return undefined;
 
   return {
     currency: "EUR",
     updatedAt: typeof raw.updated === "string" ? raw.updated : undefined,
     normal: bandHasData(normal) ? normal : undefined,
-    holo: bandHasData(holo) ? holo : undefined,
+    holo: bandHasData(holoFallback) ? holoFallback : undefined,
   };
 }
 
@@ -174,10 +188,10 @@ function normaliseTcgplayer(raw: Record<string, unknown> | undefined): CardPrici
   };
 }
 
-function normalisePricing(raw: RawCard["pricing"]): CardPricing | undefined {
+function normalisePricing(raw: RawCard["pricing"], variants?: RawCard["variants"]): CardPricing | undefined {
   if (!raw) return undefined;
   const pricing: CardPricing = {
-    cardmarket: normaliseCardmarket(raw.cardmarket),
+    cardmarket: normaliseCardmarket(raw.cardmarket, variants),
     tcgplayer: normaliseTcgplayer(raw.tcgplayer),
   };
   return pricing.cardmarket || pricing.tcgplayer ? pricing : undefined;
@@ -274,7 +288,7 @@ function mapDetail(raw: RawCard, setsById: Map<string, TcgSet>): TcgCard {
     : undefined;
   card.regulationMark = raw.regulationMark;
   card.updatedAt = raw.updated;
-  card.pricing = normalisePricing(raw.pricing);
+  card.pricing = normalisePricing(raw.pricing, raw.variants);
   card.isDetailed = true;
   return card;
 }

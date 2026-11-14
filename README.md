@@ -188,7 +188,7 @@ card.
 ```bash
 npm run lint        # ESLint (typescript-eslint + react-hooks)
 npm run typecheck   # strict TypeScript
-npm test            # 63 tests / 9 files
+npm test            # 64 tests / 9 files
 npm run build       # production build smoke test
 ```
 
