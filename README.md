@@ -223,7 +223,7 @@ card.
 ```bash
 npm run lint        # ESLint (typescript-eslint + react-hooks)
 npm run typecheck   # strict TypeScript
-npm test            # 124 tests / 15 files
+npm test            # 127 tests / 15 files
 npm run build       # production build smoke test
 ```
 

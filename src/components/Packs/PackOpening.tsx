@@ -238,7 +238,7 @@ export default function PackOpening({
                   size="hero"
                 />
                 <span className="absolute inset-x-0 bottom-6 mx-auto flex w-max items-center gap-1 rounded-full bg-black/70 px-2.5 py-1 text-[9px] font-black uppercase tracking-[0.16em] text-white/90 backdrop-blur">
-                  <Zap size={10} aria-hidden="true" /> Tab to open
+                  <Zap size={10} aria-hidden="true" /> Tap to open
                 </span>
               </div>
             </button>
