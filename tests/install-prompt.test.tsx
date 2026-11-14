@@ -42,6 +42,8 @@ afterEach(() => {
   vi.useRealTimers();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
+  delete (window as unknown as Record<string, unknown>).__pokeguruInstallPrompt;
+  delete (window as unknown as Record<string, unknown>).__pokeguruInstalled;
 });
 
 describe("InstallPrompt", () => {
@@ -140,6 +142,60 @@ describe("InstallPrompt", () => {
     fireEvent.click(screen.getByRole("button", { name: /Install PokeGuru/i }));
     expect(screen.getByText(/Add to Home Screen/i)).toBeTruthy();
     expect(screen.getByText(/Share button in Safari/i)).toBeTruthy();
+  });
+
+  it("uses an install prompt captured before the component mounted", async () => {
+    vi.useFakeTimers();
+    stubStandalone(false);
+    stubUserAgent("Mozilla/5.0 (X11; Linux x86_64) Chrome/131.0");
+
+    // pwa-capture.js fires before React loads: the event is already stashed.
+    const earlyEvent = makeInstallEvent();
+    (window as unknown as Record<string, unknown>).__pokeguruInstallPrompt = earlyEvent;
+
+    render(<InstallPrompt />);
+    await act(async () => {
+      vi.advanceTimersByTime(SHOW_DELAY);
+    });
+
+    expect(screen.getByText(/take pokeguru with you/i)).toBeTruthy();
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /Install PokeGuru/i }));
+    });
+    expect(earlyEvent.prompt).toHaveBeenCalledTimes(1);
+  });
+
+  it("picks up an install prompt captured after mount via the capture event", async () => {
+    vi.useFakeTimers();
+    stubStandalone(false);
+    stubUserAgent("Mozilla/5.0 (X11; Linux x86_64) Chrome/131.0");
+
+    render(<InstallPrompt />);
+    const lateEvent = makeInstallEvent();
+    (window as unknown as Record<string, unknown>).__pokeguruInstallPrompt = lateEvent;
+    await act(async () => {
+      window.dispatchEvent(new Event("pokeguru:beforeinstallprompt"));
+      vi.advanceTimersByTime(SHOW_DELAY);
+    });
+
+    expect(screen.getByText(/take pokeguru with you/i)).toBeTruthy();
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /Install PokeGuru/i }));
+    });
+    expect(lateEvent.prompt).toHaveBeenCalledTimes(1);
+  });
+
+  it("stays hidden when the capture script reports the app is already installed", async () => {
+    vi.useFakeTimers();
+    stubStandalone(false);
+    stubUserAgent("Mozilla/5.0 (X11; Linux x86_64) Chrome/131.0");
+    (window as unknown as Record<string, unknown>).__pokeguruInstalled = true;
+
+    render(<InstallPrompt />);
+    await act(async () => {
+      vi.advanceTimersByTime(SHOW_DELAY * 2);
+    });
+    expect(screen.queryByText(/take pokeguru with you/i)).toBeNull();
   });
 
   it("never advertises an install it cannot perform on unsupported browsers", async () => {
