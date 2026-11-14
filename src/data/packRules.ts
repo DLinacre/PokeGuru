@@ -294,7 +294,7 @@ const SM_HIT_WEIGHTS: Partial<Record<RarityTier, number>> = {
  * The ruleset. Order matters only for readability — resolution is by exact
  * set id, then series id.
  */
-export const PACK_CONFIGS: PackConfig[] = [
+const BASE_PACK_CONFIGS: PackConfig[] = [
   {
     id: "wotc-base",
     label: "Wizards of the Coast booster",
@@ -496,7 +496,7 @@ export const PACK_CONFIGS: PackConfig[] = [
     id: "sv",
     label: "Scarlet & Violet booster",
     era: "Scarlet & Violet (2023–)",
-    seriesIds: ["sv", "me"],
+    seriesIds: ["sv"],
     cardsPerPack: 10,
     slots: [
       common(4),
@@ -519,6 +519,38 @@ export const PACK_CONFIGS: PackConfig[] = [
     checkedAt: CHECKED_AT,
     notes:
       "Special sets (for example Crown Zenith, 151 or Prismatic Evolutions) were sold in different products; the same 10-card game-card model is used. 151 in particular has different foil placement, so treat the slot split as an estimate even though the era's tier weights are measured.",
+  },
+];
+
+/**
+ * Mega Evolution boosters use the same ten-card layout as Scarlet & Violet,
+ * but the measured studies we cite cover the Scarlet & Violet era. The era
+ * therefore reuses the layout with an explicitly estimated basis, so it is
+ * never presented with someone else's measured numbers.
+ */
+const SV_RULE = BASE_PACK_CONFIGS.find((config) => config.id === "sv") as PackConfig;
+
+export const PACK_CONFIGS: PackConfig[] = [
+  ...BASE_PACK_CONFIGS,
+  {
+    ...SV_RULE,
+    id: "me",
+    label: "Mega Evolution booster",
+    era: "Mega Evolution (2025–)",
+    seriesIds: ["me"],
+    confidence: "estimated",
+    source: {
+      label: "Ten-card layout carried over from Scarlet & Violet; PokeGuru slot model",
+      note:
+        "Mega Evolution packs follow the same ten-game-card layout (4 common, 3 uncommon, 3 foil, at least one rare or higher). PokeGuru treats the slot split for this era as an estimate, because the product pages we can cite describe the Scarlet & Violet era.",
+    },
+    weightsBasis: {
+      ...ESTIMATED_BASIS,
+      detail:
+        "No measured opening study for this era is bundled, so the tier shares carry over the shape of the measured Scarlet & Violet study and are labelled as an estimate. They are not presented as measured figures.",
+    },
+    notes:
+      "Mega Evolution era products are still being documented; treat both the slot split and the tier shares as estimates until era-specific measured data exists.",
   },
 ];
 
