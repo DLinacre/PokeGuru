@@ -153,9 +153,18 @@ export interface SearchFilters {
   rarity: string;
   setId: string;
   illustrator?: string;
+  /** Collector number within the set, e.g. "136". */
+  number?: string;
   sort: SearchSort;
   page: number;
   pageSize: number;
+  /**
+   * The filters below can only be applied to the cards on the current page:
+   * TCGdex search results are "briefs" without prices or printing flags.
+   */
+  minValue?: string;
+  maxValue?: string;
+  printing?: string;
 }
 
 export interface CardSearchResult {

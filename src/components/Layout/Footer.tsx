@@ -1,6 +1,7 @@
 import { ExternalLink, Info } from "lucide-react";
 import { Link } from "react-router-dom";
 import { BuyMeAPackPanel } from "../UI/BuyMeAPack";
+import Brand from "./Brand";
 
 const LINKS = [
   { to: "/search", label: "Card search" },
@@ -20,18 +21,10 @@ const SOURCES = [
 
 export default function Footer() {
   return (
-    <footer className="mt-auto border-t border-[var(--border)] bg-[var(--bg-soft)] px-4 pb-24 pt-10 sm:pb-8 md:px-6">
-      <div className="mx-auto grid max-w-[1180px] gap-8 md:grid-cols-2 lg:grid-cols-4">
+    <footer className="mt-auto border-t border-[var(--border)] bg-[var(--bg-soft)]/70 px-4 pb-24 pt-10 sm:pb-8 md:px-6">
+      <div className="mx-auto grid max-w-[1240px] gap-8 md:grid-cols-2 lg:grid-cols-4">
         <div>
-          <Link to="/" className="flex items-center gap-2 text-base font-bold text-[var(--text)] no-underline hover:no-underline">
-            <span
-              aria-hidden="true"
-              className="relative h-5 w-5 rounded-full border-[2.5px] border-[#111] bg-gradient-to-b from-[#ef4444] from-50% to-white to-50%"
-            >
-              <span className="absolute inset-0 m-auto h-1.5 w-1.5 rounded-full border-[2px] border-[#111] bg-white" />
-            </span>
-            Poke<strong className="text-[var(--accent)]">Guru</strong>
-          </Link>
+          <Brand />
           <p className="mt-3 max-w-xs text-sm leading-relaxed text-[var(--muted)]">
             A fast, open Pokémon TCG card database with GBP reference pricing, set history and a private,
             local-only collection vault.
@@ -106,7 +99,7 @@ export default function Footer() {
         <BuyMeAPackPanel />
       </div>
 
-      <div className="mx-auto mt-8 max-w-[1180px] space-y-2 border-t border-[var(--border)] pt-5 text-center text-xs text-[var(--muted)]">
+      <div className="mx-auto mt-8 max-w-[1240px] space-y-2 border-t border-[var(--border)] pt-5 text-center text-xs text-[var(--muted)]">
         <p>
           Pokémon and all related names are trademarks of Nintendo, Game Freak &amp; The Pokémon Company. This is an
           unofficial, non-commercial fan project and is not affiliated with or endorsed by them.

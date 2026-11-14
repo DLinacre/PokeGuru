@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="pgTitle">
+  <title id="pgTitle">PokeGuru logo mark</title>
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#171B24" />
+      <stop offset="1" stop-color="#0A0C11" />
+    </linearGradient>
+    <linearGradient id="crimson" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FF5A5F" />
+      <stop offset="1" stop-color="#D62F3B" />
+    </linearGradient>
+    <linearGradient id="amber" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFD166" />
+      <stop offset="1" stop-color="#F59E0B" />
+    </linearGradient>
+    <linearGradient id="bone" x1="0" y1="0" x2="0.4" y2="1">
+      <stop offset="0" stop-color="#FFFDF8" />
+      <stop offset="1" stop-color="#E9E4D8" />
+    </linearGradient>
+  </defs>
+
+  <rect width="512" height="512" rx="112" fill="url(#tile)" />
+  <rect x="8" y="8" width="496" height="496" rx="106" fill="none" stroke="#FFFFFF" stroke-opacity="0.06" stroke-width="4" />
+
+  <!-- back card -->
+  <g transform="rotate(-12 256 268)">
+    <rect x="150" y="126" width="196" height="272" rx="26" fill="url(#crimson)" />
+    <rect x="150" y="126" width="196" height="272" rx="26" fill="none" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="3" />
+    <path d="M170 336h156" stroke="#FFFFFF" stroke-opacity="0.30" stroke-width="6" stroke-linecap="round" />
+    <path d="M170 360h108" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="6" stroke-linecap="round" />
+  </g>
+
+  <!-- front card -->
+  <g transform="rotate(6 256 268)">
+    <rect x="184" y="118" width="196" height="272" rx="26" fill="url(#bone)" />
+    <rect x="184" y="118" width="196" height="272" rx="26" fill="none" stroke="#0A0C11" stroke-opacity="0.22" stroke-width="4" />
+    <rect x="184" y="118" width="196" height="52" rx="26" fill="url(#crimson)" />
+    <rect x="184" y="144" width="196" height="26" fill="url(#crimson)" />
+    <circle cx="200" cy="144" r="6" fill="#FFFDF8" fill-opacity="0.85" />
+
+    <!-- guru star -->
+    <path
+      d="M282 198c6 30 18 42 48 48-30 6-42 18-48 48-6-30-18-42-48-48 30-6 42-18 48-48Z"
+      fill="url(#amber)"
+    />
+    <circle cx="282" cy="246" r="13" fill="#0A0C11" />
+    <circle cx="282" cy="246" r="6" fill="url(#amber)" />
+
+    <!-- rarity pips -->
+    <circle cx="222" cy="332" r="9" fill="#0A0C11" fill-opacity="0.55" />
+    <circle cx="252" cy="332" r="9" fill="#0A0C11" fill-opacity="0.28" />
+    <circle cx="282" cy="332" r="9" fill="#0A0C11" fill-opacity="0.14" />
+    <path d="M216 366h96" stroke="#0A0C11" stroke-opacity="0.20" stroke-width="8" stroke-linecap="round" />
+  </g>
+
+  <!-- signature notch: a small amber tab, like a card in a binder -->
+  <path d="M392 372h34a18 18 0 0 1 18 18v42a26 26 0 0 1-52 0v-60Z" fill="url(#amber)" opacity="0.9" />
+</svg>

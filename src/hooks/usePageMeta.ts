@@ -47,7 +47,7 @@ export function usePageMeta({ title, description, path, type = "website", image 
     const origin = siteOrigin();
     const relativePath = path ?? (typeof window !== "undefined" ? window.location.pathname : "/");
     const url = origin ? `${origin}${relativePath.startsWith("/") ? relativePath : `/${relativePath}`}` : relativePath;
-    const imageUrl = image ? (image.startsWith("http") ? image : `${origin}${image}`) : origin ? `${origin}/og.png` : undefined;
+    const imageUrl = image ? (image.startsWith("http") ? image : `${origin}${image}`) : origin ? `${origin}/og.jpg` : undefined;
 
     let canonical = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
     if (!canonical) {

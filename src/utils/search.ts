@@ -1,3 +1,4 @@
+import type { CardVariants } from "../types/pokemon";
 import type { SearchFilters, SearchSort } from "../types/pokemon";
 
 export const SEARCH_PAGE_SIZE = 24;
@@ -70,16 +71,62 @@ export function parsePage(value: string | null): number {
   return Number.isFinite(parsed) && parsed >= 1 ? Math.floor(parsed) : 1;
 }
 
+export const PRINTING_OPTIONS = [
+  { value: "", label: "Any printing" },
+  { value: "normal", label: "Standard" },
+  { value: "holo", label: "Holofoil" },
+  { value: "reverse", label: "Reverse holofoil" },
+  { value: "firstEdition", label: "1st edition" },
+] as const;
+
 export function filtersFromParams(params: URLSearchParams): SearchFilters {
   return {
     query: params.get("q") ?? "",
     category: params.get("category") ?? "",
     rarity: canonicalRarity(params.get("rarity")),
     setId: params.get("set") ?? "",
+    illustrator: params.get("illustrator") ?? "",
+    number: params.get("number") ?? "",
     sort: parseSort(params.get("sort")),
     page: parsePage(params.get("page")),
     pageSize: SEARCH_PAGE_SIZE,
+    minValue: params.get("min") ?? "",
+    maxValue: params.get("max") ?? "",
+    printing: params.get("printing") ?? "",
   };
+}
+
+/** Filters that only make sense once the page's card details are loaded. */
+export function hasPageOnlyFilters(filters: SearchFilters): boolean {
+  return Boolean(filters.minValue || filters.maxValue || filters.printing);
+}
+
+function parsePrice(value: string | undefined): number | null {
+  if (!value) return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
+}
+
+/** Apply price/printing filters to an already-hydrated page of cards. */
+export function filterHydratedPage<T extends { card: { variants?: CardVariants } }>(
+  rows: T[],
+  filters: SearchFilters,
+  valueOf: (row: T) => number | null
+): T[] {
+  const min = parsePrice(filters.minValue);
+  const max = parsePrice(filters.maxValue);
+  const printing = filters.printing;
+
+  return rows.filter((row) => {
+    const value = valueOf(row);
+    if (min !== null && (value === null || value < min)) return false;
+    if (max !== null && (value === null || value > max)) return false;
+    if (printing) {
+      const variants = row.card.variants;
+      if (!variants || variants[printing as keyof CardVariants] !== true) return false;
+    }
+    return true;
+  });
 }
 
 /**
@@ -110,7 +157,13 @@ export function describeFilters(filters: SearchFilters): string {
   const parts: string[] = [];
   if (filters.query) parts.push(`“${filters.query}”`);
   if (filters.category) parts.push(filters.category === "Pokemon" ? "Pokémon" : filters.category);
-  if (filters.rarity) parts.push(filters.rarity);
+  if (filters.rarity) parts.push(rarityLabel(filters.rarity));
   if (filters.setId) parts.push(`set ${filters.setId}`);
+  if (filters.number) parts.push(`#${filters.number}`);
+  if (filters.illustrator) parts.push(`illus. ${filters.illustrator}`);
+  if (filters.minValue || filters.maxValue) {
+    parts.push(`£${filters.minValue || "0"}–${filters.maxValue ? `£${filters.maxValue}` : "any"}`);
+  }
+  if (filters.printing) parts.push(PRINTING_OPTIONS.find((o) => o.value === filters.printing)?.label ?? filters.printing);
   return parts.join(" · ");
 }

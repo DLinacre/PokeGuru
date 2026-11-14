@@ -1,10 +1,11 @@
-import { Link, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { Book, Camera, Layers, Search, Shuffle, Wallet, X } from "lucide-react";
 import { useState, type FormEvent, useEffect, useRef } from "react";
 import { useDebouncedValue } from "../../hooks/useApi";
 import { getRandomCard, searchCards } from "../../services/tcgdex";
 import type { TcgCard } from "../../types/pokemon";
 import BuyMeAPack from "../UI/BuyMeAPack";
+import Brand from "./Brand";
 import { cn } from "../../utils/cn";
 
 const NAV_ITEMS = [
@@ -142,23 +143,12 @@ export default function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-40 border-b border-[var(--border)] bg-[rgba(15,17,21,0.88)] px-3 py-2.5 backdrop-blur-xl md:px-6">
-      <div className="mx-auto flex max-w-[1180px] flex-wrap items-center gap-x-3 gap-y-2">
-        <Link
-          to="/"
-          className="order-1 flex shrink-0 items-center gap-2.5 text-lg font-semibold text-[var(--text)] no-underline hover:no-underline"
-          aria-label="PokeGuru home"
-        >
-          <span aria-hidden="true" className="pokeball relative h-6 w-6 rounded-full border-[3px] border-[#111] bg-gradient-to-b from-[#ef4444] from-50% to-white to-50% shadow-[inset_0_0_0_2px_#fff]">
-            <span className="absolute inset-0 m-auto h-2 w-2 rounded-full border-[3px] border-[#111] bg-white" />
-          </span>
-          <span>
-            Poke<strong className="text-[var(--accent)]">Guru</strong>
-          </span>
-        </Link>
+    <header className="sticky top-0 z-40 border-b border-[var(--border)] bg-[rgba(8,9,13,0.82)] px-3 py-2.5 backdrop-blur-xl md:px-6">
+      <div className="mx-auto flex max-w-[1240px] flex-wrap items-center gap-x-3 gap-y-2">
+        <Brand className="order-1" />
 
         <form onSubmit={handleSearch} className="relative order-3 w-full min-w-0 flex-1 sm:order-2 sm:w-auto sm:max-w-[520px]">
-          <div className="flex w-full overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg)]/60 transition-all focus-within:border-[var(--accent)] focus-within:ring-1 focus-within:ring-[var(--accent)]">
+          <div className="flex w-full overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-inset)] transition-all focus-within:border-[var(--border-accent)] focus-within:ring-2 focus-within:ring-[rgba(240,68,82,0.15)]">
             <label htmlFor="global-search" className="sr-only">
               Search Pokémon cards
             </label>
@@ -243,16 +233,21 @@ export default function Header() {
           )}
         </form>
 
-        <nav aria-label="Primary" className="order-2 hidden items-center gap-3 md:order-3 md:flex">
+        <nav aria-label="Primary" className="order-2 hidden items-center gap-1 md:order-3 md:flex">
           {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
-            <Link
+            <NavLink
               key={to}
               to={to}
-              className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-[var(--muted)] no-underline transition-colors hover:text-[var(--text)] hover:no-underline"
+              className={({ isActive }) =>
+                cn(
+                  "flex min-h-9 items-center gap-1.5 rounded-lg px-2.5 text-[11px] font-bold uppercase tracking-[0.12em] no-underline transition-colors hover:bg-white/5 hover:text-[var(--text)] hover:no-underline",
+                  isActive ? "bg-white/[0.06] text-[var(--text)]" : "text-[var(--muted)]"
+                )
+              }
             >
               <Icon size={15} aria-hidden="true" />
               {label}
-            </Link>
+            </NavLink>
           ))}
         </nav>
 

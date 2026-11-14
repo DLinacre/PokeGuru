@@ -5,7 +5,6 @@ import {
   Check,
   ExternalLink,
   Heart,
-  Info,
   RefreshCw,
   Share2,
   ShieldAlert,
@@ -20,11 +19,9 @@ import {
   formatUpdatedAt,
   formatUpdatedAtLong,
   formatUsd,
-  getCardValueGbp,
-  getHeadlineEur,
-  pickCardmarketQuote,
-  pickTcgplayerQuote,
+  getCardPrice,
 } from "../services/pricing";
+import PriceConfidenceBadge from "../components/UI/PriceBadge";
 import CardGrid from "../components/Cards/CardGrid";
 import JsonLd from "../components/UI/JsonLd";
 import ErrorMessage from "../components/UI/ErrorMessage";
@@ -43,12 +40,31 @@ function TypeBadge({ label }: { label: string }) {
   );
 }
 
-function PriceRow({ label, gbp, eur }: { label: string; gbp: string | null; eur: string | null }) {
+const BASIS_LABELS: Record<NonNullable<ReturnType<typeof getCardPrice>>["basis"] & string, string> = {
+  trend: "Cardmarket trend price",
+  avg: "Cardmarket average asking price",
+  low: "Lowest active listing",
+  avg30: "Cardmarket 30-day average",
+};
+
+function PriceRow({
+  label,
+  hint,
+  gbp,
+  eur,
+}: {
+  label: string;
+  hint?: string;
+  gbp: string | null;
+  eur: string | null;
+}) {
   return (
-    <div className="flex items-baseline justify-between gap-3 border-b border-[var(--border)] py-1.5 last:border-0">
-      <span className="text-xs text-[var(--muted)]">{label}</span>
+    <div className="flex items-baseline justify-between gap-3 border-b border-[var(--border)] py-2 last:border-0">
+      <span className="text-xs text-[var(--muted)]" title={hint}>
+        {label}
+      </span>
       <span className="text-right text-sm font-bold tabular-nums text-[var(--text)]">
-        {gbp ?? <NoData />}
+        {gbp ?? <span className="text-xs font-medium italic text-[var(--muted)]/80">Not published</span>}
         {gbp && eur && <span className="ml-2 text-[10px] font-medium text-[var(--muted)]">{eur}</span>}
       </span>
     </div>
@@ -83,13 +99,9 @@ export default function CardDetailPage() {
     pageSize: 7,
   });
 
-  const quote = card ? pickCardmarketQuote(card.pricing) : null;
-  const tcgQuote = card ? pickTcgplayerQuote(card.pricing) : null;
-  const gbp = card ? getCardValueGbp(card, rate) : null;
-  const headlineEur = quote ? getHeadlineEur(quote) : null;
-  const converted = (eur: number | undefined) =>
-    eur != null && rate ? formatGbp(eur * rate.rate) : null;
-  const toEur = (value: number | undefined) => formatEur(value ?? null);
+  const price = card ? getCardPrice(card, rate) : null;
+  const gbp = price?.headlineGbp ?? null;
+  const basisLabel = price?.basis ? BASIS_LABELS[price.basis] : null;
 
   const collected = card ? isInCollection(card.id) : false;
   const wikiMeta = card ? getWikiMeta(card.set.name) : undefined;
@@ -119,7 +131,7 @@ export default function CardDetailPage() {
             ],
           }
         : {}),
-      ...(gbp != null && quote
+      ...(gbp != null && price?.basis
         ? {
             offers: {
               "@type": "Offer",
@@ -131,7 +143,7 @@ export default function CardDetailPage() {
           }
         : {}),
     };
-  }, [card, gbp, quote]);
+  }, [card, gbp, price?.basis]);
 
   const handleShare = async () => {
     if (!card) return;
@@ -253,77 +265,140 @@ export default function CardDetailPage() {
           {/* Market value */}
           <section
             aria-labelledby="price-heading"
-            className="mt-6 rounded-2xl border border-[var(--border)] bg-gradient-to-br from-[#10b981]/10 to-transparent p-5"
+            className="mt-6 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-card)]"
           >
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <h2 id="price-heading" className="text-[10px] font-black uppercase tracking-widest text-[#10b981]">
-                  Cardmarket reference · GBP
-                </h2>
-                <p className="mt-1 text-3xl font-black tabular-nums text-[var(--text)]">
-                  {formatGbp(gbp) ?? <NoData />}
-                </p>
-                <p className="mt-1 text-xs text-[var(--muted)]">
-                  {quote ? `${quote.label} · trend price` : "Cardmarket does not publish a price for this card"}
-                  {headlineEur != null && rate ? ` · €${headlineEur.toFixed(2)} source` : ""}
-                </p>
-              </div>
-              {quote && (
-                <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)]/60 px-3 py-2 text-right text-[11px] text-[var(--muted)]">
-                  <p>
-                    Marketplace updated
-                    <br />
-                    <strong className="text-[var(--text)]">{formatUpdatedAtLong(quote.updatedAt) ?? "No Data Available"}</strong>
+            <div className="border-b border-[var(--border)] bg-gradient-to-r from-[#2fbf71]/10 via-transparent to-transparent p-5">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 id="price-heading" className="text-[10px] font-black uppercase tracking-[0.18em] text-[#6fe3a5]">
+                      Cardmarket reference · GBP
+                    </h2>
+                    {price && (
+                      <PriceConfidenceBadge
+                        confidence={price.confidence}
+                        label={price.confidenceLabel}
+                        reason={price.confidenceReason}
+                      />
+                    )}
+                  </div>
+                  <p className="mt-2 text-4xl font-black tabular-nums tracking-tight text-[var(--text)]">
+                    {formatGbp(price?.headlineGbp) ?? <NoData />}
                   </p>
-                  <p className="mt-1.5">
-                    FX rate date
-                    <br />
-                    <strong className="text-[var(--text)]">{rate ? formatUpdatedAtLong(rate.date) ?? rate.date : "No Data Available"}</strong>
+                  <p className="mt-1.5 text-xs leading-relaxed text-[var(--muted)]">
+                    {basisLabel ? `${basisLabel} · ${price?.printing}` : price ? "No Cardmarket value for this printing" : "Waiting for card data"}
+                    {price?.headlineEur != null && rate ? ` · ${formatEur(price.headlineEur)} source` : ""}
                   </p>
                 </div>
-              )}
+
+                {price && (
+                  <dl className="grid grid-cols-2 gap-x-6 gap-y-2 rounded-xl border border-[var(--border)] bg-[var(--bg-soft)]/60 px-4 py-3 text-[11px] sm:grid-cols-1">
+                    <div>
+                      <dt className="text-[var(--muted)]">Marketplace updated</dt>
+                      <dd className="font-semibold text-[var(--text)]">
+                        {formatUpdatedAtLong(price.updatedAt) ?? "Not published"}
+                        {price.ageDays != null && (
+                          <span className="ml-1 font-normal text-[var(--muted)]">({price.ageDays === 0 ? "today" : `${price.ageDays}d ago`})</span>
+                        )}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-[var(--muted)]">FX rate date</dt>
+                      <dd className="font-semibold text-[var(--text)]">
+                        {rate ? formatUpdatedAtLong(rate.date) ?? rate.date : "Not available"}
+                      </dd>
+                    </div>
+                    <div className="col-span-2 sm:col-span-1">
+                      <dt className="text-[var(--muted)]">Matched to</dt>
+                      <dd className="font-semibold text-[var(--text)]">
+                        {card.id} · {price.printing}
+                      </dd>
+                    </div>
+                  </dl>
+                )}
+              </div>
             </div>
 
-            {quote ? (
-              <div className="mt-4 grid gap-x-8 sm:grid-cols-2">
-                <PriceRow label="Lowest listing" gbp={converted(quote.low)} eur={toEur(quote.low)} />
-                <PriceRow label="Trend price" gbp={converted(quote.trend)} eur={toEur(quote.trend)} />
-                <PriceRow label="Average (30 day)" gbp={converted(quote.average30)} eur={toEur(quote.average30)} />
-                <PriceRow label="Average selling" gbp={converted(quote.average)} eur={toEur(quote.average)} />
+            <div className="grid gap-6 p-5 md:grid-cols-[1.35fr_1fr]">
+              <div>
+                <h3 className="mb-2 text-[10px] font-black uppercase tracking-[0.16em] text-[var(--muted)]">
+                  Published Cardmarket bands
+                </h3>
+                {price?.bands.length ? (
+                  <div>
+                    {price.bands.map((band) => (
+                      <PriceRow
+                        key={band.key}
+                        label={band.label}
+                        hint={band.hint}
+                        gbp={formatGbp(band.gbp)}
+                        eur={formatEur(band.eur)}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="flex items-center gap-2 py-3 text-sm text-[var(--muted)]">
+                    <ShieldAlert size={15} aria-hidden="true" />
+                    Cardmarket does not publish a price for this card, so no value is estimated.
+                  </p>
+                )}
+
+                {price?.alternate && (
+                  <div className="mt-4 rounded-xl border border-[var(--border)] bg-[var(--bg-soft)]/50 p-3">
+                    <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[var(--muted)]">
+                      {price.alternate.label} printing (not this card&apos;s printing)
+                    </p>
+                    <p className="mt-1 text-sm font-bold tabular-nums text-[var(--text)]">
+                      {formatGbp(price.alternate.gbp) ?? <NoData />}
+                      {price.alternate.trend != null && (
+                        <span className="ml-2 text-[10px] font-medium text-[var(--muted)]">
+                          trend {formatEur(price.alternate.trend)}
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                )}
               </div>
-            ) : (
-              <p className="mt-4 flex items-center gap-2 text-sm text-[var(--muted)]">
-                <ShieldAlert size={15} aria-hidden="true" />
-                No Cardmarket price data is available for this card, so no value is estimated.
-              </p>
-            )}
 
-            {!rate && (
-              <p className="mt-3 text-xs text-[var(--accent-2)]">
-                The EUR→GBP exchange rate is unavailable, so GBP values are hidden rather than estimated.
-              </p>
-            )}
+              <div className="space-y-3">
+                {price?.flags.length ? (
+                  <ul className="space-y-2 rounded-xl border border-[var(--accent-2)]/30 bg-[var(--accent-2)]/5 p-3 text-[11px] leading-relaxed text-[#f7c568]">
+                    {price.flags.includes("stale") && <li>This snapshot is more than 30 days old — treat it as historical.</li>}
+                    {price.flags.includes("dated") && <li>This snapshot is over a week old; prices can move week to week.</li>}
+                    {price.flags.includes("low-only") && <li>Only a lowest listing / long-run average exists, so this is indicative.</li>}
+                    {price.flags.includes("no-update-date") && <li>Cardmarket did not publish an update date for this price.</li>}
+                    {price.flags.includes("fx-missing") && (
+                      <li>The EUR→GBP exchange rate is unavailable, so GBP values are hidden rather than estimated.</li>
+                    )}
+                  </ul>
+                ) : null}
 
-            {tcgQuote && (
-              <div className="mt-4 rounded-xl border border-[var(--border)] bg-[var(--bg-card)]/50 p-3">
-                <p className="text-[10px] font-black uppercase tracking-widest text-[var(--muted)]">
-                  TCGplayer reference · USD
-                </p>
-                <p className="mt-1 text-lg font-bold text-[var(--text)]">
-                  {formatUsd(tcgQuote.market ?? tcgQuote.mid ?? tcgQuote.low) ?? <NoData />}
-                </p>
-                <p className="text-[11px] text-[var(--muted)]">
-                  {tcgQuote.label} · updated {formatUpdatedAt(tcgQuote.updatedAt) ?? "No Data Available"} · shown in USD, not
-                  converted.
-                </p>
+                {price?.tcgplayer && (
+                  <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-soft)]/60 p-3">
+                    <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[var(--muted)]">
+                      TCGplayer reference · USD
+                    </p>
+                    <p className="mt-1 text-lg font-bold tabular-nums text-[var(--text)]">
+                      {formatUsd(price.tcgplayer.market ?? price.tcgplayer.mid ?? price.tcgplayer.low) ?? <NoData />}
+                    </p>
+                    <p className="text-[11px] leading-relaxed text-[var(--muted)]">
+                      {price.tcgplayer.label} · updated {formatUpdatedAt(price.tcgplayer.updatedAt) ?? "No Data Available"} ·
+                      shown in USD, never silently converted.
+                    </p>
+                  </div>
+                )}
+
+                <details className="rounded-xl border border-[var(--border)] bg-[var(--bg-soft)]/40 p-3 text-[11px] leading-relaxed text-[var(--muted)]">
+                  <summary className="cursor-pointer font-semibold text-[var(--text)]">How this price is calculated</summary>
+                  <ol className="mt-2 list-decimal space-y-1 pl-4">
+                    <li>We match this exact card id and printing at Cardmarket via TCGdex ({card.id}, {price?.printing ?? "unknown printing"}).</li>
+                    <li>We take a single published band — trend, then average asking, then 30-day average, then lowest listing — never an average of unrelated values.</li>
+                    <li>EUR is converted with the dated Frankfurter reference rate{rate ? ` (${rate.date})` : ""}; without a rate we show no GBP figure.</li>
+                    <li>Figures are marketplace reference prices, not completed sales, live quotes, graded valuations or financial advice.</li>
+                  </ol>
+                </details>
               </div>
-            )}
-
-            <p className="mt-4 flex items-start gap-2 text-[11px] leading-relaxed text-[var(--muted)]">
-              <Info size={13} className="mt-0.5 shrink-0" aria-hidden="true" />
-              These are marketplace reference prices published by Cardmarket (asking/trend/average), converted with a
-              dated daily exchange rate. They are not completed sales, live quotes, or financial advice.
-            </p>
+            </div>
           </section>
 
           {/* Rules text */}
