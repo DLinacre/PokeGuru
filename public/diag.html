@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>PokeGuru image diagnostics</title>
+    <style>
+      body { background: #0b0d12; color: #e7e9ee; font: 13px/1.5 ui-monospace, monospace; padding: 16px; }
+      pre { white-space: pre-wrap; }
+    </style>
+  </head>
+  <body>
+    <pre id="out">running…</pre>
+    <script>
+      var out = document.getElementById("out");
+      var lines = [];
+      var violations = [];
+      document.addEventListener("securitypolicyviolation", function (e) {
+        violations.push(e.effectiveDirective + " blocked " + e.blockedURI);
+      });
+      function log(s) {
+        lines.push(s);
+        out.textContent = lines.join("\n");
+      }
+      var probes = [
+        ["sv06.5-016/low.webp", "https://assets.tcgdex.net/en/sv/sv06.5/016/low.webp"],
+        ["sv06.5-016/high.webp", "https://assets.tcgdex.net/en/sv/sv06.5/016/high.webp"],
+        ["base1-49/low.webp", "https://assets.tcgdex.net/en/base/base1/49/low.webp"],
+        ["sv06.5-016/low.png", "https://assets.tcgdex.net/en/sv/sv06.5/016/low.png"],
+        ["base1-49/high.png", "https://assets.tcgdex.net/en/base/base1/49/high.png"],
+      ];
+      function probe(url, noRef) {
+        return new Promise(function (resolve) {
+          var img = new Image();
+          if (noRef) img.referrerPolicy = "no-referrer";
+          var started = performance.now();
+          var done = false;
+          function finish(text) {
+            if (done) return;
+            done = true;
+            resolve(text + " (" + Math.round(performance.now() - started) + "ms)");
+          }
+          img.onload = function () {
+            finish("OK " + img.naturalWidth + "x" + img.naturalHeight);
+          };
+          img.onerror = function () {
+            finish("ERROR");
+          };
+          setTimeout(function () {
+            finish("TIMEOUT");
+          }, 9000);
+          img.src = url;
+        });
+      }
+      (async function () {
+        log("origin " + location.origin);
+        log("csp meta present " + !!document.querySelector('meta[http-equiv="Content-Security-Policy"]'));
+        for (var i = 0; i < probes.length; i++) {
+          log(probes[i][0] + " plain   " + (await probe(probes[i][1], false)));
+          log(probes[i][0] + " norefer " + (await probe(probes[i][1], true)));
+        }
+        try {
+          var r1 = await fetch(probes[0][1], { mode: "no-cors" });
+          log("fetch no-cors -> type=" + r1.type + " status=" + r1.status);
+        } catch (e) {
+          log("fetch no-cors threw " + e.name + ": " + e.message);
+        }
+        try {
+          var r2 = await fetch(probes[0][1], { mode: "cors" });
+          log("fetch cors -> status=" + r2.status);
+        } catch (e) {
+          log("fetch cors threw " + e.name + ": " + e.message);
+        }
+        log("csp violations: " + (violations.join(" | ") || "none"));
+        log("DONE");
+      })();
+    </script>
+  </body>
+</html>
