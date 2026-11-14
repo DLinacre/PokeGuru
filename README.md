@@ -148,8 +148,11 @@ Every page footer, the homepage “Share PokeGuru” panel and the About page of
   deployment. If nothing passes, the buttons show a **configuration warning**
   instead of generating a QR code that would not work once printed — no dummy
   URLs, ever.
-- **Printing:** choose 100% / “Actual size” (never “Fit to page”). The design is
-  full-bleed dark, so a slightly heavier paper stock keeps it crisp.
+- **Print flyer** builds the same vector scene into a print view with
+  `@page { size: 127mm 177.8mm; margin: 0 }` and opens the browser’s print
+  dialogue, so the page defaults to 5 × 7 in and stays vector. Keep the scale at
+  100% / “Actual size” (never “Fit to page”). The design is full-bleed dark, so
+  a slightly heavier paper stock keeps it crisp.
 - **Wording:** the flyer advertises only shipped features (search, set archive,
   collection, real market prices, free virtual packs) and carries an unofficial
   fan-project disclaimer. No official artwork, logos, character images or

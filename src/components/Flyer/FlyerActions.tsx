@@ -54,12 +54,14 @@ export default function FlyerActions({ variant = "full", className, showPrint = 
     setBusy("print");
     setStatus(null);
     try {
-      const { printed } = await printFlyer();
+      const { printed, downloaded } = await printFlyer();
       setStatus({
-        tone: "ok",
+        tone: printed || downloaded ? "ok" : "warn",
         text: printed
-          ? "Opened the PDF in a new tab — in the print dialogue choose 100% / Actual size."
-          : "Your browser blocked the new tab, so the flyer was downloaded instead. Print it at 100%.",
+          ? "Print dialogue opened at 5 × 7 in — keep the scale at 100% / Actual size."
+          : downloaded
+            ? "Your browser blocked the print window, so the PDF was downloaded instead. Print it at 100%."
+            : "The print window could not be opened. Use Download PokeGuru Flyer and print the PDF instead.",
       });
     } catch (error) {
       setStatus({
