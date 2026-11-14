@@ -1,10 +1,10 @@
 {
-  "id": "/",
+  "id": "%BASE%",
   "name": "PokeGuru — The Pokémon Card Guru",
   "short_name": "PokeGuru",
   "description": "Search Pokémon TCG cards, browse sets, check Cardmarket reference prices in GBP, track your collection privately and open virtual boosters.",
-  "start_url": "./",
-  "scope": "./",
+  "start_url": "%BASE%",
+  "scope": "%BASE%",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui"],
   "orientation": "portrait-primary",
@@ -14,28 +14,28 @@
   "categories": ["entertainment", "utilities", "reference"],
   "icons": [
     {
-      "src": "icons/icon-192.png",
+      "src": "%BASE%icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icons/icon-512.png",
+      "src": "%BASE%icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icons/icon-maskable-512.png",
+      "src": "%BASE%icons/icon-maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
     }
   ],
   "shortcuts": [
-    { "name": "Open a pack", "url": "./packs", "description": "Open a virtual booster pack" },
-    { "name": "Card search", "url": "./search", "description": "Search the Pokémon card database" },
-    { "name": "My vault", "url": "./collection", "description": "Open your collection" },
-    { "name": "Scan a card", "url": "./scanner", "description": "Scan a card with OCR" }
+    { "name": "Open a pack", "url": "%BASE%packs", "description": "Open a virtual booster pack" },
+    { "name": "Card search", "url": "%BASE%search", "description": "Search the Pokémon card database" },
+    { "name": "My vault", "url": "%BASE%collection", "description": "Open your collection" },
+    { "name": "Scan a card", "url": "%BASE%scanner", "description": "Scan a card with OCR" }
   ]
 }

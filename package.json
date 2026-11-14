@@ -1,13 +1,13 @@
 {
   "name": "pokeguru",
   "private": true,
-  "version": "1.7.1",
+  "version": "1.7.2",
   "description": "Pok\u00e9mon TCG card database with pricing, set browsing, card scanning and a pack opening simulator",
   "author": "LIN4CRE",
   "license": "MIT",
   "repository": "github:LIN4CRE/PokeGuru",
   "bugs": "https://github.com/DLinacre/PokeGuru/issues",
-  "homepage": "https://dlinacre.github.io/PokeGuru",
+  "homepage": "https://pokeguru.vercel.app",
   "type": "module",
   "overrides": {
     "esbuild": "0.28.1"

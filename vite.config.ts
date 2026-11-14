@@ -98,6 +98,18 @@ function deploymentFiles(options: { base: string; siteUrl: string; isPages: bool
         source: swTemplate.replace(/%BASE%/g, base).replace(/%VERSION%/g, version),
       });
 
+      // The manifest is emitted per build target (like the service worker) so
+      // `id`, `start_url`, `scope`, icon and shortcut URLs always sit inside
+      // the deployment base. A static manifest with `id: "/"` is outside the
+      // `/PokeGuru/` scope on the GitHub Pages build, which makes that build
+      // non-installable ("no installable PWA available").
+      const manifestTemplate = fs.readFileSync(path.resolve(__dirname, "src/pwa/manifest-template.json"), "utf8");
+      this.emitFile({
+        type: "asset",
+        fileName: "manifest.webmanifest",
+        source: manifestTemplate.replace(/%BASE%/g, base),
+      });
+
       const offlineTemplate = fs.readFileSync(path.resolve(__dirname, "src/pwa/offline.html"), "utf8");
       this.emitFile({
         type: "asset",

@@ -16,6 +16,7 @@
 
 <h1 align="center">PokeGuru</h1>
 <p align="center"><strong>Every card. Every set. Honest GBP pricing.</strong></p>
+<p align="center"><a href="https://pokeguru.vercel.app"><strong>▶ Open the live app: pokeguru.vercel.app</strong></a> — install it from your browser menu (see “Install app” on the About page). The GitHub Pages address is only a secondary mirror.</p>
 
 PokeGuru is a fast, installable Pokémon TCG web app for UK collectors. It searches
 the full English card database from [TCGdex](https://tcgdex.dev/), shows
