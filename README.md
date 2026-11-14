@@ -268,10 +268,28 @@ confirm the GitHub app still has access to `DLinacre/PokeGuru`, with `main` as
 the production branch and preview deployments enabled.
 3. Set `VITE_PUBLIC_SITE_URL` (already present) in all environments.
 
-## GitHub Pages (secondary)
+## GitHub Pages (secondary, currently paused)
 
-`npm run build:pages` (or the `Deploy to GitHub Pages` workflow) builds with the
-`/PokeGuru/` base path. Pages is a mirror only — Vercel is the primary host.
+`npm run build:pages` builds with the `/PokeGuru/` base path. Pages is a mirror
+only — Vercel is the primary host.
+
+The `Deploy to GitHub Pages` workflow is manual (`workflow_dispatch`) while the
+repository's `github-pages` environment only allows the `gh-pages` branch:
+
+1. Repo → **Settings → Environments → github-pages → Deployment branches and
+   tags** → add `main` (the Actions token cannot change this policy).
+2. Then re-add `push: branches: [main]` to `.github/workflows/deploy.yml`.
+
+---
+
+## 🖼️ GitHub presentation
+
+- Repository social preview: upload `assets/banner.jpg` (1280×640) in
+  **Settings → General → Social preview**. GitHub has no API for this, so it is
+  a one-off manual upload.
+- The README banner uses the same image from `assets/`.
+- Screenshots of the finished app are taken from the live site; do not commit
+  mock-ups or fabricated UI captures.
 
 ---
 
