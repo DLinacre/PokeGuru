@@ -1,5 +1,7 @@
 name: Deploy to GitHub Pages
 
+# Secondary mirror only: Vercel is PokeGuru's primary host and deploys
+# automatically from `main` through its Git integration.
 on:
   push:
     branches: [main]
@@ -10,9 +12,16 @@ permissions:
   pages: write
   id-token: write
 
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    env:
+      DEPLOY_TARGET: github-pages
+      VITE_PUBLIC_SITE_URL: https://dlinacre.github.io/PokeGuru
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -21,18 +30,24 @@ jobs:
         uses: actions/setup-node@v7
         with:
           node-version: 22
-          cache: 'npm'
+          cache: npm
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Build
-        run: npm run build
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build for GitHub Pages
+        run: npm run build:pages
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5
         with:
-          path: './dist'
+          path: ./dist
 
       - name: Deploy to GitHub Pages
         uses: actions/deploy-pages@v5

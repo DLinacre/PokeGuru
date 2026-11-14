@@ -1,14 +1,40 @@
 {
+  "id": "/",
   "name": "PokeGuru — The Pokémon Card Guru",
   "short_name": "PokeGuru",
-  "description": "Lightning-fast Pokémon TCG card database with UK market prices in GBP, set history and advanced search.",
-  "start_url": "/PokeGuru/",
-  "scope": "/PokeGuru/",
+  "description": "Search Pokémon TCG cards, browse sets, check Cardmarket reference prices in GBP and track your collection privately.",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait-primary",
   "background_color": "#0f1115",
   "theme_color": "#0f1115",
+  "lang": "en-GB",
+  "categories": ["entertainment", "utilities", "reference"],
   "icons": [
-    { "src": "/PokeGuru/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
-    { "src": "/PokeGuru/og.png", "sizes": "1200x630", "type": "image/png", "purpose": "any" }
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    { "name": "Card search", "url": "./search", "description": "Search the Pokémon card database" },
+    { "name": "My vault", "url": "./collection", "description": "Open your collection" },
+    { "name": "Scan a card", "url": "./scanner", "description": "Scan a card with OCR" }
   ]
 }

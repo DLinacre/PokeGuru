@@ -1,299 +1,337 @@
-/**
- * Custom hooks for API data fetching
- *
- * Provides a clean interface for components to fetch data
- * with loading states and error handling
- */
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type {
+  CardSearchResult,
+  DataSource,
+  SearchFilters,
+  TcgCard,
+  TcgSet,
+} from "../types/pokemon";
+import {
+  getCard,
+  getSet,
+  getSets,
+  loadCardDetails,
+  searchCards,
+} from "../services/tcgdex";
+import type { ExchangeRate } from "../services/currency";
+import { getEurToGbpRate } from "../services/currency";
+import { getCardValueGbp } from "../services/pricing";
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import type { ApiResponse, PokemonCard, PokemonSet, CardType, SortOption } from '../types/pokemon';
-import * as api from '../services/api';
-
-interface UseApiState<T> {
+export interface QueryState<T> {
   data: T | null;
   loading: boolean;
   error: string | null;
+  source: DataSource | null;
+  cachedAt?: number;
 }
 
-/**
- * Hook for fetching featured cards on the home page
- */
-export function useFeaturedCards(retryKey?: number) {
-  const [state, setState] = useState<UseApiState<PokemonCard[]>>({
-    data: null,
-    loading: true,
-    error: null,
-  });
+function errorMessage(err: unknown, fallback: string): string {
+  if (err instanceof Error && err.message) return err.message;
+  return fallback;
+}
+
+function isAbort(err: unknown): boolean {
+  return err instanceof Error && /cancel/i.test(err.message);
+}
+
+/** Debounce a rapidly changing value (search-as-you-type). */
+export function useDebouncedValue<T>(value: T, delay = 300): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(timer);
+  }, [value, delay]);
+  return debounced;
+}
+
+/** Current EUR -> GBP rate (shared singleton request). */
+export function useExchangeRate(): { rate: ExchangeRate | null; loading: boolean } {
+  const [rate, setRate] = useState<ExchangeRate | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let mounted = true;
-    setState(prev => ({ ...prev, loading: true, error: null }));
+    let active = true;
+    getEurToGbpRate()
+      .then((value) => {
+        if (active) setRate(value);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
-    async function fetchData() {
-      try {
-        const data = await api.getFeaturedCards();
-        if (mounted) {
-          setState({ data, loading: false, error: null });
-        }
-      } catch (err) {
-        if (mounted) {
-          setState({
-            data: null,
-            loading: false,
-            error: err instanceof Error ? err.message : 'Failed to load featured cards',
-          });
-        }
-      }
+  return { rate, loading };
+}
+
+/* ------------------------------------------------------------------ */
+/* Single card                                                         */
+/* ------------------------------------------------------------------ */
+
+export function useCard(id: string | undefined) {
+  const [state, setState] = useState<QueryState<TcgCard>>({
+    data: null,
+    loading: Boolean(id),
+    error: null,
+    source: null,
+  });
+  const [retryKey, setRetryKey] = useState(0);
+
+  useEffect(() => {
+    if (!id) {
+      setState({ data: null, loading: false, error: "No card selected", source: null });
+      return;
     }
+    const controller = new AbortController();
+    let active = true;
+    setState((prev) => ({ ...prev, loading: true, error: null }));
 
-    fetchData();
-    return () => { mounted = false; };
-  }, [retryKey]);
-
-  return state;
-}
-
-/**
- * Hook for searching cards
- */
-export function useCardSearch(
-  query: string,
-  type: CardType,
-  sort: SortOption,
-  page: number = 1,
-  filters: { rarity?: string; supertype?: string; setId?: string } = {},
-  retryKey?: number,
-  pageSize: number = 24
-) {
-  const [state, setState] = useState<UseApiState<ApiResponse<PokemonCard[]>>>({
-    data: null,
-    loading: true,
-    error: null,
-  });
-
-  // Track current request to avoid race conditions
-  const requestId = useRef(0);
-
-  useEffect(() => {
-    const currentRequest = ++requestId.current;
-    setState(prev => ({ ...prev, loading: true }));
-
-    const orderBy = sort === 'newest' ? '-set.releaseDate'
-                  : sort === 'oldest' ? 'set.releaseDate'
-                  : 'name';
-
-    async function fetchData() {
-      try {
-        const data = await api.searchCards(query, {
-          page,
-          pageSize,
-          orderBy,
-          type: type || undefined,
-          rarity: filters.rarity || undefined,
-          supertype: filters.supertype || undefined,
-          setId: filters.setId || undefined,
+    getCard(id, { signal: controller.signal })
+      .then(({ card, source, cachedAt }) => {
+        if (!active) return;
+        setState({ data: card, loading: false, error: null, source, cachedAt });
+      })
+      .catch((err: unknown) => {
+        if (!active || isAbort(err)) return;
+        setState({
+          data: null,
+          loading: false,
+          error: errorMessage(err, "Failed to load this card."),
+          source: null,
         });
+      });
 
-        // Only update if this is still the latest request
-        if (currentRequest === requestId.current) {
-          setState({ data, loading: false, error: null });
-        }
-      } catch (err) {
-        if (currentRequest === requestId.current) {
-          setState({
-            data: null,
-            loading: false,
-            error: err instanceof Error ? err.message : 'Search failed',
-          });
-        }
-      }
-    }
-
-    fetchData();
-  }, [query, type, sort, page, retryKey]);
-
-  return state;
-}
-
-/**
- * Hook for fetching a single card
- */
-export function useCard(id: string, retryKey?: number) {
-  const [state, setState] = useState<UseApiState<PokemonCard>>({
-    data: null,
-    loading: true,
-    error: null,
-  });
-
-  useEffect(() => {
-    let mounted = true;
-    setState({ data: null, loading: true, error: null });
-
-    async function fetchData() {
-      try {
-        const data = await api.getCard(id);
-        if (mounted) {
-          setState({ data, loading: false, error: null });
-        }
-      } catch (err) {
-        if (mounted) {
-          setState({
-            data: null,
-            loading: false,
-            error: err instanceof Error ? err.message : 'Failed to load card',
-          });
-        }
-      }
-    }
-
-    fetchData();
-    return () => { mounted = false; };
+    return () => {
+      active = false;
+      controller.abort();
+    };
   }, [id, retryKey]);
 
-  return state;
+  return { ...state, retry: useCallback(() => setRetryKey((n) => n + 1), []) };
 }
 
-/**
- * Hook for fetching all sets
- */
-export function useSets(retryKey?: number) {
-  const [state, setState] = useState<UseApiState<PokemonSet[]>>({
+/* ------------------------------------------------------------------ */
+/* Sets                                                                */
+/* ------------------------------------------------------------------ */
+
+export function useSets() {
+  const [state, setState] = useState<QueryState<TcgSet[]>>({
     data: null,
     loading: true,
     error: null,
+    source: null,
   });
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
-    let mounted = true;
+    const controller = new AbortController();
+    let active = true;
+    setState((prev) => ({ ...prev, loading: true, error: null }));
 
-    async function fetchData() {
-      try {
-        const data = await api.getSets();
-        if (mounted) {
-          setState({ data, loading: false, error: null });
-        }
-      } catch (err) {
-        if (mounted) {
-          setState({
-            data: null,
-            loading: false,
-            error: err instanceof Error ? err.message : 'Failed to load sets',
-          });
-        }
-      }
-    }
+    getSets(controller.signal)
+      .then(({ sets, source, cachedAt }) => {
+        if (!active) return;
+        setState({ data: sets, loading: false, error: null, source, cachedAt });
+      })
+      .catch((err: unknown) => {
+        if (!active || isAbort(err)) return;
+        setState({
+          data: null,
+          loading: false,
+          error: errorMessage(err, "Failed to load sets."),
+          source: null,
+        });
+      });
 
-    fetchData();
-    return () => { mounted = false; };
+    return () => {
+      active = false;
+      controller.abort();
+    };
   }, [retryKey]);
 
-  return state;
+  return { ...state, retry: useCallback(() => setRetryKey((n) => n + 1), []) };
 }
 
-/**
- * Hook for fetching cards from a specific set
- */
-export function useSetCards(setId: string, page: number = 1, retryKey?: number) {
-  const [state, setState] = useState<UseApiState<ApiResponse<PokemonCard[]>>>({
+export function useSet(id: string | undefined) {
+  const [state, setState] = useState<QueryState<TcgSet>>({
     data: null,
-    loading: true,
+    loading: Boolean(id),
     error: null,
+    source: null,
   });
+  const [retryKey, setRetryKey] = useState(0);
 
-  const [set, setSet] = useState<PokemonSet | null>(null);
-  const [setError, setSetError] = useState<string | null>(null);
-
-  // Fetch set details
   useEffect(() => {
-    let mounted = true;
-
-    async function fetchSet() {
-      try {
-        const data = await api.getSet(setId);
-        if (mounted) {
-          setSet(data);
-          setSetError(null);
-        }
-      } catch (err) {
-        if (mounted) {
-          setSetError(err instanceof Error ? err.message : 'Failed to load set');
-        }
-      }
+    if (!id) {
+      setState({ data: null, loading: false, error: "No set selected", source: null });
+      return;
     }
+    const controller = new AbortController();
+    let active = true;
+    setState({ data: null, loading: true, error: null, source: null });
 
-    fetchSet();
-    return () => { mounted = false; };
-  }, [setId, retryKey]);
+    getSet(id, controller.signal)
+      .then(({ set, source, cachedAt }) => {
+        if (!active) return;
+        setState({ data: set, loading: false, error: null, source, cachedAt });
+      })
+      .catch((err: unknown) => {
+        if (!active || isAbort(err)) return;
+        setState({
+          data: null,
+          loading: false,
+          error: errorMessage(err, "Failed to load this set."),
+          source: null,
+        });
+      });
 
-  // Fetch set cards
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [id, retryKey]);
+
+  return { ...state, retry: useCallback(() => setRetryKey((n) => n + 1), []) };
+}
+
+/* ------------------------------------------------------------------ */
+/* Search                                                              */
+/* ------------------------------------------------------------------ */
+
+export interface CardSearchState extends CardSearchResult {
+  loading: boolean;
+  enriching: boolean;
+  error: string | null;
+  source: DataSource | null;
+  cachedAt?: number;
+  retry: () => void;
+}
+
+const EMPTY_RESULT: CardSearchResult = {
+  cards: [],
+  page: 1,
+  pageSize: 24,
+  hasMore: false,
+};
+
+/**
+ * Search cards with progressive enrichment.
+ *
+ * The list endpoint returns briefs; full details (prices, rarity, artist)
+ * are fetched only for the cards on the current page, capped at a small
+ * concurrency, and merged in as they arrive. Requests are aborted when the
+ * filters change so stale responses can never overwrite newer ones.
+ */
+export function useCardSearch(filters: SearchFilters): CardSearchState {
+  const [result, setResult] = useState<CardSearchResult>(EMPTY_RESULT);
+  const [loading, setLoading] = useState(true);
+  const [enriching, setEnriching] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [source, setSource] = useState<DataSource | null>(null);
+  const [cachedAt, setCachedAt] = useState<number | undefined>(undefined);
+  const [retryKey, setRetryKey] = useState(0);
+
+  const key = useMemo(
+    () =>
+      JSON.stringify([
+        filters.query,
+        filters.category,
+        filters.rarity,
+        filters.setId,
+        filters.illustrator ?? "",
+        filters.sort,
+        filters.page,
+        filters.pageSize,
+      ]),
+    [filters]
+  );
+  const filtersRef = useRef(filters);
+  filtersRef.current = filters;
+
   useEffect(() => {
-    let mounted = true;
-    setState(prev => ({ ...prev, loading: true }));
+    const controller = new AbortController();
+    let active = true;
 
-    async function fetchCards() {
-      try {
-        const data = await api.getSetCards(setId, { page, pageSize: 50 });
-        if (mounted) {
-          setState({ data, loading: false, error: null });
-        }
-      } catch (err) {
-        if (mounted) {
-          setState({
-            data: null,
-            loading: false,
-            error: err instanceof Error ? err.message : 'Failed to load cards',
-          });
-        }
-      }
-    }
+    setLoading(true);
+    setEnriching(false);
+    setError(null);
+    setResult(EMPTY_RESULT);
 
-    fetchCards();
-    return () => { mounted = false; };
-  }, [setId, page, retryKey]);
+    const current = filtersRef.current;
+
+    searchCards(current, { signal: controller.signal })
+      .then((response) => {
+        if (!active) return;
+        setResult({
+          cards: response.cards,
+          page: response.page,
+          pageSize: response.pageSize,
+          hasMore: response.hasMore,
+          totalCount: response.totalCount,
+        });
+        setSource(response.source);
+        setCachedAt(response.cachedAt);
+        setLoading(false);
+
+        const ids = response.cards.map((card) => card.id);
+        if (!ids.length) return;
+        setEnriching(true);
+
+        loadCardDetails(ids, {
+          signal: controller.signal,
+          concurrency: 5,
+          onCard: (card) => {
+            if (!active) return;
+            setResult((prev) => ({
+              ...prev,
+              cards: prev.cards.map((existing) =>
+                existing.id === card.id ? { ...existing, ...card } : existing
+              ),
+            }));
+          },
+        }).finally(() => {
+          if (active) setEnriching(false);
+        });
+      })
+      .catch((err: unknown) => {
+        if (!active || isAbort(err)) return;
+        setLoading(false);
+        setError(errorMessage(err, "Search failed. Please try again."));
+      });
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
+    // `key` encodes every filter value that affects the request.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key, retryKey]);
 
   return {
-    ...state,
-    set,
-    setError: setError || state.error,
+    ...result,
+    loading,
+    enriching,
+    error,
+    source,
+    cachedAt,
+    retry: useCallback(() => setRetryKey((n) => n + 1), []),
   };
 }
 
 /**
- * Hook for fetching a random card (returns a trigger function)
+ * Client-side value sorting. Price sorting cannot be delegated to the search
+ * API (briefs carry no pricing), so it ranks the current page only — the UI
+ * says so explicitly. Cards without any price go last.
  */
-export function useRandomCard() {
-  const [loading, setLoading] = useState(false);
-
-  const getRandom = useCallback(async (): Promise<PokemonCard | null> => {
-    setLoading(true);
-    try {
-      const card = await api.getRandomCard();
-      return card;
-    } catch {
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  return { getRandom, loading };
-}
-
-/**
- * Hook for debounced search
- */
-export function useDebouncedValue<T>(value: T, delay: number = 300): T {
-  const [debouncedValue, setDebouncedValue] = useState(value);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [value, delay]);
-
-  return debouncedValue;
+export function sortCardsByValue(cards: TcgCard[], rate: ExchangeRate | null, direction: "asc" | "desc"): TcgCard[] {
+  const withValue = cards.map((card) => ({ card, value: getCardValueGbp(card, rate) }));
+  withValue.sort((a, b) => {
+    if (a.value == null && b.value == null) return a.card.name.localeCompare(b.card.name);
+    if (a.value == null) return 1;
+    if (b.value == null) return -1;
+    return direction === "desc" ? b.value - a.value : a.value - b.value;
+  });
+  return withValue.map((entry) => entry.card);
 }

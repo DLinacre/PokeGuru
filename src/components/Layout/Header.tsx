@@ -1,15 +1,26 @@
-import { Link, useNavigate } from 'react-router-dom';
-import { Search, Layers, Camera, Book, AlertCircle, Wallet, Shuffle } from 'lucide-react';
-import { useState, FormEvent, useEffect, useRef } from 'react';
-import { useDebouncedValue } from '../../hooks/useApi';
-import { searchCards, getRandomCard } from '../../services/api';
-import type { PokemonCard } from '../../types/pokemon';
+import { Link, useNavigate } from "react-router-dom";
+import { Book, Camera, Layers, Search, Shuffle, Wallet, X } from "lucide-react";
+import { useState, type FormEvent, useEffect, useRef } from "react";
+import { useDebouncedValue } from "../../hooks/useApi";
+import { getRandomCard, searchCards } from "../../services/tcgdex";
+import type { TcgCard } from "../../types/pokemon";
+import BuyMeAPack from "../UI/BuyMeAPack";
+import { cn } from "../../utils/cn";
+
+const NAV_ITEMS = [
+  { to: "/search", label: "Search", icon: Search },
+  { to: "/sets", label: "Sets", icon: Layers },
+  { to: "/wiki", label: "Wiki", icon: Book },
+  { to: "/collection", label: "Vault", icon: Wallet },
+  { to: "/scanner", label: "Scan", icon: Camera },
+];
 
 export default function Header() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [suggestions, setSuggestions] = useState<PokemonCard[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [suggestions, setSuggestions] = useState<TcgCard[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [searching, setSearching] = useState(false);
   const [randomLoading, setRandomLoading] = useState(false);
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -17,69 +28,89 @@ export default function Header() {
   const debouncedQuery = useDebouncedValue(searchQuery, 300);
 
   useEffect(() => {
-    if (debouncedQuery.length < 2) {
+    const query = debouncedQuery.trim();
+    if (query.length < 2) {
       setSuggestions([]);
       setShowSuggestions(false);
+      setSearching(false);
       return;
     }
 
-    let cancelled = false;
-    async function fetchSuggestions() {
-      try {
-        const result = await searchCards(debouncedQuery, { pageSize: 6, orderBy: 'name' });
-        if (!cancelled) {
-          setSuggestions(result.data || []);
-          setShowSuggestions(true);
-          setSelectedIndex(-1);
-        }
-      } catch {
-        if (!cancelled) {
-          setSuggestions([]);
-        }
-      }
-    }
+    const controller = new AbortController();
+    let active = true;
+    setSearching(true);
 
-    fetchSuggestions();
-    return () => { cancelled = true; };
+    searchCards(
+      { query, category: "", rarity: "", setId: "", sort: "name", page: 1, pageSize: 6 },
+      { signal: controller.signal }
+    )
+      .then((result) => {
+        if (!active) return;
+        setSuggestions(result.cards);
+        setShowSuggestions(result.cards.length > 0);
+        setSelectedIndex(-1);
+        setSearching(false);
+      })
+      .catch(() => {
+        if (!active) return;
+        setSuggestions([]);
+        setSearching(false);
+      });
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
   }, [debouncedQuery]);
 
   useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node) &&
-          inputRef.current && !inputRef.current.contains(e.target as Node)) {
+    function handleClickOutside(event: MouseEvent) {
+      const target = event.target as Node;
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(target) &&
+        inputRef.current &&
+        !inputRef.current.contains(target)
+      ) {
         setShowSuggestions(false);
       }
     }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === '/' && document.activeElement !== inputRef.current) {
-        e.preventDefault();
+    function handleKeyDown(event: KeyboardEvent) {
+      const tag = (document.activeElement?.tagName ?? "").toLowerCase();
+      const typing = tag === "input" || tag === "textarea" || tag === "select";
+      if (event.key === "/" && !typing) {
+        event.preventDefault();
         inputRef.current?.focus();
       }
-      if (e.key === 'Escape' && showSuggestions) {
+      if (event.key === "Escape" && showSuggestions) {
         setShowSuggestions(false);
       }
     }
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, [showSuggestions]);
 
-  const handleSearch = (e: FormEvent) => {
-    e.preventDefault();
-    const query = searchQuery.trim();
-    if (query) {
-      setShowSuggestions(false);
-      navigate(`/search?q=${encodeURIComponent(query)}`);
-    }
+  const closeSuggestions = () => {
+    setShowSuggestions(false);
+    setSuggestions([]);
+    setSearchQuery("");
   };
 
-  const selectSuggestion = (card: PokemonCard) => {
-    setShowSuggestions(false);
-    setSearchQuery('');
+  const handleSearch = (event: FormEvent) => {
+    event.preventDefault();
+    const query = searchQuery.trim();
+    if (!query) return;
+    closeSuggestions();
+    navigate(`/search?q=${encodeURIComponent(query)}`);
+  };
+
+  const selectSuggestion = (card: TcgCard) => {
+    closeSuggestions();
     navigate(`/card/${card.id}`);
   };
 
@@ -87,157 +118,180 @@ export default function Header() {
     setRandomLoading(true);
     try {
       const card = await getRandomCard();
-      if (card) {
-        setShowSuggestions(false);
-        setSearchQuery('');
-        navigate(`/card/${card.id}`);
-      }
+      closeSuggestions();
+      navigate(`/card/${card.id}`);
     } catch {
-      // silently fail
+      navigate("/search");
     } finally {
       setRandomLoading(false);
     }
   };
 
-  const handleInputKeyDown = (e: React.KeyboardEvent) => {
+  const handleInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (!showSuggestions || suggestions.length === 0) return;
-
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      setSelectedIndex(prev => (prev + 1) % suggestions.length);
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      setSelectedIndex(prev => (prev <= 0 ? suggestions.length - 1 : prev - 1));
-    } else if (e.key === 'Enter' && selectedIndex >= 0) {
-      e.preventDefault();
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setSelectedIndex((prev) => (prev + 1) % suggestions.length);
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setSelectedIndex((prev) => (prev <= 0 ? suggestions.length - 1 : prev - 1));
+    } else if (event.key === "Enter" && selectedIndex >= 0) {
+      event.preventDefault();
       selectSuggestion(suggestions[selectedIndex]);
     }
   };
 
   return (
-    <header className="sticky top-0 z-20 flex flex-wrap items-center gap-4 glass-dark px-4 py-3 md:px-6">
-      {/* Brand */}
-      <Link to="/" className="flex items-center gap-2.5 text-xl font-semibold text-[var(--text)] hover:no-underline">
-        <div className="pokeball relative h-6 w-6 rounded-full border-[3px] border-[#111] bg-gradient-to-b from-[#ef4444] from-50% to-white to-50% shadow-[inset_0_0_0_2px_#fff]">
-          <div className="absolute inset-0 m-auto h-2 w-2 rounded-full border-[3px] border-[#111] bg-white" />
-        </div>
-        <span>
-          Poke<strong className="text-[var(--accent)]">Guru</strong>
-        </span>
-      </Link>
+    <header className="sticky top-0 z-40 border-b border-[var(--border)] bg-[rgba(15,17,21,0.88)] px-3 py-2.5 backdrop-blur-xl md:px-6">
+      <div className="mx-auto flex max-w-[1180px] flex-wrap items-center gap-x-3 gap-y-2">
+        <Link
+          to="/"
+          className="order-1 flex shrink-0 items-center gap-2.5 text-lg font-semibold text-[var(--text)] no-underline hover:no-underline"
+          aria-label="PokeGuru home"
+        >
+          <span aria-hidden="true" className="pokeball relative h-6 w-6 rounded-full border-[3px] border-[#111] bg-gradient-to-b from-[#ef4444] from-50% to-white to-50% shadow-[inset_0_0_0_2px_#fff]">
+            <span className="absolute inset-0 m-auto h-2 w-2 rounded-full border-[3px] border-[#111] bg-white" />
+          </span>
+          <span>
+            Poke<strong className="text-[var(--accent)]">Guru</strong>
+          </span>
+        </Link>
 
-      {/* Search */}
-      <form
-        onSubmit={handleSearch}
-        className="relative flex flex-1 max-w-[560px] min-w-[200px]"
-      >
-        <div className="flex w-full overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg)]/50 focus-within:border-[var(--accent)] focus-within:ring-1 focus-within:ring-[var(--accent)] transition-all">
-          <input
-            ref={inputRef}
-            type="search"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onFocus={() => { if (suggestions.length > 0) setShowSuggestions(true); }}
-            placeholder="Search 18,000+ cards..."
-            className="flex-1 border-none bg-transparent px-4 py-2 text-sm text-[var(--text)] outline-none placeholder:text-[var(--muted)]"
-            aria-label="Search cards"
-            onKeyDown={handleInputKeyDown}
-            autoComplete="off"
-          />
-          <button
-            type="submit"
-            className="border-none bg-transparent px-4 text-[var(--muted)] hover:text-[var(--accent)] transition-colors active:scale-90"
-            aria-label="Submit search"
-          >
-            <Search size={18} />
-          </button>
-        </div>
-
-        {/* Autocomplete dropdown */}
-        {showSuggestions && suggestions.length > 0 && (
-          <div
-            ref={dropdownRef}
-            className="absolute left-0 right-0 top-full mt-1 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-card)] shadow-2xl z-50"
-          >
-            {suggestions.map((card, index) => (
-              <button
-                key={card.id}
-                type="button"
-                onClick={() => selectSuggestion(card)}
-                onMouseEnter={() => setSelectedIndex(index)}
-                className={`flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm transition-colors ${
-                  index === selectedIndex ? 'bg-[var(--accent)]/10 text-[var(--text)]' : 'text-[var(--muted)] hover:bg-[var(--bg-soft)]'
-                }`}
-              >
-                {card.images?.small && (
-                  <img src={card.images.small} alt="" className="h-10 w-auto rounded object-contain" />
-                )}
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-semibold text-[var(--text)]">{card.name}</p>
-                  <p className="truncate text-[11px] text-[var(--muted)]">
-                    {card.set?.name} · #{card.number}
-                  </p>
-                </div>
-                {card.types && card.types.length > 0 && (
-                  <span className="shrink-0 text-[10px] text-[var(--accent)] font-bold">{card.types.join('/')}</span>
-                )}
-              </button>
-            ))}
+        <form onSubmit={handleSearch} className="relative order-3 w-full min-w-0 flex-1 sm:order-2 sm:w-auto sm:max-w-[520px]">
+          <div className="flex w-full overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg)]/60 transition-all focus-within:border-[var(--accent)] focus-within:ring-1 focus-within:ring-[var(--accent)]">
+            <label htmlFor="global-search" className="sr-only">
+              Search Pokémon cards
+            </label>
+            <input
+              ref={inputRef}
+              id="global-search"
+              type="search"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              onFocus={() => {
+                if (suggestions.length > 0) setShowSuggestions(true);
+              }}
+              placeholder="Search cards…  (press /)"
+              className="min-w-0 flex-1 border-none bg-transparent px-3.5 py-2 text-sm text-[var(--text)] outline-none placeholder:text-[var(--muted)]"
+              onKeyDown={handleInputKeyDown}
+              autoComplete="off"
+              role="combobox"
+              aria-expanded={showSuggestions}
+              aria-controls="search-suggestions"
+              aria-autocomplete="list"
+            />
+            <button
+              type="submit"
+              className="border-none bg-transparent px-3.5 text-[var(--muted)] transition-colors hover:text-[var(--accent)] active:scale-90"
+              aria-label="Submit search"
+            >
+              <Search size={18} aria-hidden="true" />
+            </button>
           </div>
-        )}
-      </form>
 
-      {/* Navigation */}
-      <nav className="hidden items-center gap-4 sm:flex">
-        <Link
-          to="/collection"
-          className="flex items-center gap-1.5 font-bold text-xs uppercase tracking-widest text-[var(--muted)] hover:text-[var(--text)] hover:no-underline transition-colors"
-          title="My Collection"
-        >
-          <Wallet size={16} className="text-[var(--accent)]" />
-          <span>Vault</span>
-        </Link>
-        <Link
-          to="/wiki"
-          className="flex items-center gap-1.5 font-bold text-xs uppercase tracking-widest text-[var(--muted)] hover:text-[var(--text)] hover:no-underline transition-colors"
-        >
-          <Book size={16} />
-          <span>Wiki</span>
-        </Link>
-        <Link
-          to="/sets"
-          className="flex items-center gap-1.5 font-bold text-xs uppercase tracking-widest text-[var(--muted)] hover:text-[var(--text)] hover:no-underline transition-colors"
-        >
-          <Layers size={16} />
-          <span>Sets</span>
-        </Link>
-        <Link
-          to="/scanner"
-          className="flex items-center gap-1.5 font-bold text-xs uppercase tracking-widest text-[var(--muted)] hover:text-[var(--text)] hover:no-underline transition-colors"
-        >
-          <Camera size={16} />
-          <span>Scan</span>
-        </Link>
-      </nav>
+          {showSuggestions && suggestions.length > 0 && (
+            <div
+              ref={dropdownRef}
+              id="search-suggestions"
+              role="listbox"
+              aria-label="Card suggestions"
+              className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-card)] shadow-2xl"
+            >
+              {suggestions.map((card, index) => (
+                <button
+                  key={card.id}
+                  type="button"
+                  role="option"
+                  aria-selected={index === selectedIndex}
+                  onClick={() => selectSuggestion(card)}
+                  onMouseEnter={() => setSelectedIndex(index)}
+                  className={cn(
+                    "flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm transition-colors",
+                    index === selectedIndex ? "bg-[var(--accent)]/10 text-[var(--text)]" : "text-[var(--muted)] hover:bg-[var(--bg-soft)]"
+                  )}
+                >
+                  {card.images.small ? (
+                    <img
+                      src={card.images.small}
+                      alt=""
+                      width={32}
+                      height={44}
+                      loading="lazy"
+                      className="h-11 w-8 shrink-0 rounded object-contain"
+                    />
+                  ) : (
+                    <span className="h-11 w-8 shrink-0 rounded bg-[var(--bg-soft)]" aria-hidden="true" />
+                  )}
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-semibold text-[var(--text)]">{card.name}</span>
+                    <span className="block truncate text-[11px] text-[var(--muted)]">
+                      {card.set?.name || "Set not listed"} · #{card.localId}
+                    </span>
+                  </span>
+                </button>
+              ))}
+              <div className="border-t border-[var(--border)] px-3 py-2 text-[11px] text-[var(--muted)]">
+                {searching ? "Searching…" : "Press Enter to search all cards"}
+              </div>
+            </div>
+          )}
 
-      <button
-        onClick={handleRandom}
-        disabled={randomLoading}
-        className="hidden sm:flex items-center gap-1.5 rounded-full bg-[var(--bg-soft)] border border-[var(--border)] px-3 py-1 font-bold text-[10px] uppercase tracking-tighter text-[var(--muted)] hover:text-[var(--text)] hover:border-[var(--accent)] transition-all disabled:opacity-50"
-        title="Random Card"
-      >
-        <Shuffle size={12} />
-        <span>{randomLoading ? '...' : 'Random'}</span>
-      </button>
+          {searching && !showSuggestions && (
+            <span className="sr-only" role="status">
+              Searching cards
+            </span>
+          )}
+        </form>
 
-      <Link
-        to="/about"
-        className="hidden sm:flex items-center gap-1.5 rounded-full bg-[var(--bg-soft)] border border-[var(--border)] px-3 py-1 font-bold text-[10px] uppercase tracking-tighter text-[var(--muted)] hover:text-[var(--text)] hover:border-[var(--accent)] transition-all"
-        title="About PokeGuru"
-      >
-        <AlertCircle size={12} />
-        <span>About</span>
-      </Link>
+        <nav aria-label="Primary" className="order-2 hidden items-center gap-3 md:order-3 md:flex">
+          {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
+            <Link
+              key={to}
+              to={to}
+              className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-[var(--muted)] no-underline transition-colors hover:text-[var(--text)] hover:no-underline"
+            >
+              <Icon size={15} aria-hidden="true" />
+              {label}
+            </Link>
+          ))}
+        </nav>
+
+        <div className="order-4 ml-auto flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleRandom}
+            disabled={randomLoading}
+            className="hidden items-center gap-1.5 rounded-full border border-[var(--border)] bg-[var(--bg-soft)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-tight text-[var(--muted)] transition-all hover:border-[var(--accent)] hover:text-[var(--text)] disabled:opacity-50 sm:flex"
+            title="Open a random card"
+          >
+            <Shuffle size={12} aria-hidden="true" />
+            <span>{randomLoading ? "…" : "Random"}</span>
+          </button>
+          <BuyMeAPack variant="icon" className="hidden sm:inline-flex lg:hidden" />
+          <BuyMeAPack variant="compact" className="hidden lg:inline-flex" />
+          <button
+            type="button"
+            onClick={() => {
+              closeSuggestions();
+              inputRef.current?.focus();
+            }}
+            className="rounded-lg border border-[var(--border)] bg-[var(--bg-soft)] p-2 text-[var(--muted)] transition-colors hover:text-[var(--text)] md:hidden"
+            aria-label="Open search"
+          >
+            <Search size={16} aria-hidden="true" />
+          </button>
+          {showSuggestions && (
+            <button
+              type="button"
+              className="sr-only"
+              onClick={() => setShowSuggestions(false)}
+              aria-label="Close suggestions"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+      </div>
     </header>
   );
 }

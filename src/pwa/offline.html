@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0f1115" />
+    <title>Offline — PokeGuru</title>
+    <style>
+      :root { color-scheme: dark; }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        background: radial-gradient(800px 500px at 100% -10%, rgba(239, 68, 68, 0.1), transparent 70%), #0f1115;
+        color: #e7e9ee;
+        font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+        text-align: center;
+      }
+      .card {
+        max-width: 440px;
+        border: 1px solid #2a2f3d;
+        border-radius: 20px;
+        background: #1e2230;
+        padding: 32px;
+      }
+      .ball {
+        width: 56px; height: 56px; margin: 0 auto 20px;
+        border-radius: 50%;
+        border: 6px solid #111;
+        background: linear-gradient(to bottom, #ef4444 0 50%, #fff 50% 100%);
+        position: relative;
+      }
+      .ball::after {
+        content: ""; position: absolute; inset: 0; margin: auto;
+        width: 14px; height: 14px; border-radius: 50%;
+        background: #fff; border: 5px solid #111;
+      }
+      h1 { font-size: 20px; margin: 0 0 8px; }
+      p { color: #98a0b3; line-height: 1.6; font-size: 14px; margin: 0 0 20px; }
+      a, button {
+        display: inline-block;
+        margin: 4px;
+        padding: 10px 18px;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 14px;
+        text-decoration: none;
+        cursor: pointer;
+      }
+      a { background: #ef4444; color: #fff; }
+      button { background: transparent; color: #e7e9ee; border: 1px solid #2a2f3d; }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <div class="ball" aria-hidden="true"></div>
+      <h1>You&rsquo;re offline</h1>
+      <p>
+        This page hasn&rsquo;t been cached yet. Reconnect to load it, or open a page you have visited before.
+        Cards you have already viewed remain available from the offline cache.
+      </p>
+      <a href="%BASE%">Go to PokeGuru</a>
+      <button type="button" onclick="window.location.reload()">Try again</button>
+    </main>
+    <script>
+      window.addEventListener("online", function () {
+        window.location.reload();
+      });
+    </script>
+  </body>
+</html>

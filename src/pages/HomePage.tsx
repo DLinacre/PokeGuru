@@ -1,159 +1,197 @@
-import { useState, FormEvent } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { Book, Layers, Wallet } from 'lucide-react';
-import { useFeaturedCards } from '../hooks/useApi';
-import { useTitle } from '../hooks/useTitle';
-import { getTotalSetCount } from '../data/ukSets';
-import CardGrid from '../components/Cards/CardGrid';
-import LoadingSpinner from '../components/UI/LoadingSpinner';
+import { useState, type FormEvent } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Book, Camera, Layers, Search, Sparkles, Wallet } from "lucide-react";
+import { useCardSearch, useExchangeRate, useSets } from "../hooks/useApi";
+import { usePageMeta } from "../hooks/usePageMeta";
+import CardGrid from "../components/Cards/CardGrid";
+import SkeletonGrid from "../components/UI/SkeletonGrid";
+import ErrorMessage from "../components/UI/ErrorMessage";
+import { getTotalSetCount } from "../data/ukSets";
+
+const QUICK_LINKS = [
+  { label: "Charizard", to: "/search?q=charizard" },
+  { label: "Pikachu", to: "/search?q=pikachu" },
+  { label: "Umbreon", to: "/search?q=umbreon" },
+  { label: "Illustration rares", to: "/search?rarity=Illustration%20Rare&sort=newest" },
+];
+
+const CHASE_FILTERS = {
+  query: "",
+  category: "Pokemon",
+  rarity: "Special Illustration Rare",
+  setId: "",
+  sort: "newest" as const,
+  page: 1,
+  pageSize: 12,
+};
 
 export default function HomePage() {
-  useTitle('Home');
-  const [searchQuery, setSearchQuery] = useState('');
-  const navigate = useNavigate();
-  const { data: featuredCards, loading, error } = useFeaturedCards();
+  usePageMeta({
+    description:
+      "Search Pokémon TCG cards, explore every set, check Cardmarket reference prices in GBP and track your collection privately in your browser.",
+    path: "/",
+  });
 
-  const handleSearch = (e: FormEvent) => {
-    e.preventDefault();
+  const [searchQuery, setSearchQuery] = useState("");
+  const navigate = useNavigate();
+  const { rate } = useExchangeRate();
+  const { data: sets } = useSets();
+  const chase = useCardSearch(CHASE_FILTERS);
+
+  const handleSearch = (event: FormEvent) => {
+    event.preventDefault();
     const query = searchQuery.trim();
-    if (query) {
-      navigate(`/search?q=${encodeURIComponent(query)}`);
-    }
+    if (query) navigate(`/search?q=${encodeURIComponent(query)}`);
   };
 
   return (
     <div>
-      {/* Hero Section */}
-      <section className="relative py-12 text-center md:py-20 overflow-hidden">
-        {/* Glow effect */}
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[var(--accent)] opacity-[0.05] blur-[120px] pointer-events-none rounded-full" />
-
+      <section className="relative overflow-hidden py-10 text-center md:py-16">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute left-1/2 top-1/2 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--accent)] opacity-[0.06] blur-[120px]"
+        />
         <div className="relative z-10">
-          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-[var(--bg-card)] border border-[var(--border)] shadow-xl">
-            <div className="pokeball relative h-10 w-10 rounded-full border-[4px] border-[#111] bg-gradient-to-b from-[#ef4444] from-50% to-white to-50% shadow-[inset_0_0_0_3px_#fff]">
-              <div className="absolute inset-0 m-auto h-3 w-3 rounded-full border-[4px] border-[#111] bg-white" />
-            </div>
+          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] shadow-xl">
+            <span
+              aria-hidden="true"
+              className="relative h-10 w-10 rounded-full border-[4px] border-[#111] bg-gradient-to-b from-[#ef4444] from-50% to-white to-50% shadow-[inset_0_0_0_3px_#fff]"
+            >
+              <span className="absolute inset-0 m-auto h-3 w-3 rounded-full border-[4px] border-[#111] bg-white" />
+            </span>
           </div>
-          <h1 className="mb-4 text-4xl font-extrabold md:text-6xl tracking-tight">
+
+          <h1 className="mb-4 text-4xl font-extrabold tracking-tight md:text-6xl">
             The Pokémon Card <span className="text-[var(--accent)]">Guru</span>
           </h1>
-          <p className="mx-auto mb-10 max-w-xl text-lg text-[var(--muted)] md:text-xl">
-            A lightning-fast cards database with UK market prices in GBP (£), set history, and advanced search tools.
+          <p className="mx-auto mb-8 max-w-2xl text-base text-[var(--muted)] md:text-lg">
+            Every card, every set — with Cardmarket reference prices in GBP, dated exchange rates and a private
+            collection vault that never leaves your browser.
           </p>
 
-          {/* Search Form */}
           <form
             onSubmit={handleSearch}
-            className="mx-auto mb-6 flex max-w-[640px] p-1.5 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-card)]/80 backdrop-blur-md shadow-2xl focus-within:border-[var(--accent)] transition-all"
+            className="mx-auto mb-5 flex max-w-[640px] gap-1.5 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-card)]/80 p-1.5 shadow-2xl backdrop-blur-md transition-all focus-within:border-[var(--accent)]"
+            role="search"
           >
+            <label htmlFor="home-search" className="sr-only">
+              Search Pokémon cards by name
+            </label>
             <input
+              id="home-search"
               type="search"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder='Search by name, type (types:fire) or set...'
-              className="flex-1 border-none bg-transparent px-6 py-3 text-base text-[var(--text)] outline-none placeholder:text-[var(--muted)]"
-              aria-label="Search for Pokémon cards"
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Charizard, Pikachu, Trainer…"
+              className="min-w-0 flex-1 border-none bg-transparent px-4 py-3 text-base text-[var(--text)] outline-none placeholder:text-[var(--muted)]"
             />
             <button
               type="submit"
-              className="rounded-xl bg-[var(--accent)] px-8 py-3 text-base font-bold text-white hover:bg-[#dc2626] transition-all active:scale-95 shadow-lg shadow-[var(--accent)]/20"
+              className="flex items-center gap-2 rounded-xl bg-[var(--accent)] px-5 py-3 text-sm font-bold text-white shadow-lg shadow-[var(--accent)]/20 transition-all hover:bg-[#dc2626] active:scale-95"
             >
+              <Search size={16} aria-hidden="true" />
               Search
             </button>
           </form>
 
-          {/* Quick Links */}
-          <div className="flex flex-wrap justify-center gap-2 text-xs font-medium uppercase tracking-widest text-[var(--muted)]">
+          <div className="flex flex-wrap items-center justify-center gap-2 text-[11px] font-bold uppercase tracking-widest text-[var(--muted)]">
             <span>Popular:</span>
-            <Link to="/search?q=charizard" className="text-[var(--text)] hover:text-[var(--accent)] transition-colors">Charizard</Link>
-            <span className="opacity-20">•</span>
-            <Link to="/search?q=pikachu" className="text-[var(--text)] hover:text-[var(--accent)] transition-colors">Pikachu</Link>
-            <span className="opacity-20">•</span>
-            <Link to="/search?q=rarity:%22Special%20Illustration%20Rare%22" className="text-[var(--text)] hover:text-[var(--accent)] transition-colors">SIRs</Link>
+            {QUICK_LINKS.map((link) => (
+              <Link
+                key={link.to}
+                to={link.to}
+                className="rounded-full border border-[var(--border)] bg-[var(--bg-soft)] px-2.5 py-1 text-[var(--text)] no-underline transition-colors hover:border-[var(--accent)] hover:text-[var(--accent)] hover:no-underline"
+              >
+                {link.label}
+              </Link>
+            ))}
           </div>
+
+          <p className="mt-6 text-xs text-[var(--muted)]">
+            {sets ? `${sets.length} sets indexed` : "Loading set index…"} · {getTotalSetCount()} UK sets in the wiki ·
+            prices via Cardmarket + Frankfurter
+          </p>
         </div>
       </section>
 
-      {/* Quick Feature Cards */}
-      <section className="mb-16">
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          <Link
-            to="/collection"
-            className="group glass relative flex flex-col gap-4 rounded-3xl p-6 transition-all hover:-translate-y-2 hover:border-[var(--accent)] hover:shadow-2xl hover:no-underline"
-          >
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent)]/20 text-[var(--accent)] shadow-inner">
-              <Wallet size={24} />
-            </div>
-            <div>
-              <h3 className="font-extrabold text-[var(--text)] group-hover:text-[var(--accent)] transition-colors">The Vault</h3>
-              <p className="mt-1 text-xs leading-relaxed text-[var(--muted)]">
-                Track your personal collection & live portfolio value.
-              </p>
-            </div>
-          </Link>
-
-          <Link
-            to="/wiki"
-            className="group glass relative flex flex-col gap-4 rounded-3xl p-6 transition-all hover:-translate-y-2 hover:border-[var(--accent-2)] hover:shadow-2xl hover:no-underline"
-          >
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-2)]/20 text-[var(--accent-2)] shadow-inner">
-              <Book size={24} />
-            </div>
-            <div>
-              <h3 className="font-extrabold text-[var(--text)] group-hover:text-[var(--accent-2)] transition-colors">UK Wiki</h3>
-              <p className="mt-1 text-xs leading-relaxed text-[var(--muted)]">
-                Explore {getTotalSetCount()} iconic UK sets from 1999 to today.
-              </p>
-            </div>
-          </Link>
-
-          <Link
-            to="/sets"
-            className="group glass relative flex flex-col gap-4 rounded-3xl p-6 transition-all hover:-translate-y-2 hover:border-[var(--link)] hover:shadow-2xl hover:no-underline"
-          >
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--link)]/20 text-[var(--link)] shadow-inner">
-              <Layers size={24} />
-            </div>
-            <div>
-              <h3 className="font-extrabold text-[var(--text)] group-hover:text-[var(--link)] transition-colors">All Sets</h3>
-              <p className="mt-1 text-xs leading-relaxed text-[var(--muted)]">
-                Browse every expansion including modern Japanese releases.
-              </p>
-            </div>
-          </Link>
-
-          <Link
-            to="/search?q=rarity:%22Special%20Illustration%20Rare%22"
-            className="group glass relative flex flex-col gap-4 rounded-3xl p-6 transition-all hover:-translate-y-2 hover:border-purple-500 hover:shadow-2xl hover:no-underline"
-          >
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-500/20 text-purple-400 shadow-inner">
-              <span className="text-xl">✨</span>
-            </div>
-            <div>
-              <h3 className="font-extrabold text-[var(--text)] group-hover:text-purple-400 transition-colors">Chase Cards</h3>
-              <p className="mt-1 text-xs leading-relaxed text-[var(--muted)]">
-                Discover the rarest Special Illustration Rares.
-              </p>
-            </div>
-          </Link>
+      <section aria-labelledby="quick-access" className="mb-14">
+        <h2 id="quick-access" className="sr-only">
+          Quick access
+        </h2>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            { to: "/search", icon: Search, title: "Card search", copy: "Filter by set, rarity and category.", accent: "var(--accent)" },
+            { to: "/sets", icon: Layers, title: "All sets", copy: "Browse every expansion, newest first.", accent: "var(--link)" },
+            { to: "/collection", icon: Wallet, title: "The vault", copy: "Track your collection locally.", accent: "#10b981" },
+            { to: "/scanner", icon: Camera, title: "Scan a card", copy: "On-device OCR finds the card for you.", accent: "var(--accent-2)" },
+          ].map(({ to, icon: Icon, title, copy, accent }) => (
+            <Link
+              key={to}
+              to={to}
+              className="group flex flex-col gap-3 rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-5 no-underline transition-all hover:-translate-y-1 hover:border-[var(--accent)]/60 hover:shadow-lg hover:no-underline"
+            >
+              <span
+                className="flex h-10 w-10 items-center justify-center rounded-xl"
+                style={{ backgroundColor: `color-mix(in srgb, ${accent} 18%, transparent)`, color: accent }}
+              >
+                <Icon size={20} aria-hidden="true" />
+              </span>
+              <span>
+                <span className="block font-bold text-[var(--text)]">{title}</span>
+                <span className="mt-1 block text-xs leading-relaxed text-[var(--muted)]">{copy}</span>
+              </span>
+            </Link>
+          ))}
         </div>
       </section>
 
-      {/* Featured Cards */}
-      <section>
-        <div className="mb-4 flex items-baseline justify-between gap-3">
-          <h2 className="text-xl font-semibold">Fresh Holos</h2>
+      <section aria-labelledby="chase-heading">
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
+          <div>
+            <h2 id="chase-heading" className="flex items-center gap-2 text-xl font-semibold">
+              <Sparkles size={18} className="text-[var(--accent-2)]" aria-hidden="true" />
+              Chase cards
+            </h2>
+            <p className="mt-1 text-sm text-[var(--muted)]">
+              Special Illustration Rares from the newest sets — marketplace reference prices, not sold prices.
+            </p>
+          </div>
+          <Link
+            to="/search?rarity=Special%20Illustration%20Rare&sort=newest"
+            className="text-xs font-bold uppercase tracking-widest text-[var(--link)] no-underline"
+          >
+            See all
+          </Link>
         </div>
 
-        {loading && <LoadingSpinner message="Loading featured cards..." />}
-
-        {error && (
-          <div className="py-8 text-center text-[var(--muted)]">
-            <p>Couldn't load featured cards. Try searching for something!</p>
-          </div>
+        {chase.loading && <SkeletonGrid count={12} />}
+        {chase.error && (
+          <ErrorMessage message={chase.error} onRetry={chase.retry} hint="You can still browse sets and search manually." />
+        )}
+        {!chase.loading && !chase.error && (
+          <CardGrid
+            cards={chase.cards}
+            rate={rate}
+            emptyMessage="No chase cards were returned by the card database right now."
+            priorityCount={6}
+          />
         )}
 
-        {featuredCards && <CardGrid cards={featuredCards} />}
+        <div className="mt-8 flex flex-wrap gap-3">
+          <Link
+            to="/wiki"
+            className="inline-flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] px-4 py-2 text-sm font-bold text-[var(--text)] no-underline hover:border-[var(--accent)] hover:no-underline"
+          >
+            <Book size={15} aria-hidden="true" />
+            Explore the UK set wiki
+          </Link>
+          <Link
+            to="/about"
+            className="inline-flex items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] px-4 py-2 text-sm font-bold text-[var(--text)] no-underline hover:border-[var(--accent)] hover:no-underline"
+          >
+            How pricing works
+          </Link>
+        </div>
       </section>
     </div>
   );
