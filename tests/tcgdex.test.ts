@@ -151,6 +151,49 @@ describe("TCGdex adapter", () => {
     expect(card.pricing?.tcgplayer?.variants.reverse.market).toBe(0.23);
   });
 
+  it("maps a holofoil-only card's primary price to the holofoil band", async () => {
+    // Real payload shape for sv06.5-090 (Okidogi ex, Special Illustration Rare):
+    // the un-suffixed Cardmarket fields carry the holofoil price and the
+    // `-holo` fields are 0, so they must not be read as a standard price.
+    const holoOnly = {
+      ...CARD_DETAIL,
+      id: "sv06.5-090",
+      name: "Okidogi ex",
+      localId: "090",
+      variants: { firstEdition: false, holo: true, normal: false, reverse: false, wPromo: false },
+      pricing: {
+        cardmarket: {
+          updated: "2026-11-13T22:16:19.354Z",
+          unit: "EUR",
+          avg: 18.16,
+          low: 8,
+          trend: 15.61,
+          avg1: 18.33,
+          avg7: 16.53,
+          avg30: 17.55,
+          "trend-holo": 0,
+        },
+        tcgplayer: {
+          unit: "USD",
+          updated: "2026-11-13T22:16:33.862Z",
+          holofoil: { lowPrice: 17.95, midPrice: 21.37, marketPrice: 19.43 },
+        },
+      },
+    };
+
+    installFetch((url) => {
+      if (url === `${BASE}/sets`) return json([SET_BRIEF]);
+      if (url === `${BASE}/cards/sv06.5-090`) return json(holoOnly);
+      throw new Error(`Unexpected request: ${url}`);
+    });
+
+    const { getCard } = await loadAdapter();
+    const { card } = await getCard("sv06.5-090");
+    expect(card.pricing?.cardmarket?.holo).toMatchObject({ trend: 15.61, low: 8, avg: 18.16 });
+    expect(card.pricing?.cardmarket?.normal).toBeUndefined();
+    expect(card.pricing?.tcgplayer?.variants.holofoil.market).toBe(19.43);
+  });
+
   it("surfaces 404s as a not-found API error", async () => {
     installFetch((url) => {
       if (url === `${BASE}/sets`) return json([SET_BRIEF]);
