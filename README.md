@@ -3,6 +3,7 @@
 </p>
 
 <p align="center">
+  <a href="https://pokeguru.vercel.app"><img src="https://img.shields.io/badge/live-pokeguru.vercel.app-F59E0B?style=for-the-badge&logo=vercel&logoColor=white" alt="Live site"></a>
   <img src="https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB">
   <img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white">
   <img src="https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white">
@@ -170,7 +171,7 @@ card.
 
 ```bash
 npm run typecheck   # strict TypeScript
-npm test            # 44 tests / 8 files
+npm test            # 47 tests / 8 files
 npm run build       # production build smoke test
 ```
 
@@ -188,6 +189,11 @@ Covered:
 
 Fixtures live in `tests/` and are only used by Vitest.
 
+Not automated in this repository: Lighthouse/Core Web Vitals runs and
+cross-browser visual regression tests. The production bundle sizes above come
+from `npm run build`, and the live deployment is smoke-tested by loading `/`,
+`/search?q=…`, `/card/:id`, `/sets`, `/collection`, `/scanner` and `/about`.
+
 ---
 
 ## 📈 Measured performance
@@ -196,10 +202,11 @@ Production build, before → after this upgrade:
 
 | Metric | Before | After |
 | --- | --- | --- |
-| JS entry (gzip) | 110.21 kB | **97.84 kB** |
-| CSS (gzip) | 9.51 kB | 9.80 kB |
+| JS entry (gzip) | 110.21 kB | **98.40 kB** (−10.7%) |
+| CSS (gzip) | 9.51 kB | 9.80 kB (+0.3 kB, more components) |
 | Production sourcemaps | 1.68 MB `.map` shipped | none |
 | Route chunks | single bundle | 15 lazy chunks (search 2.72 kB, set pages ≈2.5 kB, scanner 6.02 kB gzip) |
+| Image requests | full-size artwork in every tile | 245×337 WebP thumbnails, with a fallback chain if a variant is missing |
 | Cards fetched per search | 250 | 24 |
 | Requests per search | 1 huge list | 1 page + throttled detail hydration (concurrency 5) |
 
@@ -212,6 +219,8 @@ navigation.
 
 ### Vercel (primary)
 
+The project is deployed at **https://pokeguru.vercel.app** (production alias).
+
 1. Import `DLinacre/PokeGuru` in Vercel — `vercel.json` already pins the Vite
    framework, `npm ci`, `npm run build` and the `dist` output directory.
 2. Add `VITE_PUBLIC_SITE_URL` (your production URL) and, if you have one,
@@ -222,6 +231,19 @@ navigation.
 5. Security headers (including a CSP that allows TCGdex, Frankfurter and the
    Tesseract CDN), immutable asset caching and `no-store` on `sw.js` are all in
    `vercel.json`.
+6. Set `VITE_PUBLIC_SITE_URL=https://pokeguru.vercel.app` in the project so
+   canonical tags, `sitemap.xml` and `robots.txt` are generated for the real
+   origin.
+
+**Git auto-deploy note:** the Vercel project exists, but the connected Vercel
+GitHub account only has access to the `LIN4CRE` GitHub account, not
+`DLinacre/PokeGuru`, so Vercel cannot yet create its own Git deployments.
+Until the Vercel GitHub app is granted access to `DLinacre/PokeGuru`, deploys
+must be triggered through the Vercel API/CLI. Once access is granted:
+
+1. Vercel → Project → Settings → Git → connect `DLinacre/PokeGuru`.
+2. Keep the production branch as `main` and leave preview deployments enabled.
+3. Set `VITE_PUBLIC_SITE_URL` (already present) in all environments.
 
 ## GitHub Pages (secondary)
 
