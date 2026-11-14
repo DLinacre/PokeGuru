@@ -1,5 +1,8 @@
-name: GitHub Pages Health Check
+name: Live app health check
 
+# Guards the things users actually notice: that the Vercel deployment is the
+# current, installable build, and that the secondary GitHub Pages mirror is not
+# silently serving an ancient one.
 on:
   workflow_dispatch:
   schedule:
@@ -12,12 +15,52 @@ jobs:
   health-check:
     runs-on: ubuntu-latest
     steps:
-      - name: Check published GitHub Pages site
+      - name: Vercel production is installable
         run: |
           set -euo pipefail
-          URL="https://dlinacre.github.io/PokeGuru/"
-          echo "Checking $URL"
-          code=$(curl -L -sS -o /tmp/page.html -w "%{http_code}" "$URL")
-          echo "HTTP $code"
-          test "$code" = "200"
-          test -s /tmp/page.html
+          BASE="https://pokeguru.vercel.app"
+
+          for path in / /manifest.webmanifest /sw.js /pwa-capture.js /icons/icon-512.png /offline.html; do
+            code=$(curl -L -sS -o /dev/null -w "%{http_code}" "$BASE$path")
+            echo "$path -> HTTP $code"
+            test "$code" = "200"
+          done
+
+          curl -L -sS "$BASE/manifest.webmanifest" -o /tmp/manifest.json
+          node -e "
+            const m = JSON.parse(require('node:fs').readFileSync('/tmp/manifest.json', 'utf8'));
+            const sizes = m.icons.map((i) => i.sizes);
+            if (!sizes.includes('192x192') || !sizes.includes('512x512')) throw new Error('manifest is missing required icons');
+            const abs = (u) => new URL(u, 'https://pokeguru.vercel.app/').href;
+            if (abs(m.id) !== abs(m.start_url) || abs(m.start_url) !== abs(m.scope)) {
+              throw new Error('manifest id/start_url/scope disagree — not installable');
+            }
+            console.log('manifest ok:', m.id);
+          "
+
+          curl -L -sS "$BASE/sw.js" -o /tmp/sw.js
+          grep -q "pokeguru" /tmp/sw.js || { echo "sw.js is not the PokeGuru worker" >&2; exit 1; }
+
+      - name: GitHub Pages mirror is up to date
+        run: |
+          set -euo pipefail
+          MIRROR="https://dlinacre.github.io/PokeGuru"
+          # The mirror is secondary, so a stale copy does not fail the build —
+          # but it is surfaced loudly, because a stale mirror is exactly how
+          # users ended up on a non-installable build.
+          manifest_code=$(curl -L -sS -o /tmp/mirror-manifest.json -w "%{http_code}" "$MIRROR/manifest.webmanifest")
+          sw_code=$(curl -L -sS -o /dev/null -w "%{http_code}" "$MIRROR/sw.js")
+
+          if [ "$manifest_code" != "200" ] || [ "$sw_code" != "200" ]; then
+            echo "::warning::GitHub Pages mirror has no manifest ($manifest_code) or service worker ($sw_code). It is serving a stale build; keep pointing users at https://pokeguru.vercel.app."
+            exit 0
+          fi
+
+          node -e "
+            const m = JSON.parse(require('node:fs').readFileSync('/tmp/mirror-manifest.json', 'utf8'));
+            if (m.id !== m.start_url || m.start_url !== m.scope) {
+              console.error('::warning::GitHub Pages mirror manifest id/start_url/scope disagree — that build is not installable. Redeploy it with npm run build:pages.');
+            } else {
+              console.log('mirror manifest ok:', m.id);
+            }
+          "
