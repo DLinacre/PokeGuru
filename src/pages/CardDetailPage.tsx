@@ -438,10 +438,14 @@ export default function CardDetailPage() {
                 </span>
                 <span>
                   <span className="block font-semibold text-[var(--text)]">{card.set.name || "Set not listed"}</span>
-                  <span className="block text-xs text-[var(--muted)]">
-                    {wikiMeta?.eraName ?? "Series unavailable"}
-                    {wikiMeta?.releaseDate ? ` · UK release ${new Date(wikiMeta.releaseDate).toLocaleDateString("en-GB")}` : ""}
-                  </span>
+                  {(wikiMeta?.eraName || card.set.series || card.set.releaseDate) && (
+                    <span className="block text-xs text-[var(--muted)]">
+                      {wikiMeta?.eraName ?? card.set.series}
+                      {wikiMeta?.releaseDate || card.set.releaseDate
+                        ? ` · released ${new Date((wikiMeta?.releaseDate ?? card.set.releaseDate)!).toLocaleDateString("en-GB")}`
+                        : ""}
+                    </span>
+                  )}
                 </span>
               </Link>
             </div>

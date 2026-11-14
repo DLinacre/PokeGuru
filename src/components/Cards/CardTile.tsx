@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { TcgCard } from "../../types/pokemon";
 import { useExchangeRate } from "../../hooks/useApi";
 import { getCardValueGbp, formatGbp } from "../../services/pricing";
@@ -32,9 +32,30 @@ interface CardTileProps {
 export default function CardTile({ card, priority = false, onPreview, showPrice = true, className }: CardTileProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageFailed, setImageFailed] = useState(false);
+  const [sourceIndex, setSourceIndex] = useState(0);
   const { rate } = useExchangeRate();
 
-  const imageUrl = card.images.small;
+  /**
+   * Prefer the 245×337 thumbnail, but fall back through the other published
+   * derivatives if a specific variant is missing upstream (TCGdex serves
+   * `{low,high}.{webp,png,jpg}` and not every combination exists for every
+   * card). Without this a single missing file leaves a blank tile.
+   */
+  const sources = useMemo(() => {
+    const base = card.imageBase?.replace(/\.(webp|png|jpg|jpeg)$/i, "");
+    const candidates = card.imageBase && base
+      ? [`${base}/low.webp`, `${base}/low.png`, `${base}/high.webp`]
+      : [card.images.small, card.images.large].filter((value): value is string => Boolean(value));
+    return [...new Set(candidates)];
+  }, [card.imageBase, card.images.small, card.images.large]);
+
+  useEffect(() => {
+    setSourceIndex(0);
+    setImageLoaded(false);
+    setImageFailed(false);
+  }, [sources]);
+
+  const imageUrl = sources[sourceIndex];
   const subtitle = [card.set?.name, card.localId ? `#${card.localId}` : ""].filter(Boolean).join(" · ");
   const value = showPrice ? getCardValueGbp(card, rate) : null;
   const priceLabel = formatGbp(value);
@@ -52,7 +73,14 @@ export default function CardTile({ card, priority = false, onPreview, showPrice 
           decoding="async"
           fetchPriority={priority ? "high" : "auto"}
           onLoad={() => setImageLoaded(true)}
-          onError={() => setImageFailed(true)}
+          onError={() => {
+            if (sourceIndex + 1 < sources.length) {
+              setSourceIndex((index) => index + 1);
+              setImageLoaded(false);
+            } else {
+              setImageFailed(true);
+            }
+          }}
           className={cn(
             "h-full w-full object-contain transition-opacity duration-300 group-hover:scale-[1.03] motion-reduce:transform-none",
             imageLoaded ? "opacity-100" : "opacity-0"
