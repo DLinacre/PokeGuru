@@ -48,7 +48,10 @@ describe("pack rules", () => {
   it("resolves sets to the era rule, including overrides", () => {
     expect(resolvePackConfig({ id: "base1", seriesId: "base" })?.id).toBe("wotc-base");
     expect(resolvePackConfig({ id: "sv06.5", seriesId: "sv" })?.id).toBe("sv");
-    expect(resolvePackConfig({ id: "me01", seriesId: "me" })?.id).toBe("sv");
+    expect(resolvePackConfig({ id: "me01", seriesId: "me" })?.id).toBe("me");
+    // The Mega Evolution era borrows the layout but never the measured label.
+    expect(resolvePackConfig({ id: "me01", seriesId: "me" })?.confidence).toBe("estimated");
+    expect(resolvePackConfig({ id: "me01", seriesId: "me" })?.weightsBasis?.kind).toBe("estimated");
     expect(resolvePackConfig({ id: "swsh3", seriesId: "swsh" })?.id).toBe("swsh");
     // Legendary Collection is the one WotC-era set with a reverse holo slot.
     expect(resolvePackConfig({ id: "lc", seriesId: "lc" })?.id).toBe("wotc-legendary");
