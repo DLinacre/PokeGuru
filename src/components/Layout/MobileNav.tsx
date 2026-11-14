@@ -1,37 +1,40 @@
-import { Link, useLocation } from 'react-router-dom';
-import { Home, Wallet, Book, Search, Layers } from 'lucide-react';
-import { cn } from '../../utils/cn';
+import { Link, useLocation } from "react-router-dom";
+import { Book, Camera, Layers, Search, Wallet } from "lucide-react";
+import { cn } from "../../utils/cn";
+
+const NAV_ITEMS = [
+  { to: "/search", icon: Search, label: "Search" },
+  { to: "/sets", icon: Layers, label: "Sets" },
+  { to: "/collection", icon: Wallet, label: "Vault" },
+  { to: "/scanner", icon: Camera, label: "Scan" },
+  { to: "/wiki", icon: Book, label: "Wiki" },
+];
 
 export default function MobileNav() {
   const location = useLocation();
 
-  const navItems = [
-    { to: '/', icon: Home, label: 'Home' },
-    { to: '/search', icon: Search, label: 'Search' },
-    { to: '/collection', icon: Wallet, label: 'Vault' },
-    { to: '/wiki', icon: Book, label: 'Wiki' },
-    { to: '/sets', icon: Layers, label: 'Sets' },
-  ];
-
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 flex h-16 items-center justify-around border-t border-[var(--border)] bg-[rgba(15,17,21,0.8)] px-2 pb-safe backdrop-blur-xl sm:hidden">
-      {navItems.map(({ to, icon: Icon, label }) => {
-        const isActive = location.pathname === to || (to !== '/' && location.pathname.startsWith(to));
-
+    <nav
+      aria-label="Mobile navigation"
+      className="fixed bottom-0 left-0 right-0 z-40 flex h-16 items-stretch justify-around border-t border-[var(--border)] bg-[rgba(15,17,21,0.92)] px-1 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl sm:hidden"
+    >
+      {NAV_ITEMS.map(({ to, icon: Icon, label }) => {
+        const isActive = location.pathname === to || location.pathname.startsWith(`${to}/`);
         return (
           <Link
             key={to}
             to={to}
+            aria-current={isActive ? "page" : undefined}
             className={cn(
-              "flex flex-col items-center gap-1 px-3 py-1 transition-all active:scale-90",
+              "relative flex min-w-[56px] flex-1 flex-col items-center justify-center gap-1 rounded-lg px-1 py-1 text-[10px] font-bold uppercase tracking-tight no-underline transition-colors hover:no-underline active:scale-95",
               isActive ? "text-[var(--accent)]" : "text-[var(--muted)]"
             )}
           >
-            <Icon size={20} strokeWidth={isActive ? 3 : 2} />
-            <span className="text-[10px] font-bold uppercase tracking-tighter">{label}</span>
             {isActive && (
-              <div className="absolute top-0 h-0.5 w-6 rounded-full bg-[var(--accent)] shadow-[0_0_8px_var(--accent)]" />
+              <span aria-hidden="true" className="absolute left-1/2 top-0 h-0.5 w-8 -translate-x-1/2 rounded-full bg-[var(--accent)]" />
             )}
+            <Icon size={20} strokeWidth={isActive ? 2.6 : 2} aria-hidden="true" />
+            <span>{label}</span>
           </Link>
         );
       })}

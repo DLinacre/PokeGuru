@@ -1,27 +1,40 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import ErrorBoundary from './components/UI/ErrorBoundary';
-import Layout from './components/Layout/Layout';
-import HomePage from './pages/HomePage';
-import SearchPage from './pages/SearchPage';
-import CardDetailPage from './pages/CardDetailPage';
-import SetsPage from './pages/SetsPage';
-import SetDetailPage from './pages/SetDetailPage';
-import ScannerPage from './pages/ScannerPage';
-import WikiPage from './pages/WikiPage';
-import AboutPage from './pages/AboutPage';
-import CollectionPage from './pages/CollectionPage';
-import NotFoundPage from './pages/NotFoundPage';
+import { lazy } from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import ErrorBoundary from "./components/UI/ErrorBoundary";
+import Layout from "./components/Layout/Layout";
+import HomePage from "./pages/HomePage";
 
 /**
- * PokeGuru — A fast, open Pokémon TCG card database
+ * PokeGuru — a fast, open Pokémon TCG database.
  *
- * Built with React 19, TypeScript, and Tailwind CSS 4
- * Data powered by pokemontcg.io API
+ * The homepage ships in the entry chunk so the first paint is immediate;
+ * every other route is split into its own lazily loaded chunk (Suspense
+ * fallbacks live in Layout so the shell never flashes).
  */
+const SearchPage = lazy(() => import("./pages/SearchPage"));
+const CardDetailPage = lazy(() => import("./pages/CardDetailPage"));
+const SetsPage = lazy(() => import("./pages/SetsPage"));
+const SetDetailPage = lazy(() => import("./pages/SetDetailPage"));
+const ScannerPage = lazy(() => import("./pages/ScannerPage"));
+const WikiPage = lazy(() => import("./pages/WikiPage"));
+const AboutPage = lazy(() => import("./pages/AboutPage"));
+const CollectionPage = lazy(() => import("./pages/CollectionPage"));
+const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
+
+/**
+ * Base path derived from Vite's `base`: "/" on Vercel, "/PokeGuru/" on the
+ * GitHub Pages build. React Router wants no trailing slash.
+ */
+function routerBasename(): string | undefined {
+  const base = import.meta.env.BASE_URL;
+  if (!base || base === "/") return undefined;
+  return base.replace(/\/$/, "");
+}
+
 export default function App() {
   return (
     <ErrorBoundary>
-      <BrowserRouter basename="/PokeGuru">
+      <BrowserRouter basename={routerBasename()}>
         <Routes>
           <Route path="/" element={<Layout />}>
             <Route index element={<HomePage />} />

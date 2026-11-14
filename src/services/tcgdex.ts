@@ -333,10 +333,13 @@ export async function getSet(
   id: string,
   signal?: AbortSignal
 ): Promise<{ set: TcgSet; source: "network" | "cache"; cachedAt?: number }> {
-  const { data, fromCache, cachedAt } = await fetchJson<RawSet>(`${TCGDEX_BASE}/sets/${encodeURIComponent(id)}`, {
-    ttlMs: TTL.set,
-    cacheKey: cacheKey("set", `${LANG}:${id}`),
-  });
+  const { data, fromCache, cachedAt } = await raceAbort(
+    fetchJson<RawSet>(`${TCGDEX_BASE}/sets/${encodeURIComponent(id)}`, {
+      ttlMs: TTL.set,
+      cacheKey: cacheKey("set", `${LANG}:${id}`),
+    }),
+    signal
+  );
   const set = mapSet(data, data);
   // Fill set-name context for the briefs returned inside the set.
   if (set.cards) {

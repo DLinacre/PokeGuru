@@ -1,95 +1,158 @@
-import { useState, useMemo } from 'react';
-import { useSets } from '../hooks/useApi';
-import { useTitle } from '../hooks/useTitle';
-import SetTile from '../components/Sets/SetTile';
-import LoadingSpinner from '../components/UI/LoadingSpinner';
-import ErrorMessage from '../components/UI/ErrorMessage';
+import { useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
+import { Layers, Search, TriangleAlert } from "lucide-react";
+import { useSets } from "../hooks/useApi";
+import { usePageMeta } from "../hooks/usePageMeta";
+import SetTile from "../components/Sets/SetTile";
+import SkeletonGrid from "../components/UI/SkeletonGrid";
+import ErrorMessage from "../components/UI/ErrorMessage";
+import { EmptyState } from "../components/UI/EmptyState";
+import { CachedBadge } from "../components/UI/DataBadges";
+import { enrichSetWithWikiMeta, seriesOptions } from "../utils/setMeta";
+import { applyParamUpdates } from "../utils/search";
+
+type SetSort = "newest" | "oldest" | "name";
+
+function parseSort(value: string | null): SetSort {
+  return value === "oldest" || value === "name" ? value : "newest";
+}
 
 export default function SetsPage() {
-  useTitle('All Sets');
-  const [retryCount, setRetryCount] = useState(0);
-  const { data: sets, loading, error } = useSets(retryCount);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedSeries, setSelectedSeries] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { data: sets, loading, error, source, cachedAt, retry } = useSets();
 
-  // Get unique series names
-  const seriesOptions = useMemo(() => {
-    if (!sets) return [];
-    const series = [...new Set(sets.map((s) => s.series))];
-    return series.sort();
-  }, [sets]);
+  const query = searchParams.get("q") ?? "";
+  const era = searchParams.get("era") ?? "";
+  const sort = parseSort(searchParams.get("sort"));
 
-  // Filter sets
-  const filteredSets = useMemo(() => {
-    if (!sets) return [];
-    return sets.filter((set) => {
-      const matchesSearch = !searchQuery || 
-        set.name.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesSeries = !selectedSeries || set.series === selectedSeries;
-      return matchesSearch && matchesSeries;
+  usePageMeta({
+    title: "All sets",
+    description: "Browse every Pokémon TCG expansion with release dates, set logos and card counts.",
+    path: "/sets",
+  });
+
+  const merged = useMemo(() => (sets ?? []).map(enrichSetWithWikiMeta), [sets]);
+  const eraOptions = useMemo(() => seriesOptions(merged), [merged]);
+
+  const filtered = useMemo(() => {
+    const normalisedQuery = query.trim().toLowerCase();
+    const matches = merged.filter((set) => {
+      const matchesQuery = !normalisedQuery || set.name.toLowerCase().includes(normalisedQuery);
+      const matchesEra = !era || set.series === era;
+      return matchesQuery && matchesEra;
     });
-  }, [sets, searchQuery, selectedSeries]);
 
-  if (loading) {
-    return <LoadingSpinner message="Loading sets..." />;
-  }
+    const withDates = matches.map((set, index) => ({ set, index }));
+    withDates.sort((a, b) => {
+      if (sort === "name") return a.set.name.localeCompare(b.set.name);
+      const aDate = a.set.releaseDate ? Date.parse(a.set.releaseDate) : Number.NaN;
+      const bDate = b.set.releaseDate ? Date.parse(b.set.releaseDate) : Number.NaN;
+      // Sets without a known release date keep the API order at the end.
+      if (Number.isNaN(aDate) && Number.isNaN(bDate)) return a.index - b.index;
+      if (Number.isNaN(aDate)) return 1;
+      if (Number.isNaN(bDate)) return -1;
+      return sort === "oldest" ? aDate - bDate : bDate - aDate;
+    });
+    return withDates.map((entry) => entry.set);
+  }, [merged, query, era, sort]);
 
-  if (error) {
-    return (
-      <ErrorMessage 
-        message={error}
-        onRetry={() => setRetryCount(c => c + 1)}
-      />
-    );
-  }
+  const update = (updates: Record<string, string>) => {
+    setSearchParams(applyParamUpdates(searchParams, updates), { replace: true });
+  };
+
+  const missingDates = filtered.filter((set) => !set.releaseDate).length;
 
   return (
     <div>
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+      <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Pokémon TCG Sets</h1>
-          <p className="text-sm text-[var(--muted)]">
-            Browse all {sets?.length || 0} official sets
+          <h1 className="text-2xl font-bold tracking-tight">Pokémon TCG sets</h1>
+          <p className="mt-1 text-sm text-[var(--muted)]">
+            {loading ? "Loading sets…" : `${filtered.length} of ${merged.length} sets`}
           </p>
         </div>
+        <CachedBadge source={source} cachedAt={cachedAt} />
       </div>
 
-      {/* Filters */}
-      <div className="mb-6 flex flex-wrap gap-3">
-        <input
-          type="search"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search sets..."
-          className="flex-1 min-w-[200px] max-w-[300px] rounded-lg border border-[var(--border)] bg-[var(--bg-card)] px-3 py-2 text-sm text-[var(--text)] outline-none placeholder:text-[var(--muted)] focus:border-[var(--accent)]"
-        />
-        <select
-          value={selectedSeries}
-          onChange={(e) => setSelectedSeries(e.target.value)}
-          className="rounded-lg border border-[var(--border)] bg-[var(--bg-card)] px-3 py-2 text-sm text-[var(--text)] outline-none focus:border-[var(--accent)]"
-        >
-          <option value="">All Series</option>
-          {seriesOptions.map((series) => (
-            <option key={series} value={series}>{series}</option>
-          ))}
-        </select>
-      </div>
-
-      {/* Results count */}
-      {searchQuery || selectedSeries ? (
-        <p className="mb-4 text-sm text-[var(--muted)]">
-          Showing {filteredSets.length} of {sets?.length || 0} sets
-        </p>
-      ) : null}
-
-      {/* Sets Grid */}
-      {filteredSets.length === 0 ? (
-        <div className="py-16 text-center text-lg text-[var(--muted)]">
-          No sets found matching your criteria.
+      <div className="mb-6 grid gap-3 sm:grid-cols-[1fr_auto_auto]">
+        <div className="relative">
+          <Search
+            size={15}
+            aria-hidden="true"
+            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)]"
+          />
+          <label htmlFor="set-search" className="sr-only">
+            Search sets by name
+          </label>
+          <input
+            id="set-search"
+            type="search"
+            value={query}
+            onChange={(event) => update({ q: event.target.value })}
+            placeholder="Search sets…"
+            className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-card)] py-2 pl-9 pr-3 text-sm text-[var(--text)] outline-none placeholder:text-[var(--muted)] focus:border-[var(--accent)]"
+          />
         </div>
-      ) : (
+
+        <div>
+          <label htmlFor="set-era" className="sr-only">
+            Filter by series
+          </label>
+          <select
+            id="set-era"
+            value={era}
+            onChange={(event) => update({ era: event.target.value })}
+            className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-card)] px-3 py-2 text-sm font-semibold text-[var(--text)] outline-none focus:border-[var(--accent)]"
+          >
+            <option value="">All series</option>
+            {eraOptions.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label htmlFor="set-sort" className="sr-only">
+            Sort sets
+          </label>
+          <select
+            id="set-sort"
+            value={sort}
+            onChange={(event) => update({ sort: event.target.value })}
+            className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-card)] px-3 py-2 text-sm font-semibold text-[var(--text)] outline-none focus:border-[var(--accent)]"
+          >
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest first</option>
+            <option value="name">Name (A–Z)</option>
+          </select>
+        </div>
+      </div>
+
+      {missingDates > 0 && !loading && (
+        <p className="mb-4 flex items-start gap-2 rounded-xl border border-[var(--border)] bg-[var(--bg-card)]/60 p-3 text-xs leading-relaxed text-[var(--muted)]">
+          <TriangleAlert size={13} className="mt-0.5 shrink-0 text-[var(--accent-2)]" aria-hidden="true" />
+          {missingDates} set{missingDates === 1 ? "" : "s"} in this view have no release date in our UK index, so they are
+          listed without a date rather than with a guessed one.
+        </p>
+      )}
+
+      {loading && <SkeletonGrid count={9} />}
+      {error && !loading && <ErrorMessage message={error} onRetry={retry} />}
+
+      {!loading && !error && filtered.length === 0 && (
+        <EmptyState
+          icon={<Layers size={40} />}
+          title="No sets match your filters"
+          description="Try a different search term or clear the series filter."
+          action={{ label: "Clear filters", onClick: () => setSearchParams({}) }}
+        />
+      )}
+
+      {!loading && !error && filtered.length > 0 && (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredSets.map((set) => (
+          {filtered.map((set) => (
             <SetTile key={set.id} set={set} />
           ))}
         </div>

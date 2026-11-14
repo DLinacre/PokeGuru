@@ -105,10 +105,14 @@ export async function fetchJson<T>(
           return payload;
         } catch (err) {
           lastError = err;
-          if (err instanceof ApiError) {
-            // Do not retry 404s or rate limits.
-            if (err.kind === "not-found") throw err;
-          }
+          // 4xx answers are definitive: retrying cannot help and would double
+          // the request count. Only network, timeout and 5xx/429 errors retry.
+          const retryable =
+            !(err instanceof ApiError) ||
+            err.status === 0 ||
+            err.status === 429 ||
+            err.status >= 500;
+          if (!retryable) throw err;
           if (attempt < retries) {
             await delay(350 * (attempt + 1));
             continue;
