@@ -15,6 +15,7 @@ import type { PackResult } from "../../types/packs";
 import { TIER_LABELS, tierRank } from "../../data/packRules";
 import PackCard from "./PackCard";
 import { bestPull, batchToText, buildReplayUrl, copyText, downloadText, resultToText } from "../../services/packShare";
+import { HIT_RANK, resultHighlights } from "../../utils/packHighlights";
 import { cn } from "../../utils/cn";
 
 interface PullSummaryProps {
@@ -23,7 +24,7 @@ interface PullSummaryProps {
   onBack: () => void;
 }
 
-const RARE_PLUS = 8; // tier rank of double rare and above
+const RARE_PLUS = HIT_RANK; // double rare and above
 
 export default function PullSummary({ results, onOpenAnother, onBack }: PullSummaryProps) {
   const [copied, setCopied] = useState<"summary" | "link" | null>(null);
@@ -40,6 +41,7 @@ export default function PullSummary({ results, onOpenAnother, onBack }: PullSumm
     0
   );
   const totalCards = results.reduce((sum, pack) => sum + pack.cards.length, 0);
+  const highlights = useMemo(() => resultHighlights(results), [results]);
 
   const flashCopied = (kind: "summary" | "link") => {
     setCopied(kind);
@@ -90,6 +92,22 @@ export default function PullSummary({ results, onOpenAnother, onBack }: PullSumm
               ? `${totalCards} cards · ${TIER_LABELS[result.bestTier ?? "other"]} best pull`
               : `${totalCards} cards · ${rareCount} rare or better`}
           </p>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {highlights.badges.map((badge) => (
+              <span
+                key={badge}
+                className={cn(
+                  "chip px-2 py-0.5 text-[10px]",
+                  highlights.special
+                    ? "border-[var(--accent-2)]/45 bg-[var(--warning-soft)] text-[var(--accent-2)]"
+                    : "text-[var(--muted)]"
+                )}
+              >
+                {highlights.special && <Sparkles size={10} aria-hidden="true" />}
+                {badge}
+              </span>
+            ))}
+          </div>
         </div>
         <button type="button" className="btn btn-ghost" onClick={onBack}>
           Back to pack
