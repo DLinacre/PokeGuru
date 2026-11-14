@@ -322,7 +322,8 @@ export const PACK_CONFIGS: PackConfig[] = [
     },
     weightsBasis: ESTIMATED_BASIS,
     checkedAt: CHECKED_AT,
-    notes: "Sets with no basic Energy cards in the database fall back to an extra common.",
+    notes:
+      "Card briefs carry no category, so a set whose basic Energies are filed as commons (Base Set) cannot have them split out: the Energy slot is filled from the common pool and says so on the pack page.",
   },
   {
     id: "wotc-legendary",

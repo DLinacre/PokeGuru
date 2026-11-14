@@ -266,6 +266,20 @@ describe("pack odds", () => {
     }
   });
 
+  it("fills a WotC Energy slot from commons instead of every rarity", () => {
+    const wotc = configById("wotc-base") as PackConfig;
+    const testPool = { ...pool({ holoRare: 0, doubleRare: 0, ultraRare: 0, illustrationRare: 0, aceSpec: 0 }), tiers: { ...pool().tiers } };
+    delete testPool.tiers.other;
+
+    for (let index = 0; index < 120; index += 1) {
+      const result = generatePack({ pool: testPool, config: wotc, seed: `energy-${index}` });
+      const energySlot = result.cards.filter((card) => card.slot === "energy");
+      expect(energySlot).toHaveLength(1);
+      expect(energySlot[0].tier).toBe("common");
+      expect(result.cards).toHaveLength(wotc.cardsPerPack);
+    }
+  });
+
   it("flags a thin pool instead of hiding it", () => {
     const thin = computePackOdds(pool({ specialIllustrationRare: 1 }), SV);
     expect(thin.thin).toBe(true);
