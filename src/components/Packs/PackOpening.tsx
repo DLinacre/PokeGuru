@@ -40,6 +40,7 @@ import PullBurst, {
 } from "./PullBurst";
 import RevealPile from "./RevealPile";
 import PullSummary from "./PullSummary";
+import type { PackCatalogueEntry } from "../../hooks/usePacks";
 import { cn } from "../../utils/cn";
 
 type Phase = "sealed" | "tearing" | "revealing" | "summary";
@@ -66,6 +67,10 @@ interface PackOpeningProps {
   onComplete: (results: PackResult[]) => void;
   onExit: () => void;
   onOpenAgain: (count: number) => void;
+  /** Other expansions to offer when the opening completes. */
+  catalogue?: PackCatalogueEntry[];
+  /** Fast-replay pack counts (1, 5, box size…). */
+  quickCounts?: number[];
 }
 
 /**
@@ -91,6 +96,8 @@ export default function PackOpening({
   onComplete,
   onExit,
   onOpenAgain,
+  catalogue = [],
+  quickCounts = [1, 5, 10],
 }: PackOpeningProps) {
   const [phase, setPhase] = useState<Phase>("sealed");
   const [results, setResults] = useState<PackResult[]>([]);
@@ -403,6 +410,10 @@ export default function PackOpening({
         results={results}
         onOpenAnother={onOpenAgain}
         onBack={onExit}
+        packs={catalogue}
+        ripCounts={quickCounts}
+        quantity={quantity}
+        activeSetId={meta.setId}
       />
     );
   }

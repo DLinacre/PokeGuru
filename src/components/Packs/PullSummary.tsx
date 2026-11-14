@@ -8,6 +8,7 @@ import {
   ExternalLink,
   Layers,
   Share2,
+  RotateCcw,
   Sparkles,
   Wallet,
 } from "lucide-react";
@@ -22,16 +23,29 @@ import {
   downloadText,
   resultToText,
 } from "../../services/packShare";
-import { HIT_RANK, resultHighlights } from "../../utils/packHighlights";
+import {
+  NOTABLE_RANK,
+  pullCounts,
+  resultHighlights,
+} from "../../utils/packHighlights";
+import HighlightStrip from "./HighlightStrip";
+import QuickRip from "./QuickRip";
+import type { PackCatalogueEntry } from "../../hooks/usePacks";
 import { cn } from "../../utils/cn";
 
 interface PullSummaryProps {
   results: PackResult[];
   onOpenAnother: (count: number) => void;
   onBack: () => void;
+  /** Other expansions, so the summary can jump straight into a new rip. */
+  packs?: PackCatalogueEntry[];
+  /** Pack counts offered as one-press repeats. */
+  ripCounts?: number[];
+  /** How many packs this session used. */
+  quantity?: number;
+  /** Set id of the results, used to avoid offering the same set twice. */
+  activeSetId?: string;
 }
-
-const RARE_PLUS = HIT_RANK; // double rare and above
 
 /**
  * Shared with the opening stage: a fixed 4/5-column grid means a whole pack is
@@ -44,6 +58,10 @@ export default function PullSummary({
   results,
   onOpenAnother,
   onBack,
+  packs = [],
+  ripCounts = [1, 5, 10],
+  quantity = results.length,
+  activeSetId = results[0]?.setId ?? "",
 }: PullSummaryProps) {
   const [copied, setCopied] = useState<"summary" | "link" | null>(null);
   const [openPack, setOpenPack] = useState<string | null>(null);
@@ -65,12 +83,9 @@ export default function PullSummary({
       ),
     [best],
   );
-  const rareCount = results.reduce(
-    (sum, pack) =>
-      sum +
-      pack.cards.filter((card) => tierRank(card.tier) >= RARE_PLUS).length,
-    0,
-  );
+  const counts = useMemo(() => pullCounts(results), [results]);
+  /** Notable pulls, i.e. everything better than a plain rare. */
+  const rareCount = counts.notable;
   const totalCards = results.reduce((sum, pack) => sum + pack.cards.length, 0);
   const highlights = useMemo(() => resultHighlights(results), [results]);
 
@@ -130,7 +145,11 @@ export default function PullSummary({
           <p className="mt-1 text-sm text-[var(--muted)]">
             {single
               ? `${totalCards} cards · ${TIER_LABELS[result.bestTier ?? "other"]} best pull`
-              : `${totalCards} cards · ${rareCount} rare or better`}
+              : `${totalCards} cards · ${
+                  counts.hits > 0
+                    ? `${counts.hits} ${counts.hitLabel.toLowerCase()}`
+                    : `no ${counts.hitLabel.toLowerCase()}`
+                }`}
           </p>
           <div className="mt-2 flex flex-wrap gap-1.5">
             {highlights.badges.map((badge) => (
@@ -205,6 +224,12 @@ export default function PullSummary({
             </div>
           )}
 
+          <HighlightStrip
+            cards={counts.cards}
+            label={`${counts.notableLabel} pulled`}
+            emptyCopy="No rare in this pack — the best card is shown above."
+          />
+
           <div className={PACK_GRID}>
             {result.cards.map((card, index) => (
               <PackCard
@@ -231,11 +256,16 @@ export default function PullSummary({
             </div>
             <div className="surface p-3">
               <p className="text-[9px] font-black uppercase tracking-[0.16em] text-[var(--muted-dim)]">
-                Rare or better
+                {counts.hitLabel}
               </p>
               <p className="mt-1 text-xl font-black tabular-nums">
-                {rareCount}
+                {counts.hits}
               </p>
+              {rareCount > counts.hits && (
+                <p className="text-[10px] text-[var(--muted)]">
+                  +{rareCount - counts.hits} more rare or better
+                </p>
+              )}
             </div>
             <div className="surface p-3">
               <p className="text-[9px] font-black uppercase tracking-[0.16em] text-[var(--muted-dim)]">
@@ -249,6 +279,14 @@ export default function PullSummary({
               </p>
             </div>
           </div>
+
+          {/* The pulls worth looking at, as artwork rather than a number.
+              A plain count reads like a bug when a favourite is on screen. */}
+          <HighlightStrip
+            cards={counts.cards}
+            label={`${counts.notableLabel} pulled`}
+            emptyCopy={`Nothing above a plain rare in these ${results.length} packs. A set's headline card — a base-set Charizard, for example — is printed as a regular rare, so it is a great pull without being a chase card.`}
+          />
 
           {/* Every pack is shown face up, in the same order it was opened, so a
               batch reads like the single-pack summary instead of a table. */}
@@ -282,6 +320,12 @@ export default function PullSummary({
                         <span className="block truncate text-[11px] text-[var(--muted)]">
                           {packBest ? TIER_LABELS[packBest.tier] : "—"} ·{" "}
                           {pack.cards.length} cards
+                          {(() => {
+                            const notable = pack.cards.filter(
+                              (card) => tierRank(card.tier) >= NOTABLE_RANK,
+                            ).length;
+                            return notable > 0 ? ` · ${notable} notable` : "";
+                          })()}
                         </span>
                       </span>
                     </span>
@@ -343,35 +387,32 @@ export default function PullSummary({
         </>
       )}
 
+      {packs.length > 0 && (
+        <QuickRip
+          packs={packs}
+          counts={[...new Set([...ripCounts, quantity])]}
+          quantity={quantity}
+          activeSetId={activeSetId}
+          onRipAgain={onOpenAnother}
+        />
+      )}
+
       <div className="surface space-y-3 p-4">
         <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={() => onOpenAnother(1)}
-          >
-            Open another pack
+          <button type="button" className="btn btn-secondary" onClick={onBack}>
+            <RotateCcw size={13} aria-hidden="true" /> Back to the pack
           </button>
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={() => onOpenAnother(5)}
+          <Link
+            to="/packs"
+            className="btn btn-ghost no-underline hover:no-underline"
           >
-            Open 5
-          </button>
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={() => onOpenAnother(10)}
-          >
-            Open 10
-          </button>
+            <Layers size={14} aria-hidden="true" /> All packs
+          </Link>
           <Link
             to="/packs/collection"
             className="btn btn-ghost no-underline hover:no-underline"
           >
-            <Wallet size={14} aria-hidden="true" />
-            Simulated collection
+            <Wallet size={14} aria-hidden="true" /> Simulated collection
           </Link>
         </div>
 
