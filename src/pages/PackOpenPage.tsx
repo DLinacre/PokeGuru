@@ -173,6 +173,33 @@ export default function PackOpenPage() {
               year={set.releaseDate ? new Date(set.releaseDate).getUTCFullYear().toString() : undefined}
             />
           </div>
+          <div className="mt-2">
+            <p className="text-center text-[10px] font-black uppercase tracking-[0.16em] text-[var(--muted-dim)]">Wrapper design</p>
+            <div className="mt-1.5 flex justify-center gap-1.5" role="group" aria-label="Wrapper design">
+              {(
+                [
+                  { id: "crimson", label: "Crimson" },
+                  { id: "prism", label: "Prism" },
+                  { id: "vintage", label: "Vintage" },
+                ] as const
+              ).map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  onClick={() => setSettings({ wrapperStyle: option.id })}
+                  aria-pressed={state.settings.wrapperStyle === option.id}
+                  className={cn(
+                    "rounded-full border px-2 py-0.5 text-[10px] font-bold transition-colors",
+                    state.settings.wrapperStyle === option.id
+                      ? "border-[var(--accent)] bg-[var(--accent)]/15 text-[var(--accent-text)]"
+                      : "border-[var(--border)] text-[var(--muted)] hover:text-[var(--text)]"
+                  )}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
           <p className="mt-2 text-center text-[10px] leading-relaxed text-[var(--muted-dim)]">
             PokeGuru wrapper illustration.
             <br />
