@@ -80,12 +80,20 @@ export function useTopCards(): UseTopCards {
       }
 
       setStatus("pricing");
+      // Show cards as they are priced instead of only at the end: the list
+      // fills in while the pass runs, then the authoritative index replaces it.
+      const partial: Record<string, TopCardEntry> = { ...current.entries };
+      let seen = 0;
       const result = await enrichIndex(current, {
         budget,
         concurrency: 5,
         signal: controller.signal,
-        onCard: () => {
-          /* ranking updates when the pass ends; avoids re-sorting on every card */
+        onCard: (entry) => {
+          if (entry) partial[entry.id] = entry;
+          seen += 1;
+          if (seen % 25 === 0 && runRef.current === runId) {
+            setIndex((previous) => ({ ...previous, entries: { ...partial } }));
+          }
         },
       });
       if (runRef.current !== runId) return;
