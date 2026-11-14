@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ChevronRight,
   FastForward,
+  Hand,
   RotateCcw,
   Sparkles,
   Volume2,
@@ -16,16 +17,28 @@ import type {
   RarityTier,
   WrapperStyle,
 } from "../../types/packs";
-import { TIER_LABELS, tierRank } from "../../data/packRules";
+import { TIER_LABELS } from "../../data/packRules";
 import {
   cryptoRng,
   generatePack,
   generatePacks,
   seededRng,
 } from "../../services/packEngine";
-import { closeAudio, playCue, setSoundEnabled } from "../../services/packSound";
+import {
+  closeAudio,
+  playBatchCheer,
+  playCue,
+  setSoundEnabled,
+} from "../../services/packSound";
 import PackArt from "./PackArt";
 import PackCard, { isChase } from "./PackCard";
+import PullBurst, {
+  DRAMA_COPY,
+  pullDrama,
+  PullCelebration,
+  type Drama,
+} from "./PullBurst";
+import RevealPile from "./RevealPile";
 import PullSummary from "./PullSummary";
 import { cn } from "../../utils/cn";
 
@@ -87,13 +100,37 @@ export default function PackOpening({
   const [spotlight, setSpotlight] = useState<{
     name: string;
     tier: RarityTier;
+    drama: Drama;
+    key: number;
   } | null>(null);
+  /**
+   * Rapid taps are called out with a smaller, shorter banner instead of the
+   * full-screen celebration, so spamming never turns into a strobe.
+   */
+  const [fastFlip, setFastFlip] = useState(false);
 
   const timerRef = useRef<number | null>(null);
   const spotlightRef = useRef<number | null>(null);
+  const fastRef = useRef<number | null>(null);
+  const motionChoiceRef = useRef(false);
+
+  const lastFlipRef = useRef(0);
   const completedRef = useRef(false);
   const pointerStart = useRef<{ x: number; y: number } | null>(null);
   const cardRefs = useRef<Array<HTMLDivElement | null>>([]);
+
+  /**
+   * Respect the OS "reduce motion" setting until the user makes a choice with
+   * the toggle. Only the first visit is affected: after that, their saved
+   * preference wins.
+   */
+  useEffect(() => {
+    if (motionChoiceRef.current) return;
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      onToggleMotion();
+    }
+  }, [onToggleMotion]);
 
   useEffect(() => {
     setSoundEnabled(sound);
@@ -102,8 +139,10 @@ export default function PackOpening({
   const clearTimers = () => {
     if (timerRef.current) window.clearTimeout(timerRef.current);
     if (spotlightRef.current) window.clearTimeout(spotlightRef.current);
+    if (fastRef.current) window.clearTimeout(fastRef.current);
     timerRef.current = null;
     spotlightRef.current = null;
+    fastRef.current = null;
   };
 
   useEffect(() => {
@@ -114,6 +153,8 @@ export default function PackOpening({
     setPackIndex(0);
     setRevealed([]);
     setSpotlight(null);
+    setFastFlip(false);
+    lastFlipRef.current = 0;
     clearTimers();
     return clearTimers;
   }, [pool.setId, config.id, quantity, seed]);
@@ -127,10 +168,35 @@ export default function PackOpening({
   const isLastPack = packIndex >= results.length - 1;
   const sealedLabel = quantity > 1 ? `Open ${quantity} packs` : "Open pack";
 
-  const flashSpotlight = useCallback((name: string, tier: RarityTier) => {
-    setSpotlight({ name, tier });
+  /**
+   * Announce a notable pull and play the cue that matches how good it is.
+   *
+   * Everything here is time-budgeted: flipping a whole pack in two seconds
+   * still feels responsive because the long celebration is replaced by a short
+   * callout, and the sound engine rate-limits itself.
+   */
+  const celebrate = useCallback((name: string, tier: RarityTier) => {
+    const drama = pullDrama(tier);
+    const time = Date.now();
+    const rapid = time - lastFlipRef.current < 420;
+    lastFlipRef.current = time;
+
+    setFastFlip(rapid);
+    if (fastRef.current) window.clearTimeout(fastRef.current);
+    fastRef.current = window.setTimeout(() => setFastFlip(false), 500);
+
+    if (drama === "common") {
+      playCue("flip");
+      return;
+    }
+
+    playCue(drama === "top" ? "hype" : "rare");
+    setSpotlight({ name, tier, drama, key: time });
     if (spotlightRef.current) window.clearTimeout(spotlightRef.current);
-    spotlightRef.current = window.setTimeout(() => setSpotlight(null), 2600);
+    spotlightRef.current = window.setTimeout(
+      () => setSpotlight(null),
+      drama === "top" ? 2400 : 1700,
+    );
   }, []);
 
   const generate = useCallback((): PackResult[] => {
@@ -192,8 +258,7 @@ export default function PackOpening({
     const card = current.cards[at];
     if (!card) return;
 
-    playCue(isChase(card) ? "rare" : "flip");
-    if (isChase(card)) flashSpotlight(card.name, card.tier);
+    celebrate(card.name, card.tier);
     if (at + 1 === current.cards.length) playCue("complete");
 
     setRevealed((prev) => {
@@ -201,7 +266,7 @@ export default function PackOpening({
       next[packIndex] = at + 1;
       return next;
     });
-  }, [current, revealed, packIndex, flashSpotlight]);
+  }, [current, revealed, packIndex, celebrate]);
 
   const revealPack = useCallback(() => {
     if (!current) return;
@@ -212,13 +277,12 @@ export default function PackOpening({
     });
     const chase = current.cards.find(isChase);
     if (chase) {
-      playCue("rare");
-      flashSpotlight(chase.name, chase.tier);
+      celebrate(chase.name, chase.tier);
     } else {
       playCue("flip");
     }
     playCue("complete");
-  }, [current, packIndex, flashSpotlight]);
+  }, [current, packIndex, celebrate]);
 
   const openPack = useCallback(
     (index: number) => {
@@ -248,7 +312,13 @@ export default function PackOpening({
     [results, reduceMotion],
   );
 
-  /** One action for the whole flow: flip the next card, or move to the next pack. */
+  /** Cheer for a finished pack, scaled by how many hits it contained. */
+  const cheerForPack = useCallback((pack: PackResult | null) => {
+    if (!pack) return;
+    const hits = pack.cards.filter(isChase).length;
+    playBatchCheer(hits >= 2 ? "high" : hits === 1 ? "mid" : "low");
+  }, []);
+
   const advance = useCallback(() => {
     if (!current) return;
     if (!packComplete) {
@@ -259,8 +329,17 @@ export default function PackOpening({
       openPack(packIndex + 1);
       return;
     }
+    cheerForPack(current);
     setPhase("summary");
-  }, [current, packComplete, isLastPack, revealNext, openPack, packIndex]);
+  }, [
+    current,
+    packComplete,
+    isLastPack,
+    revealNext,
+    openPack,
+    packIndex,
+    cheerForPack,
+  ]);
 
   useEffect(() => {
     if (phase !== "revealing" || !current || !packComplete || !isLastPack)
@@ -286,16 +365,16 @@ export default function PackOpening({
 
   useEffect(() => {
     if (phase !== "revealing" || reduceMotion) return;
+    // `→` and space both flip. Space is only swallowed when nothing focusable
+    // would have used it, so keyboard users keep normal button behaviour.
     const onKey = (event: KeyboardEvent) => {
-      if (
-        event.key !== "ArrowRight" ||
-        event.metaKey ||
-        event.ctrlKey ||
-        event.altKey
-      )
-        return;
+      const isArrow = event.key === "ArrowRight";
+      const isSpace = event.key === " " || event.key === "Spacebar";
+      if (!isArrow && !isSpace) return;
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
       const target = event.target as HTMLElement | null;
       if (target && /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return;
+      if (isSpace && target && /^(BUTTON|A)$/.test(target.tagName)) return;
       event.preventDefault();
       advance();
     };
@@ -317,25 +396,6 @@ export default function PackOpening({
     );
     if (distance > 36) begin();
   };
-
-  const bestSoFar = useMemo(() => {
-    if (!current || revealedCount === 0) return null;
-    return current.cards
-      .slice(0, revealedCount)
-      .reduce<PackResult["cards"][number]>(
-        (best, card) =>
-          tierRank(card.tier) > tierRank(best.tier) ? card : best,
-        current.cards[0],
-      );
-  }, [current, revealedCount]);
-
-  const lastRevealed =
-    revealedCount > 0 ? (current?.cards[revealedCount - 1] ?? null) : null;
-  // Duplicate pulls share an id, so compare tiers rather than identities.
-  const lastIsBest =
-    bestSoFar !== null &&
-    lastRevealed !== null &&
-    tierRank(lastRevealed.tier) >= tierRank(bestSoFar.tier);
 
   if (phase === "summary" && results.length) {
     return (
@@ -381,7 +441,10 @@ export default function PackOpening({
           </button>
           <button
             type="button"
-            onClick={onToggleMotion}
+            onClick={() => {
+              motionChoiceRef.current = true;
+              onToggleMotion();
+            }}
             className="btn btn-ghost px-2.5 py-1.5 text-[11px]"
             aria-pressed={reduceMotion}
             title={reduceMotion ? "Enable animations" : "Reduce animation"}
@@ -505,16 +568,15 @@ export default function PackOpening({
 
         {phase === "revealing" && current && (
           <div className="relative">
-            {spotlight && (
-              <div
-                role="status"
-                aria-live="polite"
-                className="animate-fade-in mb-1.5 flex items-center justify-center gap-2 rounded-lg border border-[var(--accent-2)]/45 bg-[var(--warning-soft)] px-3 py-1 text-center text-[11px] font-bold text-[var(--accent-2)]"
-              >
-                <Sparkles size={13} aria-hidden="true" />
-                {TIER_LABELS[spotlight.tier]} · {spotlight.name}
-              </div>
-            )}
+            <PullCelebration
+              seed={`${spotlight?.key ?? 0}-${packIndex}`}
+              drama={
+                spotlight && !reduceMotion && !fastFlip
+                  ? spotlight.drama
+                  : "common"
+              }
+              static={reduceMotion}
+            />
 
             <div className="mb-2 flex flex-wrap items-center justify-between gap-1.5">
               <div className="min-w-0">
@@ -524,12 +586,7 @@ export default function PackOpening({
                       Pack {packIndex + 1} of {results.length} ·{" "}
                     </span>
                   )}
-                  Card{" "}
-                  {Math.min(
-                    revealedCount + (packComplete ? 0 : 1),
-                    cards.length,
-                  )}{" "}
-                  of {cards.length}
+                  {revealedCount} of {cards.length} flipped
                 </p>
                 <div
                   className="mt-1 h-1 w-32 overflow-hidden rounded-full bg-[var(--bg-inset)]"
@@ -540,7 +597,7 @@ export default function PackOpening({
                   aria-label={`${revealedCount} of ${cards.length} cards revealed`}
                 >
                   <div
-                    className="h-full rounded-full bg-[var(--accent)] transition-all duration-300"
+                    className="h-full rounded-full bg-[var(--accent)] transition-all duration-200"
                     style={{
                       width: `${(revealedCount / Math.max(1, cards.length)) * 100}%`,
                     }}
@@ -560,8 +617,11 @@ export default function PackOpening({
                 {results.length > 1 && (
                   <button
                     type="button"
-                    className="btn btn-ghost px-2.5 py-1.5 text-[11px]"
-                    onClick={() => setPhase("summary")}
+                    className="btn btn-ghost btn-compact text-[11px]"
+                    onClick={() => {
+                      cheerForPack(current);
+                      setPhase("summary");
+                    }}
                     title="Skip the rest of the opening and jump to the summary"
                   >
                     Skip to summary
@@ -570,51 +630,115 @@ export default function PackOpening({
               </div>
             </div>
 
+            {/* The pile: every flip lands on top of the last one. */}
+            <div className="relative mb-2 flex min-h-[128px] items-center rounded-xl border border-[var(--border)] bg-[var(--bg-inset)]/70 p-2.5">
+              <RevealPile
+                revealed={cards.slice(0, revealedCount)}
+                top={revealedCount > 0 ? cards[revealedCount - 1] : null}
+                reduceMotion={reduceMotion}
+                fast={fastFlip}
+              />
+              {spotlight && (
+                <div
+                  key={spotlight.key}
+                  role="status"
+                  aria-live="polite"
+                  className={cn(
+                    "animate-callout pointer-events-none absolute inset-x-2 top-2 z-30 flex items-center justify-center gap-1.5 rounded-lg px-2 py-1 text-center text-[10px] font-black uppercase tracking-[0.14em]",
+                    spotlight.drama === "top"
+                      ? "bg-[var(--accent)]/25 text-[#ffd9a8] ring-1 ring-[var(--accent-2)]/60"
+                      : "bg-[var(--accent-2)]/20 text-[var(--accent-2)] ring-1 ring-[var(--accent-2)]/45",
+                  )}
+                >
+                  <Sparkles size={12} aria-hidden="true" />
+                  {DRAMA_COPY[spotlight.drama]} · {TIER_LABELS[spotlight.tier]}
+                </div>
+              )}
+            </div>
+
+            {/* One big, repeated-tap target: the whole stage flips the next card. */}
+            <button
+              type="button"
+              onClick={advance}
+              disabled={packComplete && isLastPack}
+              aria-label={
+                !packComplete
+                  ? `Flip next card (${cards.length - revealedCount} left)`
+                  : !isLastPack
+                    ? "Open the next pack"
+                    : "All cards flipped"
+              }
+              className="group relative flex w-full select-none items-center justify-center gap-2 rounded-xl border border-[var(--accent)]/40 bg-[var(--accent)]/10 px-3 py-2.5 text-sm font-bold text-[var(--accent-text)] transition-colors [touch-action:manipulation] hover:bg-[var(--accent)]/20 active:translate-y-px disabled:cursor-default disabled:border-[var(--border)] disabled:bg-transparent disabled:text-[var(--muted)]"
+            >
+              <Hand size={16} aria-hidden="true" className="shrink-0" />
+              {!packComplete ? (
+                <>
+                  Tap anywhere here to flip
+                  <span className="hidden text-[11px] font-semibold text-[var(--muted)] sm:inline">
+                    ({cards.length - revealedCount} left · or press → / space)
+                  </span>
+                </>
+              ) : !isLastPack ? (
+                <>
+                  Open pack {packIndex + 2} of {results.length}
+                </>
+              ) : (
+                <>All {cards.length} cards flipped — see the summary below</>
+              )}
+            </button>
+
+            {/* One grid for the whole pack: flipped cards stay face up, the rest
+                wait face down, so the pack is always on one screen. */}
             <div
               role="list"
               aria-label={`Pack ${packIndex + 1} contents`}
-              className={PACK_GRID}
+              className={cn(PACK_GRID, "mt-2.5")}
             >
               {cards.map((card, index) => {
-                const isRevealed = index < revealedCount;
+                const isFlipped = index < revealedCount;
                 const isNext = index === revealedCount;
                 return (
                   <div
-                    key={`${card.id}-${index}`}
+                    key={`${card.id}-${card.slot}-${index}`}
                     role="listitem"
                     ref={(node) => {
                       cardRefs.current[index] = node;
                     }}
-                    className={cn(
-                      "relative min-w-0 transition-[transform,opacity] duration-300",
-                      isNext && "z-10 -translate-y-0.5",
-                      !isRevealed && !isNext && "opacity-80",
-                    )}
+                    className="relative min-w-0"
                   >
-                    <PackCard
-                      pull={card}
-                      revealed={isRevealed}
-                      onReveal={isNext ? revealNext : undefined}
-                      motion={!reduceMotion}
-                      priority={index < 6}
-                      compact
-                    />
-                    {isNext && !isRevealed && !reduceMotion && (
-                      <span
-                        aria-hidden="true"
-                        className="pointer-events-none absolute -inset-0.5 animate-pulse-soft rounded-[12px] ring-2 ring-[var(--accent)]"
+                    <div className="relative">
+                      <PackCard
+                        pull={card}
+                        revealed={isFlipped}
+                        onReveal={isNext ? revealNext : undefined}
+                        motion={!reduceMotion && isFlipped}
+                        priority={index < 6}
+                        compact
                       />
-                    )}
+                      {isFlipped && (
+                        <PullBurst
+                          seed={`${card.id}-${card.slot}-${index}`}
+                          drama={pullDrama(card.tier)}
+                          static={reduceMotion || fastFlip}
+                        />
+                      )}
+                      {isNext && !reduceMotion && (
+                        <span
+                          aria-hidden="true"
+                          className="pointer-events-none absolute -inset-0.5 animate-pulse-soft rounded-[12px] ring-2 ring-[var(--accent)]"
+                        />
+                      )}
+                    </div>
                     <p
                       className={cn(
                         "mt-0.5 h-3 truncate text-center text-[9px] leading-3",
-                        isRevealed
+                        isFlipped
                           ? "font-semibold text-[var(--text-soft)]"
                           : "text-[var(--muted-dim)]",
                       )}
-                      title={isRevealed ? card.name : undefined}
+                      title={isFlipped ? card.name : undefined}
                     >
-                      {isRevealed ? card.name : isNext ? "Tap to reveal" : ""}
+                      {isFlipped ? card.name : isNext ? "Tap to reveal" : ""}
                     </p>
                   </div>
                 );
@@ -623,7 +747,7 @@ export default function PackOpening({
 
             {results.length > 1 && (
               <div
-                className="mt-3 flex flex-wrap items-center gap-1"
+                className="mt-3 flex items-center gap-1"
                 aria-label="Pack progress"
               >
                 {results.map((pack, index) => {
@@ -648,39 +772,30 @@ export default function PackOpening({
 
             <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[var(--border)] bg-[var(--bg-soft)]/60 px-2.5 py-2">
               <div className="min-w-0 flex-1">
-                {revealedCount === 0 ? (
-                  <p className="text-xs text-[var(--muted)]">
-                    Tap the highlighted card, or press{" "}
-                    <kbd className="rounded border border-[var(--border)] px-1">
-                      →
-                    </kbd>
-                    . The rarest card is always last.
-                  </p>
-                ) : (
-                  <p className="truncate text-xs">
-                    <span className="font-semibold">{lastRevealed?.name}</span>
-                    <span className="text-[var(--muted)]">
-                      {" "}
-                      · {lastRevealed ? TIER_LABELS[lastRevealed.tier] : ""}
-                      {lastIsBest
-                        ? " · best so far"
-                        : bestSoFar
-                          ? ` · best so far: ${bestSoFar.name}`
-                          : ""}
-                    </span>
-                  </p>
-                )}
+                <p className="truncate text-xs">
+                  <span className="font-semibold">
+                    {cards.length - revealedCount > 0
+                      ? `${cards.length - revealedCount} card${cards.length - revealedCount === 1 ? "" : "s"} left`
+                      : "Pack complete"}
+                  </span>
+                  <span className="text-[var(--muted)]">
+                    {" "}
+                    · {revealedCount} of {cards.length} flipped
+                    {isLastPack && packComplete
+                      ? " · this was the last pack"
+                      : ""}
+                  </span>
+                </p>
               </div>
               <button
                 type="button"
                 className="btn btn-primary btn-compact shrink-0 text-xs"
                 onClick={advance}
+                disabled={packComplete && isLastPack}
               >
                 {!packComplete ? (
                   <>
-                    {revealedCount === cards.length - 1
-                      ? "Reveal final card"
-                      : "Reveal next"}
+                    Flip next
                     <ChevronRight size={14} aria-hidden="true" />
                   </>
                 ) : !isLastPack ? (
