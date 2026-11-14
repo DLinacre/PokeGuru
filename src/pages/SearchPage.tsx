@@ -143,9 +143,9 @@ export default function SearchPage() {
               onChange={(event) => update({ rarity: event.target.value })}
               className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg)]/70 px-3 py-2 text-sm font-semibold text-[var(--text)] outline-none transition-colors focus:border-[var(--accent)]"
             >
-              {RARITY_OPTIONS.map((rarity) => (
-                <option key={rarity} value={rarity}>
-                  {rarity || "All rarities"}
+              {RARITY_OPTIONS.map((option) => (
+                <option key={option.value || "all"} value={option.value}>
+                  {option.label}
                 </option>
               ))}
             </select>

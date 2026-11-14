@@ -59,10 +59,16 @@ export function pickCardmarketQuote(pricing: CardPricing | undefined): Cardmarke
   const cm = pricing?.cardmarket;
   if (!cm) return null;
 
-  const hasData = (band?: { low?: number; trend?: number; avg?: number }) =>
-    !!band && [band.low, band.trend, band.avg].some((v) => typeof v === "number" && Number.isFinite(v));
+  const positive = (value?: number) =>
+    typeof value === "number" && Number.isFinite(value) && value > 0 ? value : undefined;
 
-  const candidates: PriceVariant[] = ["holo", "normal"];
+  const hasData = (band?: { low?: number; trend?: number; avg?: number }) =>
+    !!band && [band.low, band.trend, band.avg].some((value) => positive(value) !== undefined);
+
+  // TCGdex exposes the standard print as the un-suffixed band and the holofoil
+  // print separately; prefer the standard print so we never show a holo price
+  // for a non-holo card.
+  const candidates: PriceVariant[] = ["normal", "holo"];
   const variant = candidates.find((key) => hasData(cm[key]));
   if (!variant) return null;
 
@@ -70,7 +76,7 @@ export function pickCardmarketQuote(pricing: CardPricing | undefined): Cardmarke
   return {
     currency: "EUR",
     variant,
-    label: variant === "holo" ? "Holofoil" : "Normal",
+    label: variant === "holo" ? "Holofoil" : "Standard",
     low: band.low,
     trend: band.trend,
     average: band.avg,
@@ -91,7 +97,11 @@ export function pickTcgplayerQuote(pricing: CardPricing | undefined): TcgplayerQ
   for (const key of keys) {
     const band = tp.variants[key];
     if (!band) continue;
-    if ([band.market, band.mid, band.low, band.high].some((v) => typeof v === "number" && Number.isFinite(v))) {
+    if (
+      [band.market, band.mid, band.low, band.high].some(
+        (v) => typeof v === "number" && Number.isFinite(v) && v > 0
+      )
+    ) {
       return {
         currency: "USD",
         variant: key,
@@ -111,13 +121,21 @@ export function pickTcgplayerQuote(pricing: CardPricing | undefined): TcgplayerQ
 export function getCardValueGbp(card: TcgCard, rate: ExchangeRate | null): number | null {
   const quote = pickCardmarketQuote(card.pricing);
   if (!quote) return null;
-  const eur = quote.trend ?? quote.average ?? quote.low ?? null;
+  const eur = headlineEur(quote);
   return eurToGbp(eur, rate);
+}
+
+function headlineEur(quote: CardmarketQuote): number | null {
+  const bands = [quote.trend, quote.average, quote.low];
+  for (const value of bands) {
+    if (typeof value === "number" && Number.isFinite(value) && value > 0) return value;
+  }
+  return null;
 }
 
 /** The EUR amount used for the headline value (matching getCardValueGbp). */
 export function getHeadlineEur(quote: CardmarketQuote): number | null {
-  return quote.trend ?? quote.average ?? quote.low ?? null;
+  return headlineEur(quote);
 }
 
 export function formatGbp(value: number | null | undefined): string | null {

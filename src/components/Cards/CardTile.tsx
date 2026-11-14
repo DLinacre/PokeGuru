@@ -4,6 +4,7 @@ import type { TcgCard } from "../../types/pokemon";
 import { useExchangeRate } from "../../hooks/useApi";
 import { getCardValueGbp, formatGbp } from "../../services/pricing";
 import { cn } from "../../utils/cn";
+import { rarityLabel } from "../../utils/search";
 
 const TYPE_COLORS: Record<string, string> = {
   Colorless: "#a8a8a8",
@@ -132,7 +133,7 @@ export default function CardTile({ card, priority = false, onPreview, showPrice 
           {subtitle || "Set not listed"}
         </p>
         {showPrice && card.isDetailed && card.rarity && (
-          <p className="mt-0.5 truncate text-[10px] text-[var(--muted)]/80">{card.rarity}</p>
+          <p className="mt-0.5 truncate text-[10px] text-[var(--muted)]/80">{rarityLabel(card.rarity)}</p>
         )}
       </Link>
     </article>

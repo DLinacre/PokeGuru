@@ -113,8 +113,17 @@ function normaliseSetImages(raw: { logo?: string | null; symbol?: string | null 
 
 function normaliseCardmarket(raw: Record<string, unknown> | undefined): CardPricing["cardmarket"] {
   if (!raw) return undefined;
-  const num = (v: unknown): number | undefined =>
-    typeof v === "number" && Number.isFinite(v) ? v : typeof v === "string" && v.trim() !== "" && Number.isFinite(Number(v)) ? Number(v) : undefined;
+  // Cardmarket publishes 0 for cards with no active listings. That is not a
+  // price, so treat anything non-positive as missing data.
+  const num = (v: unknown): number | undefined => {
+    const parsed =
+      typeof v === "number"
+        ? v
+        : typeof v === "string" && v.trim() !== "" && Number.isFinite(Number(v))
+          ? Number(v)
+          : undefined;
+    return parsed !== undefined && Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
+  };
 
   const band = (suffix: string): CardmarketBand => ({
     low: num(raw[`low${suffix}`]),
@@ -199,6 +208,13 @@ function mapBrief(raw: RawCardBrief, setsById: Map<string, TcgSet>): TcgCard {
   return card;
 }
 
+/** TCGdex reports "None" when a card has no rarity; do not render that as one. */
+function normaliseRarity(value: string | null | undefined): string | undefined {
+  const trimmed = value?.trim();
+  if (!trimmed || /^none$/i.test(trimmed)) return undefined;
+  return trimmed;
+}
+
 function mapDetail(raw: RawCard, setsById: Map<string, TcgSet>): TcgCard {
   const card = baseCardFields(raw);
   const set = raw.set ? { id: raw.set.id, name: raw.set.name } : setsById.get(card.set.id);
@@ -213,7 +229,7 @@ function mapDetail(raw: RawCard, setsById: Map<string, TcgSet>): TcgCard {
   }
 
   card.category = raw.category ?? "Pokemon";
-  card.rarity = raw.rarity;
+  card.rarity = normaliseRarity(raw.rarity);
   card.illustrator = raw.illustrator;
   card.hp = raw.hp;
   card.types = raw.types;

@@ -39,9 +39,26 @@ const card = (): TcgCard => ({
 });
 
 describe("pricing", () => {
-  it("prefers the holofoil band when it has data", () => {
+  it("prefers the standard print band so non-holo cards are not priced as holofoil", () => {
     const quote = pickCardmarketQuote(card().pricing);
-    expect(quote).toMatchObject({ variant: "holo", label: "Holofoil", trend: 4 });
+    expect(quote).toMatchObject({ variant: "normal", label: "Standard", trend: 2 });
+  });
+
+  it("falls back to the holofoil band when the standard band has no data", () => {
+    const value = card();
+    value.pricing = {
+      cardmarket: { currency: "EUR", holo: { low: 3, trend: 4 } },
+    };
+    expect(pickCardmarketQuote(value.pricing)).toMatchObject({ variant: "holo", label: "Holofoil", trend: 4 });
+  });
+
+  it("treats zero-price placeholder bands as missing data", () => {
+    const value = card();
+    value.pricing = {
+      cardmarket: { currency: "EUR", normal: { low: 0, trend: 0, avg: 0 }, holo: { trend: 0 } },
+    };
+    expect(pickCardmarketQuote(value.pricing)).toBeNull();
+    expect(getCardValueGbp(value, RATE)).toBeNull();
   });
 
   it("falls back to the normal band", () => {
@@ -62,8 +79,8 @@ describe("pricing", () => {
 
   it("converts the headline EUR value with the supplied rate", () => {
     const value = card();
-    expect(getHeadlineEur(pickCardmarketQuote(value.pricing)!)).toBe(4);
-    expect(getCardValueGbp(value, RATE)).toBeCloseTo(3.2);
+    expect(getHeadlineEur(pickCardmarketQuote(value.pricing)!)).toBe(2);
+    expect(getCardValueGbp(value, RATE)).toBeCloseTo(1.6);
     expect(getCardValueGbp(value, null)).toBeNull();
   });
 
@@ -119,7 +136,7 @@ describe("pricing", () => {
         },
       },
     } satisfies TcgCard;
-    expect(pickCardmarketQuote(mapped.pricing)?.variant).toBe("holo");
-    expect(formatGbp(getCardValueGbp(mapped, RATE))).toBe("£0.17");
+    expect(pickCardmarketQuote(mapped.pricing)?.variant).toBe("normal");
+    expect(formatGbp(getCardValueGbp(mapped, RATE))).toBe("£0.06");
   });
 });

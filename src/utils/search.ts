@@ -9,26 +9,47 @@ export const CATEGORY_OPTIONS = [
   { value: "Energy", label: "Energy" },
 ] as const;
 
-/** Rarity values used by TCGdex (filtered with exact matching). */
-export const RARITY_OPTIONS = [
-  "",
-  "Common",
-  "Uncommon",
-  "Rare",
-  "Rare Holo",
-  "Double Rare",
-  "Ultra Rare",
-  "Illustration Rare",
-  "Special Illustration Rare",
-  "Hyper Rare",
-  "Rare Ultra",
-  "Rare Secret",
-  "Rare Rainbow",
-  "Radiant Rare",
-  "ACE SPEC Rare",
-  "Shiny Rare",
-  "Promo",
+/**
+ * TCGdex publishes rarity strings in sentence case (see /v2/en/rarities), and
+ * filters match exactly. Keep the API value and present a tidier label.
+ */
+export const RARITY_OPTIONS: { value: string; label: string }[] = [
+  { value: "", label: "All rarities" },
+  { value: "Common", label: "Common" },
+  { value: "Uncommon", label: "Uncommon" },
+  { value: "Rare", label: "Rare" },
+  { value: "Rare Holo", label: "Rare Holo" },
+  { value: "Holo Rare", label: "Holo Rare" },
+  { value: "Double rare", label: "Double Rare" },
+  { value: "Ultra Rare", label: "Ultra Rare" },
+  { value: "Illustration rare", label: "Illustration Rare" },
+  { value: "Special illustration rare", label: "Special Illustration Rare" },
+  { value: "Hyper rare", label: "Hyper Rare" },
+  { value: "Secret Rare", label: "Secret Rare" },
+  { value: "Radiant Rare", label: "Radiant Rare" },
+  { value: "ACE SPEC Rare", label: "ACE SPEC Rare" },
+  { value: "Shiny rare", label: "Shiny Rare" },
+  { value: "Full Art Trainer", label: "Full Art Trainer" },
+  { value: "Classic Collection", label: "Classic Collection" },
+  { value: "Promo", label: "Promo" },
 ];
+
+const RARITY_LOOKUP = new Map(
+  RARITY_OPTIONS.filter((option) => option.value).map((option) => [option.value.toLowerCase(), option.value])
+);
+
+/** Accept legacy/title-cased rarity links and return the exact API value. */
+export function canonicalRarity(value: string | null | undefined): string {
+  const trimmed = (value ?? "").trim();
+  if (!trimmed) return "";
+  return RARITY_LOOKUP.get(trimmed.toLowerCase()) ?? trimmed;
+}
+
+export function rarityLabel(value: string | null | undefined): string {
+  if (!value) return "";
+  const match = RARITY_OPTIONS.find((option) => option.value.toLowerCase() === value.toLowerCase());
+  return match?.label ?? value;
+}
 
 export const SORT_OPTIONS: { value: SearchSort; label: string; note?: string }[] = [
   { value: "name", label: "Name (A–Z)" },
@@ -53,7 +74,7 @@ export function filtersFromParams(params: URLSearchParams): SearchFilters {
   return {
     query: params.get("q") ?? "",
     category: params.get("category") ?? "",
-    rarity: params.get("rarity") ?? "",
+    rarity: canonicalRarity(params.get("rarity")),
     setId: params.get("set") ?? "",
     sort: parseSort(params.get("sort")),
     page: parsePage(params.get("page")),

@@ -22,6 +22,11 @@ describe("search URL parameters", () => {
     });
   });
 
+  it("normalises legacy title-cased rarity links to the exact TCGdex value", () => {
+    const filters = filtersFromParams(new URLSearchParams("rarity=Special+Illustration+Rare"));
+    expect(filters.rarity).toBe("Special illustration rare");
+  });
+
   it("parses every supported filter from the URL", () => {
     const filters = filtersFromParams(
       new URLSearchParams("q=charizard&category=Pokemon&rarity=Illustration+Rare&set=sv03.5&sort=value_high&page=3")
@@ -29,7 +34,7 @@ describe("search URL parameters", () => {
     expect(filters).toMatchObject({
       query: "charizard",
       category: "Pokemon",
-      rarity: "Illustration Rare",
+      rarity: "Illustration rare",
       setId: "sv03.5",
       sort: "value_high",
       page: 3,
