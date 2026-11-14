@@ -49,7 +49,7 @@ const FEATURES = [
     icon: Smartphone,
     title: "Installable PWA",
     copy: "Add PokeGuru to your home screen for an app-like experience with an offline shell and cached data.",
-    accent: "text-[var(--accent)]",
+    accent: "text-[var(--accent-text)]",
   },
 ];
 
@@ -67,11 +67,11 @@ export default function AboutPage() {
         <div aria-hidden="true" className="pointer-events-none absolute -left-10 -top-10 h-40 w-40 rounded-full bg-[var(--accent)] opacity-5 blur-3xl" />
         <div aria-hidden="true" className="pointer-events-none absolute -bottom-10 -right-10 h-40 w-40 rounded-full bg-[var(--accent-2)] opacity-5 blur-3xl" />
         <div className="relative z-10">
-          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--accent)]/10 text-[var(--accent)]">
+          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--accent)]/10 text-[var(--accent-text)]">
             <Book size={30} aria-hidden="true" />
           </div>
           <h1 className="text-4xl font-extrabold tracking-tight md:text-5xl">
-            The Pokémon <span className="text-[var(--accent)]">Guru</span>
+            The Pokémon <span className="text-[var(--accent-text)]">Guru</span>
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-[var(--muted)]">
             PokeGuru is an open, privacy-first Pokémon TCG database for UK collectors: fast search, every set, dated

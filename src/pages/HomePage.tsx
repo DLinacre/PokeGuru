@@ -258,7 +258,7 @@ export default function HomePage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {FEATURES.map(({ to, icon: Icon, title, copy }) => (
             <Link key={to} to={to} className="surface group flex flex-col gap-3 p-5 no-underline transition-transform hover:-translate-y-0.5 hover:no-underline">
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--bg-soft)] text-[var(--accent)]">
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--bg-soft)] text-[var(--accent-text)]">
                 <Icon size={19} aria-hidden="true" />
               </span>
               <span>

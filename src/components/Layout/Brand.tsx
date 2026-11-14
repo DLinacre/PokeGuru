@@ -49,7 +49,7 @@ export function BrandWordmark({ className }: { className?: string }) {
         className
       )}
     >
-      Poke<span className="text-[var(--accent)]">Guru</span>
+      Poke<span className="text-[var(--accent-text)]">Guru</span>
     </span>
   );
 }

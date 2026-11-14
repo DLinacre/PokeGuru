@@ -193,7 +193,7 @@ export default function SetDetailPage() {
           </p>
 
           <div className="mt-3 flex flex-wrap items-center gap-3">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border)] bg-[var(--bg-soft)] px-3 py-1 text-xs font-bold text-[var(--accent)]">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border)] bg-[var(--bg-soft)] px-3 py-1 text-xs font-bold text-[var(--accent-text)]">
               <Wallet size={12} aria-hidden="true" />
               {ownedInSet} / {totalCards} in your vault
             </span>
@@ -289,7 +289,7 @@ export default function SetDetailPage() {
         )}
 
         {valuation.status === "error" && (
-          <p className="mt-3 text-[11px] text-[var(--accent)]" role="alert">
+          <p className="mt-3 text-[11px] text-[var(--accent-text)]" role="alert">
             Some card snapshots could not be loaded, so no set value is shown. Try again later.
           </p>
         )}

@@ -16,7 +16,7 @@ export default function MobileNav() {
   return (
     <nav
       aria-label="Mobile navigation"
-      className="fixed bottom-0 left-0 right-0 z-40 flex h-16 items-stretch justify-around border-t border-[var(--border)] bg-[rgba(15,17,21,0.92)] px-1 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl sm:hidden"
+      className="fixed bottom-0 left-0 right-0 z-40 flex h-16 items-stretch justify-around border-t border-[var(--border)] bg-[rgba(8,9,13,0.94)] px-1 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl sm:hidden"
     >
       {NAV_ITEMS.map(({ to, icon: Icon, label }) => {
         const isActive = location.pathname === to || location.pathname.startsWith(`${to}/`);
@@ -27,7 +27,7 @@ export default function MobileNav() {
             aria-current={isActive ? "page" : undefined}
             className={cn(
               "relative flex min-w-[56px] flex-1 flex-col items-center justify-center gap-1 rounded-lg px-1 py-1 text-[10px] font-bold uppercase tracking-tight no-underline transition-colors hover:no-underline active:scale-95",
-              isActive ? "text-[var(--accent)]" : "text-[var(--muted)]"
+              isActive ? "text-[var(--accent-text)]" : "text-[var(--muted)]"
             )}
           >
             {isActive && (

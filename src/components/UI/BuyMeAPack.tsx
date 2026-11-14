@@ -120,7 +120,7 @@ export function BuyMeAPackPanel({ className }: { className?: string }) {
       <p className="mb-4 text-sm leading-relaxed text-[var(--muted)]">{SUPPORT_LEAD}</p>
       <BuyMeAPack variant="full" />
       {!configured && (
-        <p className="mt-3 text-xs leading-relaxed text-[var(--muted)]/80">
+        <p className="mt-3 text-xs leading-relaxed text-[var(--muted)]">
           Support links aren&apos;t live on this deployment yet. If you host PokeGuru yourself, set{" "}
           <code className="rounded bg-[var(--bg)] px-1 py-0.5">VITE_BUY_ME_A_PACK_URL</code> to enable this button.
         </p>

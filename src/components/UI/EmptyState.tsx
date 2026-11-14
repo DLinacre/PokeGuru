@@ -49,7 +49,7 @@ export function EmptyState({
 /** "No Data Available" — used anywhere the upstream APIs have no value. */
 export function NoData({ label = "No Data Available", className }: { label?: string; className?: string }) {
   return (
-    <span className={cn("text-[var(--muted)]/80 italic", className)} title="The data source does not publish this value">
+    <span className={cn("text-[var(--muted)] italic", className)} title="The data source does not publish this value">
       {label}
     </span>
   );

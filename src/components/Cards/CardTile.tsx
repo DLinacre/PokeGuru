@@ -167,7 +167,7 @@ function CardTile({ card, priority = false, onPreview, showPrice = true, classNa
         className="block rounded-b-[var(--radius)] border border-t-0 border-[var(--border)] bg-[var(--bg-card)] p-3 no-underline transition-colors hover:border-[var(--border-strong)] hover:no-underline"
       >
         <div className="flex items-baseline justify-between gap-2">
-          <h3 className="min-w-0 truncate text-sm font-bold text-[var(--text)] transition-colors group-hover:text-[var(--accent)]">
+          <h3 className="min-w-0 truncate text-sm font-bold text-[var(--text)] transition-colors group-hover:text-[var(--accent-text)]">
             {card.name}
           </h3>
           {showPrice && (
@@ -190,7 +190,7 @@ function CardTile({ card, priority = false, onPreview, showPrice = true, classNa
           {subtitle || "Set not listed"}
         </p>
         {showPrice && card.isDetailed && rarity && (
-          <p className="mt-0.5 truncate text-[10px] text-[var(--muted)]/80">{rarity}</p>
+          <p className="mt-0.5 truncate text-[10px] text-[var(--muted)]">{rarity}</p>
         )}
       </Link>
     </article>

@@ -64,7 +64,7 @@ function PriceRow({
         {label}
       </span>
       <span className="text-right text-sm font-bold tabular-nums text-[var(--text)]">
-        {gbp ?? <span className="text-xs font-medium italic text-[var(--muted)]/80">Not published</span>}
+        {gbp ?? <span className="text-xs font-medium italic text-[var(--muted)]">Not published</span>}
         {gbp && eur && <span className="ml-2 text-[10px] font-medium text-[var(--muted)]">{eur}</span>}
       </span>
     </div>
@@ -248,7 +248,7 @@ export default function CardDetailPage() {
         </div>
 
         <div className="min-w-0">
-          <p className="text-[11px] font-black uppercase tracking-widest text-[var(--accent)]">
+          <p className="text-[11px] font-black uppercase tracking-widest text-[var(--accent-text)]">
             {card.set.name || "Set not listed"} {card.localId ? `· #${card.localId}` : ""}
           </p>
           <h1 className="mt-1 text-3xl font-extrabold tracking-tight md:text-4xl">{card.name}</h1>
@@ -425,7 +425,7 @@ export default function CardDetailPage() {
                 <div key={attack.name} className="border-t border-[var(--border)] py-3 first:border-0 first:pt-0">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="font-semibold text-[var(--text)]">{attack.name}</span>
-                    {attack.damage && <span className="text-lg font-bold text-[var(--accent)]">{attack.damage}</span>}
+                    {attack.damage && <span className="text-lg font-bold text-[var(--accent-text)]">{attack.damage}</span>}
                   </div>
                   {attack.cost && attack.cost.length > 0 && (
                     <p className="text-xs text-[var(--muted)]">Cost: {attack.cost.join(", ")}</p>

@@ -172,7 +172,7 @@ export default function Header() {
             />
             <button
               type="submit"
-              className="border-none bg-transparent px-3.5 text-[var(--muted)] transition-colors hover:text-[var(--accent)] active:scale-90"
+              className="border-none bg-transparent px-3.5 text-[var(--muted)] transition-colors hover:text-[var(--accent-text)] active:scale-90"
               aria-label="Submit search"
             >
               <Search size={18} aria-hidden="true" />

@@ -62,7 +62,7 @@ export default function WikiPage() {
               Every English-language Pokémon TCG era released in the UK, from Base Set (1999) to the present.
               {getTotalSetCount()} sets and roughly {getTotalCardCount().toLocaleString()} cards, curated by hand.
             </p>
-            <p className="mt-3 flex items-start gap-2 text-xs leading-relaxed text-[var(--muted)]/80">
+            <p className="mt-3 flex items-start gap-2 text-xs leading-relaxed text-[var(--muted)]">
               <Info size={13} className="mt-0.5 shrink-0" aria-hidden="true" />
               This wiki is editorial reference material (release dates, eras, printed counts). It intentionally contains
               no price or graded-card estimates — those are unverifiable and would be invented.

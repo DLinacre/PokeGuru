@@ -155,7 +155,7 @@ export default function SearchPage() {
       </div>
 
       {/* Filters */}
-      <div className="sticky top-[64px] z-20 mb-6 rounded-2xl border border-[var(--border)] bg-[rgba(30,34,48,0.85)] p-3 shadow-xl backdrop-blur-xl sm:p-4">
+      <div className="sticky top-[64px] z-20 mb-6 rounded-2xl border border-[var(--border)] bg-[rgba(16,19,25,0.88)] p-3 shadow-xl backdrop-blur-xl sm:p-4">
         <div className="mb-3 flex items-center justify-between gap-2">
           <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[var(--muted)]">
             <SlidersHorizontal size={12} aria-hidden="true" />
@@ -165,7 +165,7 @@ export default function SearchPage() {
             <button
               type="button"
               onClick={clearFilters}
-              className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-[var(--muted)] transition-colors hover:text-[var(--accent)]"
+              className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-[var(--muted)] transition-colors hover:text-[var(--accent-text)]"
             >
               <FilterX size={12} aria-hidden="true" />
               Reset

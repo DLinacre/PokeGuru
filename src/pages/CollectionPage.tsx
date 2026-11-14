@@ -170,7 +170,7 @@ export default function CollectionPage() {
         <div className="relative z-10 flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
           <div>
             <h1 className="text-3xl font-extrabold tracking-tight md:text-4xl">
-              My <span className="text-[var(--accent)]">Vault</span>
+              My <span className="text-[var(--accent-text)]">Vault</span>
             </h1>
             <p className="mt-2 text-sm text-[var(--muted)]">
               {collection.length} card{collection.length === 1 ? "" : "s"} · stored locally in this browser
@@ -400,7 +400,7 @@ export default function CollectionPage() {
             <button
               type="button"
               onClick={() => removeFromCollection(item.card.id)}
-              className="absolute right-1 top-1 z-10 flex h-8 w-8 items-center justify-center rounded-full border border-[var(--border)] bg-[rgba(15,17,21,0.85)] text-red-400 opacity-100 shadow-lg transition-opacity hover:bg-red-500 hover:text-white focus-visible:opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+              className="absolute right-1 top-1 z-10 flex h-8 w-8 items-center justify-center rounded-full border border-[var(--border)] bg-[rgba(8,9,13,0.88)] text-red-400 opacity-100 shadow-lg transition-opacity hover:bg-red-500 hover:text-white focus-visible:opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
               aria-label={`Remove ${item.card.name} from your vault`}
             >
               <Trash2 size={14} />
