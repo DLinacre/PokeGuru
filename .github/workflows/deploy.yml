@@ -19,6 +19,11 @@ concurrency:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    # Required by actions/deploy-pages: the deployment must belong to the
+    # github-pages environment.
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     env:
       DEPLOY_TARGET: github-pages
       VITE_PUBLIC_SITE_URL: https://dlinacre.github.io/PokeGuru
@@ -50,4 +55,5 @@ jobs:
           path: ./dist
 
       - name: Deploy to GitHub Pages
+        id: deployment
         uses: actions/deploy-pages@v5
