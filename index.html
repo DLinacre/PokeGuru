@@ -4,69 +4,67 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PokeGuru — The Pokémon Card Guru</title>
-    <meta name="description" content="Lightning-fast Pokémon TCG card database with UK market prices in GBP (£), set history and advanced search." />
-    <meta name="keywords" content="pokemon, tcg, cards, database, pokemon cards, collector, pricing, uk, gbp, sets" />
+    <meta
+      name="description"
+      content="A fast, open Pokémon TCG card database: search every card, browse every set, check Cardmarket reference prices in GBP and track your collection privately."
+    />
+    <meta name="keywords" content="pokemon, tcg, cards, database, pokemon cards, collector, pricing, cardmarket, sets" />
     <meta name="theme-color" content="#0f1115" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="PokeGuru" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
-    <link rel="canonical" href="https://dlinacre.github.io/PokeGuru/" />
-
-    <!-- Open Graph -->
+    <!-- Open Graph / Twitter (absolute URLs are added at runtime from the real origin) -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="PokeGuru" />
     <meta property="og:title" content="PokeGuru — The Pokémon Card Guru" />
-    <meta property="og:description" content="Search cards, browse sets, and track your collection with UK GBP prices." />
-    <meta property="og:url" content="https://dlinacre.github.io/PokeGuru/" />
-    <meta property="og:image" content="https://dlinacre.github.io/PokeGuru/og.png" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <!-- Twitter -->
+    <meta
+      property="og:description"
+      content="Search Pokémon cards, browse sets and check Cardmarket reference prices in GBP — with a private, local-only collection vault."
+    />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="PokeGuru — The Pokémon Card Guru" />
-    <meta name="twitter:description" content="UK-focused Pokémon TCG card database, prices and collection tracker." />
-    <meta name="twitter:image" content="https://dlinacre.github.io/PokeGuru/og.png" />
+    <meta
+      name="twitter:description"
+      content="A fast, open Pokémon TCG database with dated GBP reference prices."
+    />
 
-    <!-- Privacy + hardening (GitHub Pages can't set real headers) -->
-    <meta name="referrer" content="strict-origin-when-cross-origin" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://api.pokemontcg.io; img-src 'self' data: https://images.pokemontcg.io; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'" />
+    <link rel="icon" href="%BASE_URL%favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="%BASE_URL%icons/apple-touch-icon.png" />
+    <link rel="manifest" href="%BASE_URL%manifest.webmanifest" />
 
-    <link rel="icon" href="/PokeGuru/favicon.svg" type="image/svg+xml" />
-    <link rel="apple-touch-icon" href="/PokeGuru/favicon.svg" />
-    <link rel="manifest" href="/PokeGuru/manifest.webmanifest" />
-    <link rel="preconnect" href="https://api.pokemontcg.io" />
-    <link rel="preconnect" href="https://images.pokemontcg.io" />
+    <link rel="preconnect" href="https://api.tcgdex.net" crossorigin />
+    <link rel="preconnect" href="https://assets.tcgdex.net" crossorigin />
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net" />
 
-    <!-- SPA path-routing restore (pairs with public/404.html) -->
+    <!-- GitHub Pages deep-link restore (no-op on other hosts) -->
     <script>
-      (function (l) {
-        if (l.search[1] === '/') {
-          var decoded = l.search.slice(1).split('&').map(function (s) {
-            return s.replace(/~and~/g, '&');
-          }).join('?');
-          window.history.replaceState(null, null,
-            l.pathname.slice(0, -1) + decoded + l.hash);
+      (function (location) {
+        if (location.search[1] === "/") {
+          var decoded = location.search
+            .slice(1)
+            .split("&")
+            .map(function (segment) {
+              return segment.replace(/~and~/g, "&");
+            })
+            .join("?");
+          window.history.replaceState(null, null, location.pathname.slice(0, -1) + decoded + location.hash);
         }
-      }(window.location));
+      })(window.location);
     </script>
 
-    <!-- Structured data: WebSite + SearchAction (sitelinks search box) -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "WebSite",
-      "name": "PokeGuru",
-      "url": "https://dlinacre.github.io/PokeGuru/",
-      "potentialAction": {
-        "@type": "SearchAction",
-        "target": { "@type": "EntryPoint", "urlTemplate": "https://dlinacre.github.io/PokeGuru/search?q={query}" },
-        "query-input": "required name=query"
-      }
-    }
-    </script>
+    <!--SITE_JSONLD-->
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      <p style="padding: 24px; font-family: system-ui, sans-serif; color: #e7e9ee; background: #0f1115">
+        PokeGuru needs JavaScript to search the Pokémon TCG card database.
+      </p>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
