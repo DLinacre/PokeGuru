@@ -45,6 +45,11 @@ interface PullSummaryProps {
   quantity?: number;
   /** Set id of the results, used to avoid offering the same set twice. */
   activeSetId?: string;
+  /**
+   * False for the earliest sets, whose card pool has one combined rare tier:
+   * there a holo rare is not a separate chase tier to count.
+   */
+  hasSeparateHolo?: boolean;
 }
 
 /**
@@ -62,6 +67,7 @@ export default function PullSummary({
   ripCounts = [1, 5, 10],
   quantity = results.length,
   activeSetId = results[0]?.setId ?? "",
+  hasSeparateHolo = true,
 }: PullSummaryProps) {
   const [copied, setCopied] = useState<"summary" | "link" | null>(null);
   const [openPack, setOpenPack] = useState<string | null>(null);
@@ -83,11 +89,17 @@ export default function PullSummary({
       ),
     [best],
   );
-  const counts = useMemo(() => pullCounts(results), [results]);
+  const counts = useMemo(
+    () => pullCounts(results, { hasSeparateHolo }),
+    [results, hasSeparateHolo],
+  );
   /** Notable pulls, i.e. everything better than a plain rare. */
   const rareCount = counts.notable;
   const totalCards = results.reduce((sum, pack) => sum + pack.cards.length, 0);
-  const highlights = useMemo(() => resultHighlights(results), [results]);
+  const highlights = useMemo(
+    () => resultHighlights(results, { hasSeparateHolo }),
+    [results, hasSeparateHolo],
+  );
 
   const flashCopied = (kind: "summary" | "link") => {
     setCopied(kind);
