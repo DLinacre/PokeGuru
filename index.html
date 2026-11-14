@@ -3,23 +3,79 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PokeGuru — The Pokémon Card Database</title>
-    <meta name="description" content="A fast, open Pokémon TCG card database. Search cards, browse sets, and view detailed card information with market prices." />
-    <meta name="keywords" content="pokemon, tcg, cards, database, pokemon cards, collector, pricing, sets" />
-    <meta name="theme-color" content="#0f1115" />
+    <title>PokeGuru — The Pokémon Card Guru</title>
+    <meta
+      name="description"
+      content="A fast, open Pokémon TCG card database: search every card, browse every set, check Cardmarket reference prices in GBP and track your collection privately."
+    />
+    <meta name="keywords" content="pokemon, tcg, cards, database, pokemon cards, collector, pricing, cardmarket, sets" />
+    <meta name="theme-color" content="#08090d" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
-    <meta property="og:title" content="PokeGuru — Pokémon TCG Card Database" />
-    <meta property="og:description" content="Search every card, browse sets, and view market prices for Pokémon TCG." />
+    <meta name="apple-mobile-web-app-title" content="PokeGuru" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+    <!-- Open Graph / Twitter (absolute URLs are added at runtime from the real origin) -->
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://lin4cre.github.io/PokeGuru" />
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🃏</text></svg>" />
-    <link rel="preconnect" href="https://api.pokemontcg.io" />
-    <link rel="preconnect" href="https://images.pokemontcg.io" />
-    <script type="module" crossorigin src="/PokeGuru/assets/index-B-3WAfzA.js"></script>
-    <link rel="stylesheet" crossorigin href="/PokeGuru/assets/index-CW8rLtd3.css">
+    <meta property="og:site_name" content="PokeGuru" />
+    <meta property="og:title" content="PokeGuru — The Pokémon Card Guru" />
+    <meta
+      property="og:description"
+      content="Search Pokémon cards, browse sets and check Cardmarket reference prices in GBP — with a private, local-only collection vault."
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="PokeGuru — The Pokémon Card Guru" />
+    <meta
+      name="twitter:description"
+      content="A fast, open Pokémon TCG database with dated GBP reference prices."
+    />
+
+    <link rel="icon" href="/PokeGuru/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/PokeGuru/icons/apple-touch-icon.png" />
+    <link rel="manifest" href="/PokeGuru/manifest.webmanifest" />
+
+    <!-- Capture beforeinstallprompt before React loads (see public/pwa-capture.js).
+         Must stay a plain external script in <head> so it runs during parsing
+         and passes the strict CSP (script-src 'self'). -->
+    <script src="/PokeGuru/pwa-capture.js"></script>
+
+    <link rel="preconnect" href="https://api.tcgdex.net" crossorigin />
+    <link rel="preconnect" href="https://assets.tcgdex.net" crossorigin />
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net" />
+
+    <!-- GitHub Pages deep-link restore (no-op on other hosts) -->
+    <script>
+      (function (location) {
+        if (location.search[1] === "/") {
+          var decoded = location.search
+            .slice(1)
+            .split("&")
+            .map(function (segment) {
+              return segment.replace(/~and~/g, "&");
+            })
+            .join("?");
+          window.history.replaceState(null, null, location.pathname.slice(0, -1) + decoded + location.hash);
+        }
+      })(window.location);
+    </script>
+
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"PokeGuru","url":"https://pokeguru.vercel.app/PokeGuru/","potentialAction":{"@type":"SearchAction","target":{"@type":"EntryPoint","urlTemplate":"https://pokeguru.vercel.app/PokeGuru/search?q={query}"},"query-input":"required name=query"}}</script>
+    <script type="module" crossorigin src="/PokeGuru/assets/index-B9mHhVMG.js"></script>
+    <link rel="modulepreload" crossorigin href="/PokeGuru/assets/rolldown-runtime-BCiCTKAo.js">
+    <link rel="modulepreload" crossorigin href="/PokeGuru/assets/createLucideIcon-DMv-9yve.js">
+    <link rel="modulepreload" crossorigin href="/PokeGuru/assets/chunk-6KYCQHYJ-vQWDvHvt.js">
+    <link rel="modulepreload" crossorigin href="/PokeGuru/assets/cn-B6Hkbr0V.js">
+    <link rel="stylesheet" crossorigin href="/PokeGuru/assets/index-DRG7c4sw.css">
+      <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://assets.tcgdex.net; font-src 'self' data:; connect-src 'self' https://api.tcgdex.net https://api.frankfurter.dev https://cdn.jsdelivr.net https://tessdata.projectnaptha.com; worker-src 'self' blob: https://cdn.jsdelivr.net; base-uri 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'none'" />
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root"></div>
+    <noscript>
+      <p style="padding: 24px; font-family: system-ui, sans-serif; color: #e7e9ee; background: #0f1115">
+        PokeGuru needs JavaScript to search the Pokémon TCG card database.
+      </p>
+    </noscript>
   </body>
 </html>
