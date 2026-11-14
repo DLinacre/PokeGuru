@@ -306,7 +306,6 @@ export function useCardSearch(filters: SearchFilters): CardSearchState {
       controller.abort();
     };
     // `key` encodes every filter value that affects the request.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key, retryKey]);
 
   return {

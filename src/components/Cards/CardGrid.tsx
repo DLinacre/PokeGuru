@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { memo, useState } from "react";
 import type { TcgCard } from "../../types/pokemon";
 import CardTile from "./CardTile";
 import CardPreviewModal from "./CardPreviewModal";
@@ -17,7 +17,7 @@ interface CardGridProps {
   showPrice?: boolean;
 }
 
-export default function CardGrid({
+function CardGrid({
   cards,
   rate,
   emptyMessage = "No cards found.",
@@ -48,6 +48,7 @@ export default function CardGrid({
             priority={index < priorityCount}
             onPreview={enablePreview ? () => setPreviewCard(card) : undefined}
             showPrice={showPrice}
+            rate={rate}
           />
         ))}
       </div>
@@ -64,3 +65,5 @@ export default function CardGrid({
     </>
   );
 }
+
+export default memo(CardGrid);

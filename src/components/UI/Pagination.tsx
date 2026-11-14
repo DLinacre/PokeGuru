@@ -62,7 +62,7 @@ export default function Pagination({
                   aria-current={page === currentPage ? "page" : undefined}
                   className={`min-w-9 rounded-lg border px-2.5 py-2 text-sm font-bold transition-colors ${
                     page === currentPage
-                      ? "border-[var(--accent)] bg-[var(--accent)]/15 text-[var(--accent)]"
+                      ? "border-[var(--accent)] bg-[var(--accent)]/15 text-[var(--accent-text)]"
                       : "border-[var(--border)] bg-[var(--bg-card)] text-[var(--muted)] hover:border-[var(--accent)] hover:text-[var(--text)]"
                   }`}
                 >

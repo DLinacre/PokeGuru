@@ -16,9 +16,14 @@ describe("search URL parameters", () => {
       category: "",
       rarity: "",
       setId: "",
+      illustrator: "",
+      number: "",
       sort: "name",
       page: 1,
       pageSize: SEARCH_PAGE_SIZE,
+      minValue: "",
+      maxValue: "",
+      printing: "",
     });
   });
 

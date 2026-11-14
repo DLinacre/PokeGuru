@@ -19,7 +19,7 @@ export default function UpdatePrompt() {
       role="status"
       className="fixed bottom-20 left-4 right-4 z-[70] mx-auto flex max-w-md items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] p-3 shadow-2xl sm:bottom-6 sm:left-auto sm:right-6"
     >
-      <RefreshCw size={18} className="shrink-0 text-[var(--accent)]" aria-hidden="true" />
+      <RefreshCw size={18} className="shrink-0 text-[var(--accent-text)]" aria-hidden="true" />
       <p className="flex-1 text-sm text-[var(--text)]">A new PokeGuru version is ready.</p>
       <button
         type="button"

@@ -87,7 +87,7 @@ export default function CardPreviewModal({
           </div>
 
           <div className="min-w-0">
-            <p className="text-[10px] font-black uppercase tracking-widest text-[var(--accent)]">
+            <p className="text-[10px] font-black uppercase tracking-widest text-[var(--accent-text)]">
               {card.set.name || "Set not listed"} {card.localId ? `· #${card.localId}` : ""}
             </p>
             <h2 id="card-preview-title" className="mt-1 text-2xl font-bold text-[var(--text)]">

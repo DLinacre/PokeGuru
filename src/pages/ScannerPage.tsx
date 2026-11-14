@@ -188,7 +188,7 @@ export default function ScannerPage() {
                 {imageWarning}
               </p>
             )}
-            <p className="mt-2 max-w-md text-[11px] leading-relaxed text-[var(--muted)]/80">
+            <p className="mt-2 max-w-md text-[11px] leading-relaxed text-[var(--muted)]">
               Your photo is never uploaded. The first scan downloads the OCR engine and English language data; after
               that it works offline from the cache.
             </p>
@@ -335,7 +335,7 @@ export default function ScannerPage() {
                           <p className="truncate text-[11px] text-[var(--muted)]">
                             {card.set.name || "Set not listed"} {card.localId ? `· #${card.localId}` : ""}
                           </p>
-                          <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--accent)]">
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--accent-text)]">
                             {score >= 10 ? "Name match" : score >= 5 ? "Close match" : "Possible match"}
                           </p>
                         </button>

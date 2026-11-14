@@ -17,7 +17,7 @@ export default function Layout() {
     <div className="flex min-h-screen flex-col">
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-3 focus:z-50 focus:rounded-lg focus:bg-[var(--accent)] focus:px-4 focus:py-2 focus:text-white"
+        className="skip-link"
       >
         Skip to content
       </a>
@@ -35,7 +35,7 @@ export default function Layout() {
       <main
         id="main-content"
         tabIndex={-1}
-        className="mx-auto w-full max-w-[1180px] flex-1 px-4 py-6 pb-24 outline-none animate-fade-in md:px-6 sm:pb-8"
+        className="mx-auto w-full max-w-[1240px] flex-1 px-4 py-6 pb-24 outline-none animate-fade-in md:px-6 sm:pb-8"
       >
         <Suspense fallback={<PageSkeleton title="Loading page" />}>
           <Outlet />

@@ -382,7 +382,8 @@ function buildSearchUrl(filters: SearchFilters, includeSort: boolean): string {
   if (filters.rarity) params.set("rarity", `eq:${filters.rarity}`);
   if (filters.category) params.set("category", `eq:${filters.category}`);
   if (filters.setId) params.set("set.id", `eq:${filters.setId}`);
-  if (filters.illustrator) params.set("illustrator", filters.illustrator);
+  if (filters.number) params.set("localId", filters.number.trim().replace(/^#/, ""));
+  if (filters.illustrator) params.set("illustrator", `like:${filters.illustrator}`);
 
   params.set("pagination:page", String(Math.max(1, filters.page)));
   params.set("pagination:itemsPerPage", String(filters.pageSize));

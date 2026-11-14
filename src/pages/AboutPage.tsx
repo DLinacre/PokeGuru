@@ -49,7 +49,7 @@ const FEATURES = [
     icon: Smartphone,
     title: "Installable PWA",
     copy: "Add PokeGuru to your home screen for an app-like experience with an offline shell and cached data.",
-    accent: "text-[var(--accent)]",
+    accent: "text-[var(--accent-text)]",
   },
 ];
 
@@ -67,11 +67,11 @@ export default function AboutPage() {
         <div aria-hidden="true" className="pointer-events-none absolute -left-10 -top-10 h-40 w-40 rounded-full bg-[var(--accent)] opacity-5 blur-3xl" />
         <div aria-hidden="true" className="pointer-events-none absolute -bottom-10 -right-10 h-40 w-40 rounded-full bg-[var(--accent-2)] opacity-5 blur-3xl" />
         <div className="relative z-10">
-          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--accent)]/10 text-[var(--accent)]">
+          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--accent)]/10 text-[var(--accent-text)]">
             <Book size={30} aria-hidden="true" />
           </div>
           <h1 className="text-4xl font-extrabold tracking-tight md:text-5xl">
-            The Pokémon <span className="text-[var(--accent)]">Guru</span>
+            The Pokémon <span className="text-[var(--accent-text)]">Guru</span>
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed text-[var(--muted)]">
             PokeGuru is an open, privacy-first Pokémon TCG database for UK collectors: fast search, every set, dated
@@ -121,7 +121,19 @@ export default function AboutPage() {
                   TCGdex
                 </a>
                 , a free community API. Prices are <strong className="text-[var(--text)]">Cardmarket reference
-                values</strong> (lowest listing, trend, averages) — the same numbers Cardmarket publishes to the API.
+                values</strong> — the same numbers Cardmarket publishes to the API, never re-derived.
+              </p>
+              <p>
+                <strong className="text-[var(--text)]">Printing matters.</strong> Cardmarket publishes a standard
+                band and a holofoil band. PokeGuru first works out which printing a card has, then reads only that
+                band, so a non-holo card is never valued using holofoil prices. When both printings exist, the second
+                value is shown separately and labelled as an alternate printing.
+              </p>
+              <p>
+                The headline figure uses Cardmarket&apos;s trend price, then average asking price, then the 30-day
+                average, then the lowest listing — always one published band, never an average of unrelated numbers.
+                Each figure carries a confidence label (<strong className="text-[var(--text)]">Verified</strong>,
+                Indicative, Stale, Price Unverified or No Data Available) and a tooltip explaining exactly why.
               </p>
               <p>
                 Euro prices are converted to GBP using{" "}
