@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { Book, Camera, Layers, PackageOpen, Search, Shuffle, Wallet, X } from "lucide-react";
+import { Book, Camera, Layers, PackageOpen, Search, Shuffle, TrendingUp, Wallet, X } from "lucide-react";
 import { useState, type FormEvent, useEffect, useRef } from "react";
 import { useDebouncedValue } from "../../hooks/useApi";
 import { getRandomCard, searchCards } from "../../services/tcgdex";
@@ -7,11 +7,13 @@ import type { TcgCard } from "../../types/pokemon";
 import BuyMeAPack from "../UI/BuyMeAPack";
 import Brand from "./Brand";
 import { cn } from "../../utils/cn";
+import CardArtwork from "../Cards/CardArtwork";
 
 const NAV_ITEMS = [
   { to: "/search", label: "Search", icon: Search },
   { to: "/sets", label: "Sets", icon: Layers },
   { to: "/packs", label: "Packs", icon: PackageOpen },
+  { to: "/top-100", label: "Top 100", icon: TrendingUp },
   { to: "/wiki", label: "Wiki", icon: Book },
   { to: "/collection", label: "Vault", icon: Wallet },
   { to: "/scanner", label: "Scan", icon: Camera },
@@ -201,18 +203,12 @@ export default function Header() {
                     index === selectedIndex ? "bg-[var(--accent)]/10 text-[var(--text)]" : "text-[var(--muted)] hover:bg-[var(--bg-soft)]"
                   )}
                 >
-                  {card.images.small ? (
-                    <img
-                      src={card.images.small}
-                      alt=""
-                      width={32}
-                      height={44}
-                      loading="lazy"
-                      className="h-11 w-8 shrink-0 rounded object-contain"
-                    />
-                  ) : (
-                    <span className="h-11 w-8 shrink-0 rounded bg-[var(--bg-soft)]" aria-hidden="true" />
-                  )}
+                  <CardArtwork
+                    card={card}
+                    alt=""
+                    emptyLabel=""
+                    className="h-11 w-8 shrink-0 rounded object-contain"
+                  />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-semibold text-[var(--text)]">{card.name}</span>
                     <span className="block truncate text-[11px] text-[var(--muted)]">

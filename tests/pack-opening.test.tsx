@@ -28,6 +28,9 @@ function makePool(): PackPool {
       setName: "Test Set",
       rarity: tier,
       tier,
+      // Real TCGdex asset bases, plus one legacy full URL to prove both shapes
+      // resolve through the shared artwork module.
+      image: index === 0 && tier === "common" ? "https://assets.tcgdex.net/en/sv/sv01/low.webp" : `https://assets.tcgdex.net/en/sv/sv01/${index + 1}`,
     }));
   }
   return {
@@ -95,6 +98,16 @@ describe("pack opening experience", () => {
     for (const card of results[0].cards) expect(card.setId).toBe("test1");
 
     expect(await screen.findByRole("heading", { name: "Your Test Set pack" })).toBeTruthy();
+    // The reveal must show the actual card, resolved through the shared artwork
+    // module — never a bare broken image.
+    const images = Array.from(document.querySelectorAll("img"));
+    expect(images.length).toBeGreaterThan(0);
+    for (const image of images) {
+      expect(image.getAttribute("src")).toMatch(/^https:\/\/assets\.tcgdex\.net\//);
+      expect(image.getAttribute("src")).not.toMatch(/\.webp\//);
+      expect(image.getAttribute("referrerpolicy")).toBe("no-referrer");
+    }
+    expect(screen.queryByText(/Image unavailable/i)).toBeNull();
     expect(screen.getByText("Best pull")).toBeTruthy();
     expect(screen.getByText(/Simulated — not owned/)).toBeTruthy();
   });

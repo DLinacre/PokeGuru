@@ -6,6 +6,9 @@
  *    cached shell + offline page are fallbacks when the network fails.
  *  - Hashed build assets: cache-first (immutable).
  *  - Third-party API/data: stale-while-revalidate, bounded cache.
+ *  - Card artwork (assets.tcgdex.net): never intercepted. The browser talks
+ *    to the CDN directly, so a cached or failed entry can never hand an <img>
+ *    a non-image response (which renders as a broken card).
  *  - Every cache is versioned; old versions are deleted on activation.
  *
  * A waiting worker never takes over a live page on its own — the UI offers
@@ -28,13 +31,16 @@ const PRECACHE = [
   `${BASE}icons/icon-512.png`,
 ];
 
-const DATA_HOSTS = new Set([
-  "api.tcgdex.net",
-  "api.frankfurter.dev",
-  "assets.tcgdex.net",
-  "cdn.jsdelivr.net",
-  "tessdata.projectnaptha.com",
-]);
+const DATA_HOSTS = new Set(["api.tcgdex.net", "api.frankfurter.dev", "cdn.jsdelivr.net", "tessdata.projectnaptha.com"]);
+
+/** Hosts serving card artwork and other binary media — always straight to network. */
+const MEDIA_HOSTS = new Set(["assets.tcgdex.net", "images.tcgdex.net"]);
+
+/** Requests that must never receive a cached non-image body. */
+function isMediaRequest(request, url) {
+  if (MEDIA_HOSTS.has(url.hostname)) return true;
+  return request.destination === "image" || request.destination === "font" || request.destination === "audio" || request.destination === "video";
+}
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -112,9 +118,16 @@ async function staleWhileRevalidate(request) {
   const cached = await cache.match(request);
   const network = fetch(request)
     .then(async (response) => {
-      if (response.ok || response.type === "opaque") {
-        await cache.put(request, response.clone());
-        await trimCache(DATA_CACHE, 250);
+      // Only complete, cacheable responses are stored: opaque and error
+      // responses used to end up in the cache and were later replayed to
+      // callers (including <img>) as if they were content.
+      if (response.ok && response.type === "basic") {
+        try {
+          await cache.put(request, response.clone());
+          await trimCache(DATA_CACHE, 150);
+        } catch {
+          /* quota pressure must never break the response */
+        }
       }
       return response;
     })
@@ -143,9 +156,12 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  // Artwork and other media bypass the worker entirely.
+  if (isMediaRequest(request, url)) return;
+
   if (url.origin === self.location.origin) {
     // Never cache the service worker itself.
-    if (url.pathname.endsWith("/sw.js")) return;
+    if (url.pathname.endsWith("/sw.js") || url.pathname.startsWith(`${BASE}api/`)) return;
     const isHashedAsset = url.pathname.includes("/assets/");
     if (isHashedAsset) {
       event.respondWith(cacheFirst(request).catch(() => fetch(request)));

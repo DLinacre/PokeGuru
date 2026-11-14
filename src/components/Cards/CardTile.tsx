@@ -1,12 +1,12 @@
 import { Link } from "react-router-dom";
-import { memo, useEffect, useMemo, useState } from "react";
-import { ImageOff } from "lucide-react";
+import { memo, useMemo, useState } from "react";
 import type { TcgCard } from "../../types/pokemon";
 import { useExchangeRate } from "../../hooks/useApi";
 import { formatGbp, getCardPrice } from "../../services/pricing";
 import type { ExchangeRate } from "../../services/currency";
 import { rarityLabel } from "../../utils/search";
 import { cn } from "../../utils/cn";
+import CardArtwork, { type ArtworkState } from "./CardArtwork";
 
 const TYPE_COLORS: Record<string, string> = {
   Colorless: "#a8a8a8",
@@ -42,34 +42,11 @@ interface CardTileProps {
 }
 
 function CardTile({ card, priority = false, onPreview, showPrice = true, className, rate: rateProp }: CardTileProps) {
-  const [imageLoaded, setImageLoaded] = useState(false);
-  const [imageFailed, setImageFailed] = useState(false);
-  const [sourceIndex, setSourceIndex] = useState(0);
+  const [artworkState, setArtworkState] = useState<ArtworkState>("loading");
   const { rate: hookRate } = useExchangeRate();
   const rate = rateProp !== undefined ? rateProp : hookRate;
 
-  /**
-   * Prefer the 245×337 thumbnail, but fall back through the other published
-   * derivatives if a specific variant is missing upstream (TCGdex serves
-   * `{low,high}.{webp,png,jpg}` and not every combination exists for every
-   * card).
-   */
-  const sources = useMemo(() => {
-    const base = card.imageBase?.replace(/\.(webp|png|jpg|jpeg)$/i, "");
-    const candidates =
-      card.imageBase && base
-        ? [`${base}/low.webp`, `${base}/low.png`, `${base}/high.webp`]
-        : [card.images.small, card.images.large].filter((value): value is string => Boolean(value));
-    return [...new Set(candidates)];
-  }, [card.imageBase, card.images.small, card.images.large]);
-
-  useEffect(() => {
-    setSourceIndex(0);
-    setImageLoaded(false);
-    setImageFailed(false);
-  }, [sources]);
-
-  const imageUrl = sources[sourceIndex];
+  const artworkReady = artworkState === "loaded" || artworkState === "missing" || artworkState === "failed";
   const price = useMemo(() => (showPrice ? getCardPrice(card, rate) : null), [card, rate, showPrice]);
   const priceLabel = price ? formatGbp(price.headlineGbp) : null;
 
@@ -78,37 +55,14 @@ function CardTile({ card, priority = false, onPreview, showPrice = true, classNa
   const rarity = rarityLabel(card.rarity);
 
   const image = (
-    <>
-      {imageUrl && !imageFailed ? (
-        <img
-          src={imageUrl}
-          alt={`${label} card image`}
-          width={245}
-          height={337}
-          loading={priority ? "eager" : "lazy"}
-          decoding="async"
-          fetchPriority={priority ? "high" : "auto"}
-          onLoad={() => setImageLoaded(true)}
-          onError={() => {
-            if (sourceIndex + 1 < sources.length) {
-              setSourceIndex((index) => index + 1);
-              setImageLoaded(false);
-            } else {
-              setImageFailed(true);
-            }
-          }}
-          className={cn(
-            "h-full w-full object-contain transition-[opacity,transform] duration-300 group-hover:scale-[1.035] motion-reduce:transform-none",
-            imageLoaded ? "opacity-100" : "opacity-0"
-          )}
-        />
-      ) : (
-        <span className="flex h-full w-full flex-col items-center justify-center gap-2 p-3 text-center text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--muted-dim)]">
-          <ImageOff size={22} aria-hidden="true" />
-          Image unavailable
-        </span>
-      )}
-    </>
+    <CardArtwork
+      card={card}
+      size="thumb"
+      priority={priority}
+      alt={`${label} card image`}
+      emptyLabel="No artwork"
+      onStateChange={setArtworkState}
+    />
   );
 
   return (
@@ -116,7 +70,7 @@ function CardTile({ card, priority = false, onPreview, showPrice = true, classNa
       <div
         className={cn(
           "holo-shimmer relative aspect-[245/337] w-full overflow-hidden rounded-t-[var(--radius)] border border-b-0 border-[var(--border)] bg-[var(--bg-inset)] transition-shadow duration-200 group-hover:shadow-[0_18px_40px_-18px_rgba(0,0,0,0.9)]",
-          !imageLoaded && !imageFailed && "animate-shimmer"
+          !artworkReady && "animate-shimmer"
         )}
       >
         {onPreview ? (

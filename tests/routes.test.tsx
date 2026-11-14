@@ -76,6 +76,22 @@ describe("routing and direct navigation", () => {
     expect(screen.getByText(/These are simulated pulls, not physical cards/)).toBeTruthy();
   });
 
+  it("renders the top 100 page with an honest empty state", async () => {
+    window.history.pushState({}, "", "/top-100");
+    render(<App />);
+    expect(await screen.findByRole("heading", { level: 1, name: /most valuable pokémon cards/i })).toBeTruthy();
+    // Nothing in the stubbed API carries a Cardmarket trend, so the list must
+    // stay empty rather than inventing values.
+    expect(await screen.findByText(/No priced cards yet/i)).toBeTruthy();
+  });
+
+  it("links to the top 100 from the primary navigation", async () => {
+    window.history.pushState({}, "", "/");
+    render(<App />);
+    const links = await screen.findAllByRole("link", { name: /top 100/i });
+    expect(links.some((link) => link.getAttribute("href")?.endsWith("/top-100"))).toBe(true);
+  });
+
   it("shows the not-found page for unknown routes", async () => {
     window.history.pushState({}, "", "/this-page-does-not-exist");
     render(<App />);

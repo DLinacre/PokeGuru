@@ -22,6 +22,7 @@ const SimCollectionPage = lazy(() => import("./pages/SimCollectionPage"));
 const WikiPage = lazy(() => import("./pages/WikiPage"));
 const AboutPage = lazy(() => import("./pages/AboutPage"));
 const CollectionPage = lazy(() => import("./pages/CollectionPage"));
+const Top100Page = lazy(() => import("./pages/Top100Page"));
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 
 /**
@@ -52,6 +53,7 @@ export default function App() {
             <Route path="packs" element={<PacksPage />} />
             <Route path="packs/collection" element={<SimCollectionPage />} />
             <Route path="packs/:setId" element={<PackOpenPage />} />
+            <Route path="top-100" element={<Top100Page />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Routes>

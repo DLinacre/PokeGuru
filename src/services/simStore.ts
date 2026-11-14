@@ -63,6 +63,7 @@ function normaliseCard(raw: unknown): PulledCard | null {
     tier: (typeof value.tier === "string" ? value.tier : "other") as PulledCard["tier"],
     treatment,
     image: typeof value.image === "string" ? value.image : undefined,
+    imageBase: typeof value.imageBase === "string" ? value.imageBase : undefined,
     slot: typeof value.slot === "string" ? value.slot : "unknown",
   };
 }

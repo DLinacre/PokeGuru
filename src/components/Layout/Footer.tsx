@@ -3,9 +3,11 @@ import { Link } from "react-router-dom";
 import { BuyMeAPackPanel } from "../UI/BuyMeAPack";
 import FlyerActions from "../Flyer/FlyerActions";
 import Brand from "./Brand";
+import { APP_VERSION } from "../../utils/version";
 
 const LINKS = [
   { to: "/search", label: "Card search" },
+  { to: "/top-100", label: "Top 100 by value" },
   { to: "/sets", label: "All sets" },
   { to: "/wiki", label: "UK set wiki" },
   { to: "/collection", label: "Collection vault" },
@@ -111,7 +113,7 @@ export default function Footer() {
           unofficial, non-commercial fan project and is not affiliated with or endorsed by them.
         </p>
         <p>
-          Prices are marketplace reference values (Cardmarket EUR converted to GBP with a dated daily rate), not
+          PokeGuru <span className="font-bold tabular-nums text-[var(--text)]">v{APP_VERSION}</span> · prices are marketplace reference values (Cardmarket EUR converted to GBP with a dated daily rate), not
           completed sales or financial advice. Released under the{" "}
           <a
             href="https://opensource.org/licenses/MIT"
