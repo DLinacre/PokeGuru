@@ -231,6 +231,22 @@ function resolveSlotCards(
         detail: "A basic Energy card printed in this set.",
       };
     }
+    // Card briefs carry no category, so a set whose basic Energies are filed
+    // under "Common" (Base Set, for example) cannot be split out. Fill the
+    // slot from the documented fallback instead of drawing from every rarity.
+    for (const tier of FALLBACK_ORDER[slot.fallback ?? "common"]) {
+      const cards = cardsForTier(pool, tier);
+      if (cards.length) {
+        return {
+          cards,
+          treatment,
+          tiers: [tier],
+          detail: `The database files this set's basic Energy cards as ${TIER_LABELS[tier].toLowerCase()}s, so a ${TIER_LABELS[
+            tier
+          ].toLowerCase()} card fills the Energy slot.`,
+        };
+      }
+    }
   }
 
   // Fixed-tier slots. These must draw from their own rarity, never from the
