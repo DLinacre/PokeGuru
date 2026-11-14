@@ -52,3 +52,22 @@ describe("PWA manifest template", () => {
     }
   });
 });
+
+describe("install prompt capture ordering", () => {
+  const html = readFileSync(path.resolve(__dirname, "../index.html"), "utf8");
+
+  it("loads the capture script in <head> before the React entry", () => {
+    const capture = html.indexOf("pwa-capture.js");
+    const entry = html.indexOf("/src/main.tsx");
+    expect(capture).toBeGreaterThan(-1);
+    expect(entry).toBeGreaterThan(-1);
+    // Chrome fires `beforeinstallprompt` once; a capture script that loads
+    // after the React bundle can miss it entirely.
+    expect(capture).toBeLessThan(entry);
+  });
+
+  it("links the manifest through the deployment base", () => {
+    expect(html).toContain('rel="manifest"');
+    expect(html).toContain("%BASE_URL%manifest.webmanifest");
+  });
+});
