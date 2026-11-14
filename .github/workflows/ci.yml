@@ -59,7 +59,7 @@ jobs:
           test -f dist/sitemap.xml
           # The manifest must be installable: name, 192 + 512 icons, and an
           # id/start_url/scope that agree (all inside the deployment base).
-          node -e "const m=require('./dist/manifest.webmanifest'); const sizes=m.icons.map(i=>i.sizes); if(!m.name||!m.short_name) throw new Error('manifest name missing'); if(!sizes.includes('192x192')||!sizes.includes('512x512')) throw new Error('manifest icons missing'); if(m.id!==m.start_url||m.start_url!==m.scope) throw new Error('manifest id/start_url/scope mismatch'); console.log('manifest ok:', m.id)"
+          node -e "const m=JSON.parse(require('node:fs').readFileSync('dist/manifest.webmanifest','utf8')); const sizes=m.icons.map(i=>i.sizes); if(!m.name||!m.short_name) throw new Error('manifest name missing'); if(!sizes.includes('192x192')||!sizes.includes('512x512')) throw new Error('manifest icons missing'); if(m.id!==m.start_url||m.start_url!==m.scope) throw new Error('manifest id/start_url/scope mismatch'); for (const i of m.icons) if(!i.src.startsWith(m.scope)) throw new Error('icon outside scope: '+i.src); console.log('manifest ok:', m.id)"
           # Production sourcemaps must not ship.
           if find dist -name '*.map' | grep -q .; then
             echo "Unexpected sourcemap in dist" >&2
