@@ -250,11 +250,12 @@ export default function AboutPage() {
               </p>
               <p>
                 <strong className="text-[var(--text)]">Odds are honest.</strong> Pokémon does not publish per-rarity pull
-                odds for individual expansions, and we have no measured community sample to cite. Every percentage in the
-                simulator is therefore derived from the documented pack size and that set&apos;s own rarity mix, and is
-                labelled as an estimate. There is no pity timer, no hidden boost and no rigged &ldquo;exciting&rdquo; pull;
-                random outcomes use the browser&apos;s cryptographic generator, and a reported seed reproduces the same
-                pack.
+                odds for individual expansions. Where a measured community study exists we use it and say so: Scarlet &amp;
+                Violet tier shares come from TCGplayer&apos;s Authentication Center openings (8,000+ packs, published March
+                2023), shown with the source, sample size and the date we checked it. Everywhere else the percentages are
+                PokeGuru estimates derived from the pack layout and the set&apos;s own rarity mix, and they are labelled as
+                estimates. There is no pity timer, no hidden boost and no rigged &ldquo;exciting&rdquo; pull; random
+                outcomes use the browser&apos;s cryptographic generator, and a reported seed reproduces the same pack.
               </p>
               <p>
                 <strong className="text-[var(--text)]">Kept separate.</strong> Simulated pulls live under their own

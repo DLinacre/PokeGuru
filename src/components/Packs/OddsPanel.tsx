@@ -14,8 +14,28 @@ function checkedDate(iso: string): string {
   return date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
 }
 
+const BASIS_STYLES = {
+  measured: {
+    chip: "border-[var(--link)]/40 bg-[var(--bg-elevated)] text-[var(--link)]",
+    heading: "Chance per pack (community-measured)",
+    blurb: "Pack structure from the product guidance; tier odds from a measured opening study.",
+  },
+  documented: {
+    chip: "border-[var(--success)]/40 bg-[var(--success-soft)] text-[var(--success)]",
+    heading: "Chance per pack",
+    blurb: "Pack structure and tier odds both come from published product information.",
+  },
+  estimated: {
+    chip: "border-[var(--accent-2)]/40 bg-[var(--warning-soft)] text-[var(--accent-2)]",
+    heading: "Chance per pack (estimate)",
+    blurb: "Pack layout is modelled; tier odds are a PokeGuru estimate, not a published rate.",
+  },
+} as const;
+
 export default function OddsPanel({ odds }: { odds: PackOdds }) {
   const documented = odds.confidence === "documented";
+  const basisKind = odds.weightsBasis?.kind ?? "estimated";
+  const basis = BASIS_STYLES[basisKind];
 
   return (
     <section aria-labelledby="odds-heading" className="surface p-4 sm:p-5">
@@ -25,22 +45,23 @@ export default function OddsPanel({ odds }: { odds: PackOdds }) {
             <CircleHelp size={15} className="text-[var(--accent-2)]" aria-hidden="true" />
             Pack odds &amp; methodology
           </h2>
-          <p className="mt-1 text-xs text-[var(--muted)]">
-            {documented
-              ? "Pack structure from the product guidance; tier odds are a PokeGuru estimate."
-              : "Pack size is documented; slot split and tier odds are a PokeGuru estimate."}
-          </p>
+          <p className="mt-1 text-xs text-[var(--muted)]">{basis.blurb}</p>
         </div>
-        <span
-          className={
-            documented
-              ? "chip border-[var(--success)]/40 bg-[var(--success-soft)] text-[var(--success)]"
-              : "chip border-[var(--accent-2)]/40 bg-[var(--warning-soft)] text-[var(--accent-2)]"
-          }
-        >
-          {documented ? <ShieldCheck size={11} aria-hidden="true" /> : <TriangleAlert size={11} aria-hidden="true" />}
-          {confidenceLabel(odds.confidence)}
-        </span>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span
+            className={
+              documented
+                ? "chip border-[var(--success)]/40 bg-[var(--success-soft)] text-[var(--success)]"
+                : "chip border-[var(--accent-2)]/40 bg-[var(--warning-soft)] text-[var(--accent-2)]"
+            }
+          >
+            {documented ? <ShieldCheck size={11} aria-hidden="true" /> : <TriangleAlert size={11} aria-hidden="true" />}
+            {confidenceLabel(odds.confidence)}
+          </span>
+          <span className={`chip ${basis.chip}`} title={odds.weightsBasis?.detail ?? basis.blurb}>
+            {basisKind === "measured" ? "Measured odds" : basisKind === "documented" ? "Documented odds" : "Estimated odds"}
+          </span>
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -57,9 +78,7 @@ export default function OddsPanel({ odds }: { odds: PackOdds }) {
         </div>
 
         <div>
-          <h3 className="mb-2 text-[10px] font-black uppercase tracking-[0.16em] text-[var(--muted-dim)]">
-            Chance per pack (estimate)
-          </h3>
+          <h3 className="mb-2 text-[10px] font-black uppercase tracking-[0.16em] text-[var(--muted-dim)]">{basis.heading}</h3>
           {odds.rows.length ? (
             <ul className="space-y-1.5">
               {odds.rows.slice(0, 9).map((row) => (
@@ -107,11 +126,31 @@ export default function OddsPanel({ odds }: { odds: PackOdds }) {
             {odds.source.note}
           </span>
         </p>
+        {odds.weightsBasis && (
+          <p className="flex items-start gap-2">
+            <Info size={12} className="mt-0.5 shrink-0" aria-hidden="true" />
+            <span>
+              <strong className="text-[var(--text-soft)]">Tier weights:</strong> {odds.weightsBasis.label}
+              {odds.weightsBasis.sampleSize ? ` · sample ${odds.weightsBasis.sampleSize}` : ""}
+              {odds.weightsBasis.checkedAt ? ` · checked ${checkedDate(odds.weightsBasis.checkedAt)}` : ""}
+              {odds.weightsBasis.url && (
+                <>
+                  {" · "}
+                  <a href={odds.weightsBasis.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-0.5">
+                    study <ExternalLink size={10} aria-hidden="true" />
+                  </a>
+                </>
+              )}
+              <br />
+              {odds.weightsBasis.detail}
+            </span>
+          </p>
+        )}
         {odds.notes && <p>{odds.notes}</p>}
         <p>
-          Last checked {checkedDate(odds.checkedAt)}. Pokémon does not publish per-rarity odds for individual expansions, and we have no
-          measured sample for this set, so the tier percentages are modelled from the documented pack size and the set&apos;s own rarity mix.
-          They are entertainment values, not official pull rates.
+          Last checked {checkedDate(odds.checkedAt)}. {basisKind === "measured"
+            ? "Tier percentages reproduce the measured study above, so sampling error applies and other expansions in the era can differ. They are not official rates."
+            : "Pokémon does not publish per-rarity odds for individual expansions, and we have no measured sample for this set, so the tier percentages are modelled from the documented pack size and the set's own rarity mix. They are entertainment values, not official pull rates."}
         </p>
       </div>
     </section>

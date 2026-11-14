@@ -466,6 +466,7 @@ export function computePackOdds(pool: PackPool, config: PackConfig): PackOdds {
     rows,
     slotSummary,
     source: config.source,
+    weightsBasis: config.weightsBasis,
     checkedAt: config.checkedAt,
     notes: config.notes,
     thin,
