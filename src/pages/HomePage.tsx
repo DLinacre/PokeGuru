@@ -10,6 +10,8 @@ import SkeletonGrid from "../components/UI/SkeletonGrid";
 import ErrorMessage from "../components/UI/ErrorMessage";
 import SetTile from "../components/Sets/SetTile";
 import Brand from "../components/Layout/Brand";
+import FlyerActions from "../components/Flyer/FlyerActions";
+import FlyerPreview from "../components/Flyer/FlyerPreview";
 import { getTotalSetCount } from "../data/ukSets";
 import { enrichSetWithWikiMeta } from "../utils/setMeta";
 import { formatGbp, getCardValueGbp } from "../services/pricing";
@@ -289,6 +291,22 @@ export default function HomePage() {
           <Link to="/about" className="btn btn-ghost no-underline hover:no-underline">
             How pricing works
           </Link>
+        </div>
+      </section>
+
+      <section aria-labelledby="share-heading" className="surface overflow-hidden">
+        <div className="grid gap-6 p-5 sm:p-6 lg:grid-cols-[minmax(0,180px)_minmax(0,1fr)] lg:items-center">
+          <FlyerPreview className="mx-auto max-w-[180px]" />
+          <div>
+            <h2 id="share-heading" className="text-lg font-black uppercase tracking-wide">
+              Share PokeGuru
+            </h2>
+            <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-[var(--muted)]">
+              Printed a flyer for your local card shop, league night or binder? Download the official 5 × 7 in poster, print it at
+              100% and pin it up — the QR code takes anyone straight to PokeGuru.
+            </p>
+            <FlyerActions className="mt-4" />
+          </div>
         </div>
       </section>
     </div>

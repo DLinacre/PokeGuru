@@ -13,6 +13,8 @@ import {
   Zap,
 } from "lucide-react";
 import { usePageMeta } from "../hooks/usePageMeta";
+import FlyerActions from "../components/Flyer/FlyerActions";
+import FlyerPreview from "../components/Flyer/FlyerPreview";
 import { BuyMeAPackPanel } from "../components/UI/BuyMeAPack";
 
 const FEATURES = [
@@ -287,6 +289,16 @@ export default function AboutPage() {
               desktop Chrome/Edge use the install icon in the address bar; on iOS use Share → &ldquo;Add to Home
               Screen&rdquo;.
             </p>
+          </div>
+
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-5" id="flyer">
+            <h2 className="mb-3 text-sm font-black uppercase tracking-tight">Share PokeGuru</h2>
+            <p className="mb-3 text-xs leading-relaxed text-[var(--muted)]">
+              A printable 5 × 7 in flyer with a QR code to the live site — perfect for card shops, league nights and
+              trade binders.
+            </p>
+            <FlyerPreview className="mb-4" label="Preview of the printable 5 × 7 in PokeGuru flyer" />
+            <FlyerActions variant="compact" />
           </div>
 
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-5">
