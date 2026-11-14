@@ -31,6 +31,7 @@ import ErrorMessage from "../components/UI/ErrorMessage";
 import PageSkeleton from "../components/UI/PageSkeleton";
 import { CachedBadge } from "../components/UI/DataBadges";
 import { NoData } from "../components/UI/EmptyState";
+import { rarityLabel } from "../utils/search";
 import { getWikiMeta } from "../utils/setMeta";
 import type { TcgCard } from "../types/pokemon";
 
@@ -65,7 +66,7 @@ export default function CardDetailPage() {
   usePageMeta({
     title: card ? `${card.name} · ${card.set.name || "Pokémon card"}` : "Card details",
     description: card
-      ? `${card.name} from ${card.set.name || "the Pokémon TCG"}${card.rarity ? ` (${card.rarity})` : ""} — Cardmarket reference price in GBP and full card details.`
+      ? `${card.name} from ${card.set.name || "the Pokémon TCG"}${card.rarity ? ` (${rarityLabel(card.rarity)})` : ""} — Cardmarket reference price in GBP and full card details.`
       : "Pokémon TCG card details, attacks and Cardmarket reference prices.",
     path: id ? `/card/${id}` : "/search",
     type: "article",
@@ -113,7 +114,7 @@ export default function CardDetailPage() {
       ...(card.rarity || card.illustrator
         ? {
             additionalProperty: [
-              ...(card.rarity ? [{ "@type": "PropertyValue", name: "Rarity", value: card.rarity }] : []),
+              ...(card.rarity ? [{ "@type": "PropertyValue", name: "Rarity", value: rarityLabel(card.rarity) }] : []),
               ...(card.illustrator ? [{ "@type": "PropertyValue", name: "Illustrator", value: card.illustrator }] : []),
             ],
           }
@@ -245,7 +246,7 @@ export default function CardDetailPage() {
             {card.stage && <TypeBadge label={card.stage} />}
             {card.types?.map((type) => <TypeBadge key={type} label={type} />)}
             {card.hp != null && <TypeBadge label={`${card.hp} HP`} />}
-            {card.rarity && <TypeBadge label={card.rarity} />}
+            {card.rarity && <TypeBadge label={rarityLabel(card.rarity)} />}
             {card.regulationMark && <TypeBadge label={`Regulation ${card.regulationMark}`} />}
           </div>
 
@@ -410,7 +411,7 @@ export default function CardDetailPage() {
               </div>
               <div>
                 <dt className="text-[10px] font-bold uppercase tracking-widest text-[var(--muted)]">Rarity</dt>
-                <dd className="text-[var(--text)]">{card.rarity || <NoData />}</dd>
+                <dd className="text-[var(--text)]">{rarityLabel(card.rarity) || <NoData />}</dd>
               </div>
               <div>
                 <dt className="text-[10px] font-bold uppercase tracking-widest text-[var(--muted)]">Standard legal</dt>

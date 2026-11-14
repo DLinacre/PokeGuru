@@ -12,13 +12,13 @@ const QUICK_LINKS = [
   { label: "Charizard", to: "/search?q=charizard" },
   { label: "Pikachu", to: "/search?q=pikachu" },
   { label: "Umbreon", to: "/search?q=umbreon" },
-  { label: "Illustration rares", to: "/search?rarity=Illustration%20Rare&sort=newest" },
+  { label: "Illustration rares", to: "/search?rarity=Illustration%20rare&sort=newest" },
 ];
 
 const CHASE_FILTERS = {
   query: "",
   category: "Pokemon",
-  rarity: "Special Illustration Rare",
+  rarity: "Special illustration rare",
   setId: "",
   sort: "newest" as const,
   page: 1,
@@ -153,11 +153,11 @@ export default function HomePage() {
               Chase cards
             </h2>
             <p className="mt-1 text-sm text-[var(--muted)]">
-              Special Illustration Rares from the newest sets — marketplace reference prices, not sold prices.
+              Special Illustration Rare cards from the newest sets — marketplace reference prices, not sold prices.
             </p>
           </div>
           <Link
-            to="/search?rarity=Special%20Illustration%20Rare&sort=newest"
+            to="/search?rarity=Special%20illustration%20rare&sort=newest"
             className="text-xs font-bold uppercase tracking-widest text-[var(--link)] no-underline"
           >
             See all

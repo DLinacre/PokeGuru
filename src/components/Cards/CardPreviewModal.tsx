@@ -5,6 +5,7 @@ import type { TcgCard } from "../../types/pokemon";
 import type { ExchangeRate } from "../../services/currency";
 import { formatGbp, getCardValueGbp, pickCardmarketQuote, formatUpdatedAt } from "../../services/pricing";
 import { NoData } from "../UI/EmptyState";
+import { rarityLabel } from "../../utils/search";
 import { useExchangeRate } from "../../hooks/useApi";
 
 interface CardPreviewModalProps {
@@ -96,7 +97,7 @@ export default function CardPreviewModal({
             <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
               <div>
                 <dt className="text-[10px] font-bold uppercase tracking-widest text-[var(--muted)]">Rarity</dt>
-                <dd className="text-[var(--text)]">{card.rarity ?? <NoData />}</dd>
+                <dd className="text-[var(--text)]">{rarityLabel(card.rarity) || <NoData />}</dd>
               </div>
               <div>
                 <dt className="text-[10px] font-bold uppercase tracking-widest text-[var(--muted)]">Illustrator</dt>
