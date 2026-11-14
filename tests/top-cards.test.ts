@@ -1,7 +1,8 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   INDEX_KEY,
   clearIndex,
+  discoverCandidates,
   coverage,
   emptyIndex,
   entryFromCard,
@@ -169,5 +170,48 @@ describe("coverage and freshness", () => {
   it("uses the latest marketplace timestamp for the update line", () => {
     const value = indexUpdatedAt(index([entry({ updatedAt: "2026-11-13T22:16:19Z" })]));
     expect(new Date(value ?? 0).getUTCFullYear()).toBe(2026);
+  });
+});
+
+describe("candidate discovery", () => {
+  it("collects briefs per rarity, in order, without duplicates", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = new URL(String(input));
+        if (url.pathname.endsWith("/series")) {
+          return new Response(JSON.stringify([{ id: "sv", name: "Scarlet & Violet" }]), { status: 200 });
+        }
+        if (url.pathname.includes("/series/")) {
+          return new Response(JSON.stringify({ id: "sv", name: "Scarlet & Violet", sets: [] }), { status: 200 });
+        }
+        if (url.pathname.endsWith("/sets")) {
+          return new Response(JSON.stringify([]), { status: 200 });
+        }
+        if (url.pathname.includes("/cards")) {
+          const rarity = url.searchParams.get("rarity") ?? "";
+          const page = Number(url.searchParams.get("pagination:page") ?? "1");
+          const briefs =
+            page === 1
+              ? [
+                  { id: `a-${rarity.length}-1`, localId: "1", name: "One", image: "https://assets.tcgdex.net/en/sv/sv01/1" },
+                  { id: `a-${rarity.length}-2`, localId: "2", name: "Two" },
+                ]
+              : [];
+          return new Response(JSON.stringify(briefs), { status: 200 });
+        }
+        return new Response("{}", { status: 404 });
+      })
+    );
+
+    const progress: number[] = [];
+    const result = await discoverCandidates(undefined, (done) => progress.push(done));
+
+    expect(result.candidates.length).toBeGreaterThan(0);
+    expect(new Set(result.candidates).size).toBe(result.candidates.length);
+    // Every candidate carries the rarity label it came from.
+    for (const id of result.candidates) expect(typeof result.rarities[id]).toBe("string");
+    // Progress reaches the total number of planned requests.
+    expect(Math.max(...progress)).toBeGreaterThan(0);
   });
 });

@@ -59,6 +59,8 @@ export const CANDIDATE_RARITIES: { rarity: string; label: string; pages: number 
 ];
 
 const PAGE_SIZE = 100;
+/** Parallel discovery requests (cheap briefs, cached after the first visit). */
+const DISCOVERY_CONCURRENCY = 4;
 const CANDIDATE_TTL = 7 * 24 * 60 * 60 * 1000;
 
 export interface TopCardEntry {
@@ -202,34 +204,55 @@ export async function discoverCandidates(
   signal?: AbortSignal,
   onProgress?: (done: number, total: number) => void
 ): Promise<{ candidates: string[]; rarities: Record<string, string> }> {
-  const total = CANDIDATE_RARITIES.reduce((sum, entry) => sum + entry.pages, 0);
+  const jobs: { rarity: string; label: string; page: number }[] = [];
+  for (const entry of CANDIDATE_RARITIES) {
+    for (let page = 1; page <= entry.pages; page += 1) {
+      jobs.push({ rarity: entry.rarity, label: entry.label, page });
+    }
+  }
+
+  const perRarity = new Map<string, { label: string; pages: { page: number; ids: string[] }[] }>();
+  let done = 0;
+  let index = 0;
+
+  const worker = async () => {
+    while (index < jobs.length) {
+      if (signal?.aborted) return;
+      const job = jobs[index++];
+      try {
+        const result = await searchCards(
+          { query: "", category: "", rarity: job.rarity, setId: "", sort: "newest", page: job.page, pageSize: PAGE_SIZE },
+          { signal }
+        );
+        const bucket = perRarity.get(job.rarity) ?? { label: job.label, pages: [] };
+        bucket.pages.push({ page: job.page, ids: result.cards.map((card) => card.id) });
+        perRarity.set(job.rarity, bucket);
+      } catch {
+        // A failed page must not lose the pages we already have.
+      } finally {
+        done += 1;
+        onProgress?.(done, jobs.length);
+      }
+    }
+  };
+
+  // Parallel discovery keeps a first visit short; the API tolerates this and
+  // every response is cached for the rest of the session.
+  await Promise.all(Array.from({ length: Math.min(DISCOVERY_CONCURRENCY, jobs.length) }, worker));
+
   const seen = new Set<string>();
   const candidates: string[] = [];
   const rarities: Record<string, string> = {};
-  let done = 0;
-
+  // Keep a stable, highest-value-first order: rarity order, then page order.
   for (const entry of CANDIDATE_RARITIES) {
-    if (signal?.aborted) break;
-    for (let page = 1; page <= entry.pages; page += 1) {
-      if (signal?.aborted) break;
-      try {
-        const result = await searchCards(
-          { query: "", category: "", rarity: entry.rarity, setId: "", sort: "newest", page, pageSize: PAGE_SIZE },
-          { signal }
-        );
-        for (const card of result.cards) {
-          if (seen.has(card.id)) continue;
-          seen.add(card.id);
-          candidates.push(card.id);
-          rarities[card.id] = entry.label;
-        }
-        if (result.cards.length < PAGE_SIZE) break;
-      } catch {
-        // A failed page must not lose the pages we already have.
-        break;
-      } finally {
-        done += 1;
-        onProgress?.(done, total);
+    const bucket = perRarity.get(entry.rarity);
+    if (!bucket) continue;
+    for (const page of bucket.pages.sort((a, b) => a.page - b.page)) {
+      for (const id of page.ids) {
+        if (seen.has(id)) continue;
+        seen.add(id);
+        candidates.push(id);
+        rarities[id] = entry.label;
       }
     }
   }
