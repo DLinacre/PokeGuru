@@ -161,10 +161,16 @@ export default defineConfig(({ mode }) => {
   const isPages = env.DEPLOY_TARGET === "github-pages";
   const base = isPages ? "/PokeGuru/" : env.VITE_BASE_PATH || "/";
   const siteUrl = (env.VITE_PUBLIC_SITE_URL || "").replace(/\/+$/, "");
+  // The service worker cache version is a build stamp; the *app* version shown
+  // in the UI is package.json's version so there is one source of truth.
   const version = `${Date.now()}`;
+  const packageVersion = JSON.parse(fs.readFileSync(path.resolve(__dirname, "package.json"), "utf8")).version as string;
 
   return {
     base,
+    define: {
+      __APP_VERSION__: JSON.stringify(packageVersion),
+    },
     plugins: [
       react(),
       tailwindcss(),

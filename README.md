@@ -58,6 +58,11 @@ and keeps a private collection vault in the browser.
   or estimated, shows the modelled tier odds with sources, and keeps simulated
   pulls in their own store (`pokeguru_pack_sim_v1`) so they can never leak into
   your real collection or its valuation.
+- **Top 100 by value** — a ranked list of the most valuable cards by Cardmarket
+  trend, one printing per card, raw and ungraded, shown in GBP with the EUR
+  source figure, the marketplace update date and the FX rate date. Cards without
+  a real Cardmarket price are excluded; the page states exactly how much of the
+  candidate pool has been priced and never pads the list.
 - **Printable 5 × 7 in flyer** — one-click, vector, print-ready PDF
   (`PokeGuru-5x7-QR-Flyer.pdf`) with a QR code that always points at the live
   production site, plus a Print option that opens your print dialogue. Linked
@@ -117,11 +122,12 @@ so never put secrets in them.
 | Variable | Required | Purpose |
 | --- | --- | --- |
 | `VITE_PUBLIC_SITE_URL` | **yes for the flyer** | Canonical origin used for canonical/OG tags, `sitemap.xml`, absolute `robots.txt` entries **and the QR code on the printable flyer**, e.g. `https://pokeguru.example.com` (no trailing slash). Empty = derive from the browser and skip the sitemap; for the flyer the served origin is used only when it looks like a real production address (see below). When set, the build asks TCGdex for the live set list so every `/set/:id` page is listed (static routes only if the API is unreachable). |
-| `VITE_BUY_ME_A_PACK_URL` | no | A real support/payment page for “Buy Me a Pack”. When empty the call-to-action renders in a clearly labelled *not configured* state — no fabricated link is ever shown. |
 | `DEPLOY_TARGET` | no | `github-pages` builds with the `/PokeGuru/` base path. Leave unset for Vercel and other root-hosted deployments. |
 
-> There is no real donation destination configured in this repository by
-> default. If you fork PokeGuru, set `VITE_BUY_ME_A_PACK_URL` to your own page.
+> **Buy Me a Pack** needs no configuration: every instance links to
+> `https://paypal.me/dlinacre16` in a new tab with `rel="noopener noreferrer"`.
+> If you fork PokeGuru, change the `BUY_ME_A_PACK_URL` constant in
+> `src/components/UI/BuyMeAPack.tsx`.
 
 ---
 
@@ -229,13 +235,63 @@ That data is not available from the free upstream APIs, so it is not displayed.
 
 ## 🖼️ Images & caching
 
-- Card thumbnails use TCGdex’s `low` variant; detail pages use `high`.
-- Images are lazy-loaded below the fold, above-the-fold artwork is eager, and
-  every image has explicit dimensions to avoid layout shift.
+- **One resolver.** `src/services/cardImages.ts` is the only code that builds an
+  image URL: it normalises a TCGdex asset base (an API base, `…/016`, a legacy
+  `…/016.webp` or an already-resolved `…/016/low.webp` — all become `…/016`),
+  refuses to invent a URL for a card with no published artwork, and returns the
+  published derivatives in order (`low.webp → low.png → high.webp → high.png`,
+  reversed for detail art).
+- **One component.** `<CardArtwork>` renders every card image (grids, pack
+  reveals, previews, vault, scanner, header suggestions). It walks the
+  derivative chain, retries on a different format, resets when the card changes
+  and distinguishes *no artwork published* from *failed to load* (with a retry
+  action). A bare broken `<img>` can no longer appear.
+- Thumbnails use the 245×337 `low` variant; detail pages and pack hero art use
+  `high`. Images are lazy below the fold, eager above it, and every image has
+  explicit dimensions to avoid layout shift.
+- The service worker **never intercepts artwork**: `assets.tcgdex.net` and any
+  image request go straight to the network, so a cached or failed entry can
+  never hand an `<img>` a non-image response. Only complete `basic` responses
+  are cached, and quota errors are swallowed rather than breaking a response.
 - Requests are deduplicated in-memory, persisted in `localStorage` with typed
   TTLs, and aborted via `AbortSignal` when a query changes — stale responses can
   never overwrite newer ones.
 - Page size is 24 cards (down from 250) with URL-driven pagination.
+
+---
+
+## 🏆 Top 100 by value
+
+`/top-100` ranks the most valuable Pokémon cards PokeGuru can verify.
+
+**Why it is built the way it is.** Cardmarket publishes no public leaderboard and
+the TCGdex search endpoint returns neither prices nor a price sort, so a price
+ranking has to come from per-card details. Requesting the whole ~20,000-card
+catalogue on every visit would be an unreasonable load on a free public API, so
+the page builds a local price index instead:
+
+1. **Discovery** (~26 requests, cached a week) — collect candidates from the
+   rarities that hold the market's expensive raw cards: Special Illustration
+   Rare, Illustration Rare, Hyper Rare, Secret Rare, Ultra Rare, Rare Holo, Holo
+   Rare, Shiny Rare, Shiny Ultra Rare, Radiant Rare, ACE SPEC Rare, Amazing Rare,
+   Classic Collection, Rare Holo V/VMAX/VSTAR, Rare PRIME, Rare Holo LV.X and
+   LEGEND (~2,600 candidates, one request per 100 cards).
+2. **Pricing** — card details are fetched with a bounded budget per visit
+   (900 on a first pass, 600 per "Price more cards" click), concurrency 5,
+   resumable, and persisted in `localStorage` (`pokeguru.top100.index.v2`).
+3. **Ranking** — only cards with a positive Cardmarket trend are ranked. Ten
+   printing bands are never mixed: each row names the printing its price belongs
+   to, and a non-holo card is never valued from the holofoil band.
+
+**Rules.** English, raw and ungraded cards only; marketplace *reference* prices,
+never completed sales; GBP from the dated Frankfurter rate with the EUR source
+figure beside it; unpriceable cards excluded rather than estimated; the list is
+never padded to 100. The page always shows the marketplace update date, the FX
+rate and its date, how many candidates have been priced, and a progress bar, so
+partial coverage is visible rather than hidden.
+
+Filters: name/set/number search, rarity, era; sorts: value high→low, low→high,
+name, newest set. Reached from the desktop nav, the mobile nav and the footer.
 
 ---
 
@@ -350,10 +406,10 @@ The project is deployed at **https://pokeguru.vercel.app** (production alias).
 
 1. Import `DLinacre/PokeGuru` in Vercel — `vercel.json` already pins the Vite
    framework, `npm ci`, `npm run build` and the `dist` output directory.
-2. Add `VITE_PUBLIC_SITE_URL` (your production URL) and, if you have one,
-   `VITE_BUY_ME_A_PACK_URL`.
-3. SPA rewrites send `/search`, `/card/:id`, `/sets`, `/collection` and
-   `/scanner` to `index.html`, so refreshes and direct links work.
+2. Add `VITE_PUBLIC_SITE_URL` (your production URL). Nothing else is required —
+   “Buy Me a Pack” is a constant, not an environment setting.
+3. SPA rewrites send `/search`, `/card/:id`, `/sets`, `/collection`, `/scanner`
+   and `/top-100` to `index.html`, so refreshes and direct links work.
 4. `main` deploys to production; pull requests get preview deployments.
 5. Security headers (including a CSP that allows TCGdex, Frankfurter and the
    Tesseract CDN), immutable asset caching and `no-store` on `sw.js` are all in
@@ -411,8 +467,10 @@ repository's `github-pages` environment only allows the `gh-pages` branch:
 ## 👋 Buy Me a Pack
 
 PokeGuru is free and ad-free. If it helps you, you can buy the maintainer a pack
-of Pokémon cards — the link is configured with `VITE_BUY_ME_A_PACK_URL` and
-opens with `rel="noopener noreferrer"`.
+of Pokémon cards at **https://paypal.me/dlinacre16**. The link is a constant in
+`src/components/UI/BuyMeAPack.tsx`, so it works identically on production,
+preview deployments and GitHub Pages with no environment variable; every
+instance opens in a new tab with `rel="noopener noreferrer"`.
 
 ---
 

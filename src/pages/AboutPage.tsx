@@ -16,6 +16,7 @@ import { usePageMeta } from "../hooks/usePageMeta";
 import FlyerActions from "../components/Flyer/FlyerActions";
 import FlyerPreview from "../components/Flyer/FlyerPreview";
 import { BuyMeAPackPanel } from "../components/UI/BuyMeAPack";
+import { APP_VERSION } from "../utils/version";
 
 const FEATURES = [
   {
@@ -87,7 +88,7 @@ export default function AboutPage() {
             GBP reference prices and a collection that never leaves your browser.
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-2">
-            {["React 19", "Vite", "Tailwind 4", "TypeScript", "TCGdex", "Frankfurter", "Open source"].map((tag) => (
+            {["React 19", "Vite", "Tailwind 4", "TypeScript", "TCGdex", "Frankfurter", "Open source", `v${APP_VERSION}`].map((tag) => (
               <span
                 key={tag}
                 className="rounded-full border border-[var(--border)] bg-[var(--bg)] px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-[var(--muted)]"
@@ -308,6 +309,7 @@ export default function AboutPage() {
               <li>· Release dates for some newer sets are not in the UK index and are shown as unavailable.</li>
               <li>· OCR works best on sharp, well-lit photos and can misread card names.</li>
               <li>· Cards are added once each; the vault has no quantity support yet.</li>
+              <li>· The Top 100 is built from priced card details, so it shows how much of the candidate pool has been scanned.</li>
             </ul>
           </div>
 

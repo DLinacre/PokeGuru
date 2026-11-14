@@ -1,11 +1,12 @@
 import { Link, useLocation } from "react-router-dom";
-import { Book, Camera, Layers, PackageOpen, Search, Wallet } from "lucide-react";
+import { Book, Camera, Layers, PackageOpen, Search, TrendingUp, Wallet } from "lucide-react";
 import { cn } from "../../utils/cn";
 
 const NAV_ITEMS = [
   { to: "/search", icon: Search, label: "Search" },
   { to: "/sets", icon: Layers, label: "Sets" },
   { to: "/packs", icon: PackageOpen, label: "Packs" },
+  { to: "/top-100", icon: TrendingUp, label: "Top 100" },
   { to: "/collection", icon: Wallet, label: "Vault" },
   { to: "/scanner", icon: Camera, label: "Scan" },
   { to: "/wiki", icon: Book, label: "Wiki" },
@@ -27,14 +28,14 @@ export default function MobileNav() {
             to={to}
             aria-current={isActive ? "page" : undefined}
             className={cn(
-              "relative flex min-w-[56px] flex-1 flex-col items-center justify-center gap-1 rounded-lg px-1 py-1 text-[10px] font-bold uppercase tracking-tight no-underline transition-colors hover:no-underline active:scale-95",
+              "relative flex min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-lg px-0.5 py-1 text-[9px] font-bold uppercase leading-tight tracking-tight no-underline transition-colors hover:no-underline active:scale-95",
               isActive ? "text-[var(--accent-text)]" : "text-[var(--muted)]"
             )}
           >
             {isActive && (
               <span aria-hidden="true" className="absolute left-1/2 top-0 h-0.5 w-8 -translate-x-1/2 rounded-full bg-[var(--accent)]" />
             )}
-            <Icon size={20} strokeWidth={isActive ? 2.6 : 2} aria-hidden="true" />
+            <Icon size={18} strokeWidth={isActive ? 2.6 : 2} aria-hidden="true" />
             <span>{label}</span>
           </Link>
         );
