@@ -370,6 +370,10 @@ estimates.
   matching price and is listed as *No price* rather than borrowing the standard
   printing's figure. Pack totals are therefore *known* values: the UI always
   states how many cards the total covers.
+- **Some cards have no scan upstream.** TCGdex's asset library has no artwork for a few
+  sub-sets (Shiny Vault, Trainer Gallery, Galarian Gallery). Those cards render a
+  labelled stand-in with their own name, set and number instead of substituting
+  artwork from another card or another provider.
 - **Opening history is local and capped.** The last 12 openings are kept in this
   browser (each with its frozen price snapshot); clearing site data removes them,
   and older openings are dropped rather than thinned out.

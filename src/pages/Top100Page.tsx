@@ -58,7 +58,19 @@ function Row({ entry, rank }: { entry: TopCardEntry; rank: number }) {
         tabIndex={-1}
         aria-hidden="true"
       >
-        <CardArtwork card={{ id: entry.id, imageBase: entry.imageBase }} alt="" className="aspect-[245/337] w-full" />
+        <CardArtwork
+          card={{
+            id: entry.id,
+            name: entry.name,
+            imageBase: entry.imageBase,
+            localId: entry.localId,
+            setName: entry.setName,
+            rarity: entry.rarity,
+          }}
+          alt=""
+          placeholder="motif"
+          className="aspect-[245/337] w-full"
+        />
       </Link>
       <div className="min-w-0 flex-1">
         <Link to={`/card/${entry.id}`} className="block truncate text-sm font-bold text-[var(--text)] no-underline hover:no-underline hover:text-[var(--accent-text)]">

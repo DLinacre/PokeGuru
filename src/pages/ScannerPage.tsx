@@ -321,7 +321,7 @@ export default function ScannerPage() {
                           <CardArtwork
                             card={card}
                             alt={`${card.name} card`}
-                            emptyLabel="No artwork"
+                            placeholder="name"
                             className="mx-auto aspect-[245/337] w-full max-w-[140px] rounded-md"
                           />
                           <p className="mt-2 truncate text-sm font-bold text-[var(--text)]">{card.name}</p>

@@ -7,6 +7,22 @@ All notable changes to PokeGuru. The format follows
 Detailed prose for each release — including the tests that were actually run —
 lives in [RELEASE_NOTES.md](RELEASE_NOTES.md).
 
+## [1.12.0] - 2026-11-14
+
+### Added
+- A card-shaped stand-in for cards whose artwork TCGdex does not publish: the
+  card's own name, set and number over a rarity-tinted plate, with a plain
+  *No scan* badge. Shiny Vault, Trainer Gallery and Galarian Gallery cards have
+  no scans at all in TCGdex's asset library, and previously showed an empty grey
+  box in every grid, pack and list.
+
+### Changed
+- `CardArtwork` takes a `placeholder` level (`full`, `name`, `motif`) so 32 px
+  thumbnails stay quiet while grids and pack cards carry the details.
+- A failed image now shows the card's name beside the retry action instead of an
+  anonymous icon.
+- The about page states the artwork rule alongside the pricing rule.
+
 ## [1.11.1] - 2026-11-14
 
 ### Changed

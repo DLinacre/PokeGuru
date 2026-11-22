@@ -65,11 +65,15 @@ export default function PackCard({
             id: pull.id,
             name: pull.name,
             imageBase: pull.imageBase ?? pull.image,
+            localId: pull.localId,
+            setName: pull.setName,
+            rarity: pull.rarity,
+            tier: pull.tier,
           }}
           size="thumb"
           priority={priority}
           alt={`${pull.name} from ${pull.setName}`}
-          emptyLabel="No artwork"
+          placeholder="name"
           imgClassName="rounded-[9px]"
         />
       ) : (

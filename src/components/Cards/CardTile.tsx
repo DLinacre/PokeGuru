@@ -60,7 +60,7 @@ function CardTile({ card, priority = false, onPreview, showPrice = true, classNa
       size="thumb"
       priority={priority}
       alt={`${label} card image`}
-      emptyLabel="No artwork"
+      placeholder="full"
       onStateChange={setArtworkState}
     />
   );

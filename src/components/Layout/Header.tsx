@@ -206,7 +206,7 @@ export default function Header() {
                   <CardArtwork
                     card={card}
                     alt=""
-                    emptyLabel=""
+                    placeholder="motif"
                     className="h-11 w-8 shrink-0 rounded object-contain"
                   />
                   <span className="min-w-0 flex-1">
