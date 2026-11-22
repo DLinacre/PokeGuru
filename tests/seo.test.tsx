@@ -1,4 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { render } from "@testing-library/react";
+import { usePageMeta } from "../src/hooks/usePageMeta";
+import type { JsonLd } from "../src/services/seo";
 import {
   PRODUCTION_ORIGIN,
   absoluteAssetUrl,
@@ -105,3 +108,53 @@ describe("structured data", () => {
     expect(types).toEqual(["Organization", "WebSite", "WebApplication", "WebPage"]);
   });
 });
+
+describe("usePageMeta (runtime head)", () => {
+  function Probe({ path, robots, title }: { path: string; robots?: string; title?: string }) {
+    usePageMeta({ title, description: "A described page.", path, robots });
+    return null;
+  }
+
+  it("writes a query-free canonical, index directive and social tags", async () => {
+    render(<Probe path="/search?q=charizard&sort=newest" title="Search: charizard" />);
+
+    expect(document.querySelector('link[rel="canonical"]')?.getAttribute("href")).toBe(
+      `${PRODUCTION_ORIGIN}/search`
+    );
+    expect(document.querySelector('meta[name="robots"]')?.getAttribute("content")).toBe(
+      "index,follow,max-image-preview:large,max-snippet:-1"
+    );
+    expect(document.querySelector('meta[property="og:url"]')?.getAttribute("content")).toBe(
+      `${PRODUCTION_ORIGIN}/search`
+    );
+    expect(document.querySelector('meta[property="og:image"]')?.getAttribute("content")).toBe(
+      `${PRODUCTION_ORIGIN}/og.png`
+    );
+    expect(document.querySelector('meta[property="og:image:width"]')?.getAttribute("content")).toBe("1200");
+    expect(document.querySelector('meta[property="og:image:height"]')?.getAttribute("content")).toBe("630");
+    expect(document.querySelector('meta[name="twitter:card"]')?.getAttribute("content")).toBe("summary_large_image");
+    expect(document.title).toBe("Search: charizard | PokeGuru");
+  });
+
+  it("honours noindex and removes page JSON-LD on the next route", () => {
+    const schema = graph({ "@type": "WebPage", name: "Filtered" });
+    const { rerender } = render(
+      <Probe path="/search?q=pikachu" robots="noindex,follow" />
+    );
+    expect(document.querySelector('meta[name="robots"]')?.getAttribute("content")).toBe("noindex,follow");
+    expect(document.querySelector('meta[name="googlebot"]')?.getAttribute("content")).toBe("noindex,follow");
+
+    render(<ProbeWithSchema schema={schema} />);
+    expect(document.querySelectorAll('script#page-jsonld')).toHaveLength(1);
+
+    rerender(<Probe path="/sets" />);
+    expect(document.querySelector('meta[name="robots"]')?.getAttribute("content")).toBe(
+      "index,follow,max-image-preview:large,max-snippet:-1"
+    );
+  });
+});
+
+function ProbeWithSchema({ schema }: { schema: JsonLd }) {
+  usePageMeta({ title: "With schema", description: "Schema page.", path: "/top-100", jsonLd: schema });
+  return null;
+}

@@ -71,12 +71,14 @@ collection logic changed.
   cannot publish a self-canonicalising sitemap.
 
 ### Tests
-- New `tests/seo.test.ts` (13 assertions): canonical origin/path handling, asset
+- New `tests/seo.test.tsx` (15 assertions): canonical origin/path handling, asset
   URLs, single site suffix, long-title shortening, `WebSite`/`WebApplication`
   shape (and the absence of invented ratings), `FAQPage` mirroring, `ItemList`
-  numbering and the `@graph` envelope.
+  numbering and the `@graph` envelope — plus two jsdom tests that drive
+  `usePageMeta` and assert the real head output: a query-free canonical,
+  index/`noindex` directives, `og:*`/`twitter:*` tags and JSON-LD replacement.
 - Full run for this release: `tsc --noEmit` clean, `eslint .` clean,
-  `vitest run` **229 passed / 26 files**, `vite build` clean.
+  `vitest run` **231 passed / 26 files**, `vite build` clean.
 
 ## [1.8.0] - 2026-11-14
 
