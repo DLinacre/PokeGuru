@@ -85,10 +85,7 @@ export default function PackValueSummary({
             >
               Market value · Cardmarket GBP
             </h2>
-            <p
-              key={Math.round(totals.totalGbp * 100)}
-              className="mt-1 text-3xl font-black leading-none tabular-nums tracking-tight sm:text-4xl"
-            >
+            <p className="mt-1 text-3xl font-black leading-none tabular-nums tracking-tight sm:text-4xl">
               {nothing ? "—" : formatGbp(totals.totalGbp)}
             </p>
             <p className="mt-1.5 text-xs leading-relaxed text-[var(--muted)]">

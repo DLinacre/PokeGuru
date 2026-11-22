@@ -56,13 +56,17 @@ export default function PackValueBar({
             {hasValue ? amount : "—"}
           </p>
           {/* Announced separately: the visible figure is keyed to restart its
-              animation, which would break a live region on the element itself. */}
-          <span className="sr-only" role="status" aria-live="polite">
+              animation, which would break a live region on the element itself.
+              Deliberately not `role="status"` — the opening callout owns that,
+              and two of them would make the announcement ambiguous. */}
+          <span className="sr-only" aria-live="polite">
             {hasValue
               ? `Pack value ${amount} across ${totals.priced} of ${totals.cards} cards`
               : awaiting > 0
                 ? "Prices are still loading"
-                : "No Cardmarket price for this pack"}
+                : failures > 0
+                  ? "Prices could not be loaded"
+                  : "No Cardmarket price for this pack"}
           </span>
           <p className="mt-1 text-[10px] leading-tight text-[var(--muted)]">
             {hasValue ? (
@@ -73,6 +77,8 @@ export default function PackValueBar({
               </>
             ) : awaiting > 0 ? (
               "Prices are still loading"
+            ) : failures > 0 ? (
+              "Prices could not be loaded — the cards are unaffected"
             ) : (
               "No Cardmarket price for any card in this pack"
             )}
@@ -116,8 +122,8 @@ export default function PackValueBar({
             ) : (
               <>
                 <TriangleAlert size={10} aria-hidden="true" />
-                {failures} price lookup{failures === 1 ? "" : "s"} failed — the
-                packing itself is unaffected.
+                {failures} price lookup{failures === 1 ? "" : "s"} failed — the pack
+                opened exactly as it would have.
               </>
             )}
           </p>

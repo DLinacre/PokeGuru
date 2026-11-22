@@ -148,7 +148,7 @@ export const PUBLIC_ROUTES: PublicRoute[] = [
     heading: "The free Pokémon card opening simulator",
     body: [
       "Pick an expansion and open a virtual booster built from that set's real card pool. Each pack panel states whether its structure is documented or estimated, and shows the modelled tier odds with sources.",
-      "Simulated pulls are stored separately from your real collection, are never valued, and nothing is purchased: this is a fan-made simulator, not a shop.",
+      "Simulated pulls are stored separately from your real collection and nothing is purchased: this is a fan-made simulator, not a shop. Where Cardmarket publishes a price for the printing that was opened, each pull shows that reference figure in GBP with its marketplace date and FX rate; where it does not, the pull is marked unpriced rather than estimated.",
     ],
     links: [
       { href: "/packs/collection", label: "Your simulated pulls" },

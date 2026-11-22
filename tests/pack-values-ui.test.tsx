@@ -209,11 +209,17 @@ describe("pack values in the opening UI", () => {
     fireEvent.click(screen.getByRole("button", { name: "Open pack" }));
     await waitFor(() => expect(onComplete).toHaveBeenCalledTimes(1));
 
+    // A failed lookup is stated as a failure, never as "Cardmarket has no
+    // price" — the two are different claims.
     await waitFor(() =>
-      expect(screen.getByText(/No Cardmarket price for any card in this pack/)).toBeTruthy()
+      expect(
+        screen.getByText(/Prices could not be loaded — the cards are unaffected/)
+      ).toBeTruthy()
     );
+    expect(screen.queryByText(/No Cardmarket price for any card in this pack/)).toBeNull();
     // Every card is still revealed: pricing never blocks the toy.
     expect(screen.getAllByRole("listitem")).toHaveLength(SV.cardsPerPack);
+    expect(screen.getAllByText("No data").length).toBeGreaterThan(0);
     expect(screen.getByText(/lookup/)).toBeTruthy();
   });
 

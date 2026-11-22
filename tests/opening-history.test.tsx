@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import type { OpeningSession, PackResult, PulledCard, RarityTier } from "../src/types/packs";
 
@@ -195,6 +195,23 @@ describe("opening history storage", () => {
     expect(store.getSimSnapshot().openings[0].id).toBe("s19");
   });
 
+  it("does not resurrect cleared openings on the next load", async () => {
+    // A v1 payload with pull history migrates, as documented…
+    localStorage.setItem(
+      KEY,
+      JSON.stringify({ version: 1, history: [pack("p1", [pull("a")])], packsOpened: 1 })
+    );
+    const first = await loadStore();
+    expect(first.getSimSnapshot().openings).toHaveLength(1);
+
+    // …then clearing writes an empty openings array, which must stay empty: the
+    // visitor asked for it to go, so a reload may not rebuild it from history.
+    first.clearOpenings();
+    const reloaded = await loadStore();
+    expect(reloaded.getSimSnapshot().openings).toEqual([]);
+    expect(reloaded.getSimSnapshot().history).toHaveLength(1);
+  });
+
   it("can clear the history without touching the simulated collection", async () => {
     const store = await loadStore();
     store.recordPacks([pack("p9", [pull("z")])]);
@@ -230,6 +247,25 @@ describe("opening history page", () => {
     expect(screen.getByText(/Shrouded Fable/)).toBeTruthy();
     expect(screen.getByText("£8.36")).toBeTruthy();
     expect(screen.getByText(/1 of 2 priced · 1 unavailable/)).toBeTruthy();
+  });
+
+  it("shows both copies when the same card is pulled twice in one pack", async () => {
+    const twice = session();
+    const doubled = {
+      ...twice,
+      packs: [{ ...twice.packs[0], pulls: [...twice.packs[0].pulls, ...twice.packs[0].pulls] }],
+    };
+    localStorage.setItem(KEY, JSON.stringify({ version: 2, openings: [doubled], history: [] }));
+    const PackHistoryPage = (await import("../src/pages/PackHistoryPage")).default;
+    render(
+      <MemoryRouter>
+        <PackHistoryPage />
+      </MemoryRouter>
+    );
+    fireEvent.click(screen.getByRole("button", { name: /Shrouded Fable/ }));
+    // Duplicates count twice: two chips, not one collapsed card. (Matching the
+    // whole chip keeps the page total, which is also £8.36, out of the count.)
+    expect(await screen.findAllByText(/^Card a £8\.36$/)).toHaveLength(2);
   });
 
   it("labels a migrated entry as having no recorded values", async () => {

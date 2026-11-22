@@ -60,12 +60,16 @@ export default function PullValueLine({
     );
   }
 
+  // A lookup that failed is not the same as a price that does not exist. Say
+  // which one it was, and never dress a network error up as marketplace data.
+  const failed = value.flags?.includes("lookup-failed") ?? false;
   return (
     <span
       className={cn(base, "text-[var(--muted-dim)]")}
       title={value.reason ?? "No Cardmarket price for this printing"}
+      aria-label={failed ? "Price unavailable: lookup failed" : "No Cardmarket price"}
     >
-      No price
+      {failed ? "No data" : "No price"}
     </span>
   );
 }

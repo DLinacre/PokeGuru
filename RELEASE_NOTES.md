@@ -1,5 +1,49 @@
 # Release Notes
 
+## [1.11.1] - 2026-11-14
+
+A short follow-up to 1.11.0. Nothing about how values are calculated or stored
+has changed — this is the honesty pass on the words around them, plus two bugs
+the release itself introduced.
+
+### Changed
+- **The packs page tells the truth about values.** It used to say simulated
+  pulls are "never valued". They are now: the bullet and the disclaimer describe
+  Cardmarket reference prices for the printing that was opened, state that they
+  are not appraisals or offers, and say that an unpriced printing is reported
+  rather than guessed. The route description behind the prerendered copy matches.
+- The opening-history header no longer reads "The last  openings" before
+  anything has been saved.
+
+### Fixed
+- **A failed lookup is not a missing price.** A card whose TCGdex request failed
+  was labelled *No price*, which asserts something about Cardmarket that we do
+  not know. It now reads *No data* (with the reason on hover and for screen
+  readers), and the pack bar says the prices could not be loaded rather than
+  claiming none are published. Retry and the "the pack opened exactly as it
+  would have" wording are unchanged.
+- **Cleared history stays cleared.** `parseSimState` rebuilt legacy opening
+  entries from pull history whenever the openings array was empty, so clearing
+  the history and reloading brought it back. Migration now runs only when the
+  stored payload has no openings array at all, i.e. genuinely pre-1.11 data.
+- **No duplicate live regions.** The running total's screen-reader announcement
+  also used `role="status"`, colliding with the opening callout; the callout owns
+  the role and the total announces through `aria-live` alone. This was failing
+  `tests/pack-opening.test.tsx` on `main`.
+- Opening history rendered duplicate pulls with duplicate React keys; each pull
+  in a pack now has a stable, unique key, and a test covers a card pulled twice.
+
+### Tests
+- `tests/opening-history.test.tsx` (13): adds "does not resurrect cleared
+  openings on the next load" and "shows both copies when the same card is pulled
+  twice in one pack".
+- `tests/pack-values-ui.test.tsx` (5): the all-lookups-fail case now asserts
+  *Prices could not be loaded* and *No data*, and that the misleading sentence is
+  gone.
+- `tests/pack-opening.test.tsx`: the keyboard reveal assertion waits for the
+  update instead of racing it.
+- `e2e/pack-values.spec.ts`: selectors aligned with the real buttons and copy.
+
 ## [1.11.0] - 2026-11-14
 
 Pack openings now carry real money: every pull is valued from the same
