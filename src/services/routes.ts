@@ -265,6 +265,20 @@ export const PUBLIC_ROUTES: PublicRoute[] = [
     prerender: false,
   },
   {
+    path: "/packs/history",
+    title: "Your pack opening history",
+    description:
+      "Review previous simulated pack openings with the Cardmarket values that were current when each pack was opened.",
+    heading: "Your opening history",
+    body: [
+      "Each opening is saved in this browser with the prices that were current at the time, so a past opening never changes when the market moves.",
+    ],
+    changefreq: "yearly",
+    priority: "0.1",
+    indexable: false,
+    prerender: false,
+  },
+  {
     path: "/packs/collection",
     title: "Your simulated pulls",
     description: "Simulated pack pulls stored separately from your real collection, with no monetary value.",

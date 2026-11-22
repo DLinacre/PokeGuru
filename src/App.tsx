@@ -19,6 +19,7 @@ const ScannerPage = lazy(() => import("./pages/ScannerPage"));
 const PacksPage = lazy(() => import("./pages/PacksPage"));
 const PackOpenPage = lazy(() => import("./pages/PackOpenPage"));
 const SimCollectionPage = lazy(() => import("./pages/SimCollectionPage"));
+const PackHistoryPage = lazy(() => import("./pages/PackHistoryPage"));
 const WikiPage = lazy(() => import("./pages/WikiPage"));
 const AboutPage = lazy(() => import("./pages/AboutPage"));
 const CollectionPage = lazy(() => import("./pages/CollectionPage"));
@@ -53,6 +54,7 @@ export default function App() {
             <Route path="scanner" element={<ScannerPage />} />
             <Route path="packs" element={<PacksPage />} />
             <Route path="packs/collection" element={<SimCollectionPage />} />
+            <Route path="packs/history" element={<PackHistoryPage />} />
             <Route path="packs/:setId" element={<PackOpenPage />} />
             <Route path="top-100" element={<Top100Page />} />
             <Route path="flyer" element={<FlyerPage />} />

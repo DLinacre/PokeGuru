@@ -1,5 +1,66 @@
 # Release Notes
 
+## [1.11.0] - 2026-11-14
+
+Pack openings now carry real money: every pull is valued from the same
+Cardmarket snapshot the card pages use, the running total only ever counts
+prices that are known, and each completed opening is saved with its prices
+frozen.
+
+### Added
+- **Pack market values** (`src/services/packValues.ts`, `src/hooks/usePackValues.ts`).
+  One calculation layer produces every figure in the pack UI: a card's GBP
+  value, the running pack total, the opening summary, the session totals and the
+  stored snapshot. Totals are the sum of the *rounded* per-card values, so the
+  numbers on screen always add up to the number shown.
+- **Finish-aware pricing** (`resolveFinishQuote` in `src/services/pricing.ts`).
+  A value is only used when its Cardmarket band matches the finish that was
+  pulled. Reverse holofoils have no Cardmarket band in TCGdex's payload, so they
+  are reported as *No price* with the reason, never valued with the standard
+  printing's figure. When a card exists in a single printing the only published
+  band is used and flagged as such.
+- **Running total during the reveal** (`PackValueBar`): current pack value, cards
+  priced, cards unavailable and cards still awaiting a price. The bar never
+  claims the known value is the whole pack.
+- **Per-card prices** under every revealed card, in a fixed-height line so the
+  grid never shifts as values land.
+- **Opening summary** (`PackValueSummary`): known total, cards opened, priced and
+  unavailable counts, highest and lowest priced pull, average per priced card,
+  and for a batch the average known value per pack, the best pack and the number
+  of packs with no priced card.
+- **Opening history** (`/packs/history`): the last 12 openings with date,
+  expansion, packs, cards, frozen value, best pull and price coverage, expandable
+  to per-pack values and a replay link. Empty state included; nothing is
+  fabricated.
+- **Storage schema v2** with migration: existing simulator data is kept and old
+  pull history appears as legacy entries that say "values not recorded" rather
+  than showing a zero. Opening records are dropped oldest-first if local storage
+  fills up, and corrupt payloads are ignored.
+- New tests: `tests/pack-values.test.ts` (21), `tests/pack-values-hook.test.tsx`
+  (6), `tests/pack-values-ui.test.tsx` (5), `tests/opening-history.test.tsx`
+  (11) and `e2e/pack-values.spec.ts`.
+
+### Changed
+- `usePackValues` requests **one detail per unique card id** through the existing
+  TCGdex cache and in-flight de-duplication, at concurrency 4, and only for the
+  pack the visitor has reached — a 36-pack box does not fire 360 requests up
+  front. Responses carry a run token, so a slow request from an earlier pack or
+  session can never price a card in a different opening.
+- Prices stream in the background with a small render batching window; the pack
+  itself never waits for them. A failed lookup becomes an unavailable price with
+  a retry action, and the opening continues regardless.
+- The summary's primary button is now enabled at the end of a pack so
+  reduced-motion users (whose cards are revealed at once) can reach it.
+- Doubles as a fix for the two items left over from 1.10.0: build-time TCGdex
+  requests retry transient failures, and the Pages/release workflows run on Node
+  26 like Vercel and CI.
+
+### Fixed
+- An opening could be snapshotted before its prices arrived (it now waits for
+  every requested price to settle, with a timeout fallback that records what is
+  actually known).
+- Reduced-motion users could not reach the opening summary of a single pack.
+
 ## [1.10.0] - 2026-11-14
 
 A technical release: prerendered HTML, a real card sitemap, accurate structured
