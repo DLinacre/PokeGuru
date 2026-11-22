@@ -26,8 +26,9 @@ export default function SetsPage() {
   const sort = parseSort(searchParams.get("sort"));
 
   usePageMeta({
-    title: "All sets",
-    description: "Browse every Pokémon TCG expansion with release dates, set logos and card counts.",
+    title: "Every Pokémon TCG expansion",
+    description:
+      "Browse every Pokémon TCG expansion with release dates, set logos and card counts, then open any set to see its cards and reference values.",
     path: "/sets",
   });
 

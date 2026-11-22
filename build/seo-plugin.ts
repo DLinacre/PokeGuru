@@ -428,7 +428,7 @@ export function seoFiles(options: SeoPluginOptions): Plugin {
         sitemaps: files.map((file) => ({ path: `/sitemaps/${file.path}`, urls: file.urls.length })),
         notes: [
           "Card and set URLs come from TCGdex at build time; no identifiers are invented.",
-          "No <lastmod> is emitted: upstream modification dates are not published to this build.",
+          "No lastmod element is emitted: upstream modification dates are not published to this build.",
           "Failure to reach TCGdex degrades coverage; the counts above are what was actually written.",
         ],
       };

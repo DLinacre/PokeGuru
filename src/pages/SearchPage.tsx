@@ -38,7 +38,7 @@ export default function SearchPage() {
   const debouncedNumber = useDebouncedValue(numberInput, 450);
   const debouncedIllustrator = useDebouncedValue(illustratorInput, 450);
 
-  const metaTitle = filters.query ? `Search: ${filters.query}` : "Card search";
+  const metaTitle = filters.query ? `Search: ${filters.query}` : "Pokémon card search";
   // Search results are a *view* of /search, not distinct pages: the canonical
   // URL drops the query string and result views are noindex,follow so Google
   // does not index thousands of near-duplicate parameter URLs.

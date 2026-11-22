@@ -51,6 +51,9 @@ logic changed.
   the audit job to fail silently.
 - `npm run build:pages` is a cross-platform Node script (`scripts/build-pages.mjs`)
   instead of `DEPLOY_TARGET=... vite build`, so PowerShell and cmd work.
+- Sets, packs and search titles/descriptions now share the prerendered copy, so
+  the HTML a crawler receives and the head React writes agree exactly.
+- `vercel.json` caches `/sitemaps/*` for an hour.
 
 ### Removed
 - `src/components/UI/JsonLd.tsx` (only existed to inject the misleading Product
