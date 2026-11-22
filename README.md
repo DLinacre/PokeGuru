@@ -362,7 +362,9 @@ estimates.
   English set list.
 - **The pack simulator is a model.** Pack structures are documented where the
   community has documented them and clearly labelled as estimates where it has
-  not; pulls are simulated and carry no monetary value.
+  not. Pulls are simulated: they are not yours to own or sell, and they never
+  count towards your collection's value. Any figure shown against a pull is a
+  Cardmarket reference price for the printing that was opened.
 - **Pack values cover the finishes Cardmarket publishes.** TCGdex exposes
   `normal` and `holo` Cardmarket bands only, so a reverse-holofoil pull has no
   matching price and is listed as *No price* rather than borrowing the standard

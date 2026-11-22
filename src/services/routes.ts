@@ -281,9 +281,12 @@ export const PUBLIC_ROUTES: PublicRoute[] = [
   {
     path: "/packs/collection",
     title: "Your simulated pulls",
-    description: "Simulated pack pulls stored separately from your real collection, with no monetary value.",
+    description: "Simulated pack pulls stored separately from your real collection, shown with the Cardmarket reference value of the printing that was opened.",
     heading: "Your simulated pulls",
-    body: ["Simulated pulls are kept apart from the collection vault so they can never affect your real valuation."],
+    body: [
+      "Simulated pulls are kept apart from the collection vault so they can never affect your real valuation.",
+      "Each pull shows the Cardmarket reference value for the finish that was opened, and the opening history keeps those figures frozen at the time of the pull. They are never presented as cards you own or can sell.",
+    ],
     changefreq: "yearly",
     priority: "0.1",
     indexable: false,

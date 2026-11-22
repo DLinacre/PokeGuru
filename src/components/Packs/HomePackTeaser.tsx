@@ -52,7 +52,7 @@ export default function HomePackTeaser() {
             </Link>
           </div>
           <p className="mt-3 text-[11px] text-[var(--muted-dim)]">
-            Free and unlimited · no ads, currency or purchases · simulated pulls have no monetary value.
+            Free and unlimited · no ads, virtual currency or purchases · simulated pulls are not yours to sell.
           </p>
         </div>
 

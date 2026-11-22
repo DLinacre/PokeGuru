@@ -91,7 +91,9 @@ export default function SimCollectionPage() {
       <div className="mb-5 flex flex-wrap items-center gap-2 rounded-xl border border-[var(--accent-2)]/30 bg-[var(--warning-soft)] p-3 text-[11px] leading-relaxed text-[var(--accent-2)]">
         <TriangleAlert size={14} className="shrink-0" aria-hidden="true" />
         <span>
-          These are simulated pulls, not physical cards. They have no monetary value and are excluded from every price and valuation feature.{" "}
+          These are simulated pulls, not physical cards. They never count towards your collection&apos;s value — any
+          figure shown is the Cardmarket reference price for the printing that was opened, not something you own or can
+          sell.{" "}
           <Link to="/collection" className="font-bold underline">
             Go to your real vault
           </Link>
