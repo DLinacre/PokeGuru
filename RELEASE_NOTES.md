@@ -54,6 +54,11 @@ logic changed.
 - Sets, packs and search titles/descriptions now share the prerendered copy, so
   the HTML a crawler receives and the head React writes agree exactly.
 - `vercel.json` caches `/sitemaps/*` for an hour.
+- `vercel.json` now rewrites each prerendered route to its static file
+  (`/sets` → `/sets.html`) ahead of the SPA catch-all. A cleanUrls-style mapping
+  was not used because it would have 308-redirected `offline.html`, which the
+  service worker precaches. A unit test pins the rewrite list to the prerender
+  registry so the two cannot drift.
 
 ### Removed
 - `src/components/UI/JsonLd.tsx` (only existed to inject the misleading Product
@@ -67,7 +72,7 @@ logic changed.
 
 ### Tests (actually run)
 - `tsc --noEmit` clean, `eslint .` clean, `vite build` clean.
-- `vitest run`: **243 passed / 27 files**.
+- `vitest run`: **245 passed / 27 files**.
 - Prerender and sitemap verified in the build output: eight static route files,
   `sitemap.xml` index, `sitemaps/pages.xml`, `sitemap-coverage.json`, and a
   JavaScript-disabled check of the served HTML is covered by the Playwright suite.
