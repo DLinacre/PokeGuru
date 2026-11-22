@@ -50,6 +50,41 @@ describe("CardArtwork", () => {
     expect(screen.queryByAltText("Promo Drowzee card")).toBeNull();
   });
 
+  it("fills the plate with the card's own details when no scan exists", () => {
+    // Shining Fates Shiny Vault and the other subset sets have no scans in the
+    // TCGdex asset library at all: the tile must still look like a card.
+    render(
+      <CardArtwork
+        card={{
+          id: "swsh4.5sv-SV122",
+          name: "Eternatus VMAX",
+          localId: "SV122",
+          setName: "Shining Fates Shiny Vault",
+          rarity: "Secret Rare",
+        }}
+        alt="Eternatus VMAX from Shining Fates Shiny Vault"
+      />
+    );
+    expect(screen.getByText("Eternatus VMAX")).toBeTruthy();
+    expect(screen.getByText("Shining Fates Shiny Vault · #SV122")).toBeTruthy();
+    expect(screen.getByText(/no scan/i)).toBeTruthy();
+    // It is labelled as a stand-in, never as the card's artwork.
+    expect(screen.getByRole("img", { name: /no artwork available/i })).toBeTruthy();
+  });
+
+  it("keeps thumbnails quiet: motif only, and hidden from assistive tech", () => {
+    const { container } = render(
+      <CardArtwork
+        card={{ id: "swsh4.5sv-SV122", name: "Eternatus VMAX", setName: "Shining Fates Shiny Vault" }}
+        alt=""
+        placeholder="motif"
+      />
+    );
+    expect(screen.queryByText("Eternatus VMAX")).toBeNull();
+    expect(screen.queryByText(/no scan/i)).toBeNull();
+    expect(container.querySelector("[aria-hidden='true']")).toBeTruthy();
+  });
+
   it("recovers artwork saved as a full URL", () => {
     render(<CardArtwork card={{ id: "sv06.5-016", images: { small: `${BASE}/low.webp` } }} alt="Drowzee card" />);
     const img = screen.getByAltText("Drowzee card") as HTMLImageElement;

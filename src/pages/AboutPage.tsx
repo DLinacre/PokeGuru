@@ -158,6 +158,13 @@ export default function AboutPage() {
                 Available</strong>. It does not estimate, interpolate or invent values. TCGplayer figures are shown in
                 USD and are never silently converted.
               </p>
+              <p>
+                <strong className="text-[var(--text)]">Artwork has the same rule.</strong> Card images come from
+                TCGdex&apos;s asset library. A handful of sub-sets — Shiny Vault, Trainer Gallery and Galarian Gallery,
+                among others — have no scans in that library at all. Those tiles show the card&apos;s own name, set and
+                number on a labelled plate that says it has no scan, rather than borrowing artwork for a different card
+                or inventing one.
+              </p>
               <div className="rounded-xl border border-[var(--accent-2)]/30 bg-[var(--accent-2)]/10 p-4 text-[var(--accent-2)]">
                 <p className="flex items-start gap-2 font-semibold">
                   <Info size={16} className="mt-0.5 shrink-0" aria-hidden="true" />

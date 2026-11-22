@@ -1,5 +1,42 @@
 # Release Notes
 
+## [1.12.0] - 2026-11-14
+
+Every card tile now has artwork — the real scan where TCGdex publishes one, and
+a labelled card-shaped stand-in where it does not.
+
+### Why
+TCGdex's asset library has no scans for whole sub-sets. Its own compiler only
+publishes an image URL when the asset exists (`getCardPictures` reads
+`assets.tcgdex.net/datas.json`), and for
+`swsh4.5sv` (Shining Fates Shiny Vault), `swsh10tg` (Astral Radiance Trainer
+Gallery) and `swsh12.5gg` (Crown Zenith Galarian Gallery) it publishes none — not
+in the set payload, not in the card detail. PokeGuru therefore rendered a grey
+"No artwork" box for every one of those cards, which reads as a broken app.
+
+The fix is deliberately *not* to substitute another card's art or to add a second
+image provider, both of which would risk showing the wrong scan.
+
+### Added
+- **Card stand-in** in the shared `CardArtwork` component: the card's own name,
+  set and number, over a plate tinted by rarity (a stable hash when the rarity is
+  unknown), with light and ring decoration drawn in CSS and a plain *No scan*
+  badge. It is a designed placeholder, never presented as card art, and it is
+  labelled for assistive technology as "no artwork available".
+- Detail levels: `full` (grid tiles, collection, scanner, card pages), `name`
+  (small pack cards) and `motif` (32 px header thumbnails and the Top 100 strip,
+  which are decorative and hidden from screen readers).
+
+### Changed
+- The failed-image state names the card next to the retry action.
+- The about page explains the artwork rule next to the pricing rule, and the
+  README lists the gap under known limitations.
+
+### Tests
+- `tests/card-artwork.test.tsx` (8): the stand-in shows the card's name, set and
+  number and is labelled as a stand-in; the motif level stays quiet and is
+  hidden from assistive technology.
+
 ## [1.11.1] - 2026-11-14
 
 A short follow-up to 1.11.0. Nothing about how values are calculated or stored
