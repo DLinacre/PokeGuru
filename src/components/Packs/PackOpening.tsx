@@ -940,7 +940,7 @@ export default function PackOpening({
         <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-[var(--muted)]">
           <span className="inline-flex items-center gap-1.5">
             <RotateCcw size={12} aria-hidden="true" />
-            Free and unlimited — no currency, no ads, no accounts.
+            Free and unlimited — no virtual currency, no ads, no accounts.
           </span>
           <span>Simulated pulls have no real-world value.</span>
         </div>

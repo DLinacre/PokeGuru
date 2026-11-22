@@ -14,6 +14,13 @@ the release itself introduced.
   rather than guessed. The route description behind the prerendered copy matches.
 - The opening-history header no longer reads "The last  openings" before
   anything has been saved.
+- **One consistent line about simulated pulls.** The about page ("never priced"),
+  the simulated-collection page ("no monetary value … excluded from every price
+  feature"), the pack footer ("no currency") and the home teaser said pulls carry
+  no value, which the value bar now contradicts. All four say the same thing: a
+  pull is not part of your collection or its valuation, and any figure shown is a
+  Cardmarket reference price for the printing that was opened, not something you
+  own or can sell.
 
 ### Fixed
 - **A failed lookup is not a missing price.** A card whose TCGdex request failed

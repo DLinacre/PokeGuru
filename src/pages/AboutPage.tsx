@@ -233,8 +233,8 @@ export default function AboutPage() {
             </div>
             <div className="space-y-3 text-sm leading-relaxed text-[var(--muted)]">
               <p>
-                The simulator opens virtual Pokémon TCG booster packs. It is free and unlimited, with no currency, no
-                ads, no account and no purchase — and the pulls are entertainment only.
+                The simulator opens virtual Pokémon TCG booster packs. It is free and unlimited, with no virtual
+                currency, no ads, no account and no purchase — and the pulls are entertainment only.
               </p>
               <p>
                 <strong className="text-[var(--text)]">Pack contents are real.</strong> Cards are drawn from the chosen
@@ -262,8 +262,10 @@ export default function AboutPage() {
               </p>
               <p>
                 <strong className="text-[var(--text)]">Kept separate.</strong> Simulated pulls live under their own
-                storage key, are never added to your collection, never priced, and are excluded from every valuation. The
-                reset button clears only simulated data.
+                storage key, are never added to your collection, and are excluded from your collection&apos;s totals and
+                valuations. They are shown with the Cardmarket reference value for the printing that was opened, and the
+                opening history keeps those figures frozen at the moment of the pull. The reset button clears only
+                simulated data.
               </p>
               <p>
                 <strong className="text-[var(--text)]">Artwork.</strong> TCGdex does not publish product-wrapper images,

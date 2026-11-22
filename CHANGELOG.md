@@ -16,6 +16,12 @@ lives in [RELEASE_NOTES.md](RELEASE_NOTES.md).
   plainly that an unpriced printing is reported rather than guessed. The route
   description used for prerendered copy matches.
 
+- The about page, the simulated-collection page, the pack footer and the home
+  teaser no longer describe pulls as "never priced" / "no monetary value". They
+  now say pulls are kept apart from the collection's totals and valuations, and
+  that any figure shown is a Cardmarket reference price for the printing that was
+  opened — never something you own or can sell.
+
 ### Fixed
 - A pulled card whose price lookup failed said *No price*, implying Cardmarket
   had none. It now reads *No data*, and the pack bar says the prices could not be
