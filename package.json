@@ -1,7 +1,7 @@
 {
   "name": "pokeguru",
   "private": true,
-  "version": "1.7.2",
+  "version": "1.8.0",
   "description": "Pok\u00e9mon TCG card database with pricing, set browsing, card scanning and a pack opening simulator",
   "author": "LIN4CRE",
   "license": "MIT",

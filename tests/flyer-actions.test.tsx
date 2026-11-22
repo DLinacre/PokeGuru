@@ -27,7 +27,7 @@ describe("FlyerActions", () => {
       fireEvent.click(button);
     });
 
-    await waitFor(() => expect(screen.getByText(/PokeGuru-5x7-QR-Flyer\.pdf/)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(/PokeGuru-5x6-QR-Flyer\.pdf/)).toBeTruthy());
     expect(HTMLAnchorElement.prototype.click).toHaveBeenCalledTimes(1);
     expect(URL.createObjectURL).toHaveBeenCalledTimes(1);
 

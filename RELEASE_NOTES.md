@@ -1,5 +1,34 @@
 # Release Notes
 
+## [1.8.0] - 2026-11-14
+
+### Added
+- **The flyer has its own page (`/flyer`).** Live preview, download and print
+  controls, a three-step “printing it on 5 × 6 photo paper” guide, a “what is on
+  it” checklist and a “does the QR scan?” note. Linked from the footer nav, the
+  homepage “Share PokeGuru” panel and the About page.
+- `/flyer` and `/top-100` added to `sitemap.xml`.
+
+### Changed
+- **Flyer is now 5 × 6 in (127 × 152.4 mm = 360 × 432 pt)** for standard 5 × 6
+  photo paper. The scene was re-laid out for the shorter sheet: tighter hero,
+  same 98 pt QR, badge and legal lines moved up, and a ~6 mm safe margin so
+  borderless photo printing cannot clip the artwork. The print view’s
+  `@page`/sheet CSS, the PDF page box, the preview aspect ratio, the download
+  filename (`PokeGuru-5x6-QR-Flyer.pdf`) and every on-screen dimension all match.
+- **Flyer controls no longer appear on every page.** The footer, homepage and
+  About page now carry a single link to `/flyer` instead of the download/print
+  panel, so the site chrome stays clean.
+
+### Tests
+- New coverage for the 5 × 6 in geometry (points, millimetres, page box, print
+  CSS, SVG viewBox) and for the layout staying inside the sheet.
+- New coverage for the flyer’s dedicated page and for the footer *not* embedding
+  the controls.
+- The price-confidence test now pins `Date.now()` to the day after its fixture,
+  so it no longer turns “verified” into “indicative” purely as wall-clock time
+  passes (it had started failing for that reason alone).
+
 ## [1.7.2] - 2026-11-14
 
 ### Fixed

@@ -31,6 +31,8 @@ const STATIC_ROUTES = [
   "/scanner",
   "/packs",
   "/packs/collection",
+  "/top-100",
+  "/flyer",
   "/about",
 ];
 

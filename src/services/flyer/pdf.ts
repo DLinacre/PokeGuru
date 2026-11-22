@@ -39,7 +39,7 @@ export async function renderFlyerPdf(scene: FlyerScene): Promise<RenderedPdf> {
   const doc = await PDFDocument.create();
   doc.setTitle(scene.title);
   doc.setAuthor("PokeGuru");
-  doc.setSubject(`PokeGuru promotional flyer (5 × 7 in) — ${scene.url}`);
+  doc.setSubject(`PokeGuru promotional flyer (5 × 6 in photo paper) — ${scene.url}`);
   doc.setKeywords(["PokeGuru", "Pokémon TCG", "flyer", "QR code", "promotional"]);
   doc.setCreator("PokeGuru flyer generator");
   doc.setProducer("PokeGuru (pdf-lib)");

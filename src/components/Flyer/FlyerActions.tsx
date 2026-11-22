@@ -13,7 +13,7 @@ interface FlyerActionsProps {
 }
 
 /**
- * Download / print controls for the 5 × 7 in promotional flyer.
+ * Download / print controls for the 5 × 6 in promotional flyer.
  *
  * The PDF is generated in the browser on demand, so the button always hands
  * out the current design with a QR code for the live production address — there
@@ -58,7 +58,7 @@ export default function FlyerActions({ variant = "full", className, showPrint = 
       setStatus({
         tone: printed || downloaded ? "ok" : "warn",
         text: printed
-          ? "Print dialogue opened at 5 × 7 in — keep the scale at 100% / Actual size."
+          ? "Print dialogue opened at 5 × 6 in — choose 5 × 6 photo paper and keep the scale at 100% / Actual size."
           : downloaded
             ? "Your browser blocked the print window, so the PDF was downloaded instead. Print it at 100%."
             : "The print window could not be opened. Use Download PokeGuru Flyer and print the PDF instead.",
@@ -104,12 +104,12 @@ export default function FlyerActions({ variant = "full", className, showPrint = 
 
       {compact ? (
         <p id="flyer-note" className="text-[11px] text-[var(--muted)]">
-          5 × 7 in print-ready PDF · QR links to{" "}
+          5 × 6 in photo-paper PDF · QR links to{" "}
           <strong className="text-[var(--text-soft)]">{origin.origin ? origin.host : "the live site once configured"}</strong>
         </p>
       ) : (
         <p id="flyer-note" className="text-xs leading-relaxed text-[var(--muted)]">
-          One-page, print-ready PDF · exactly 5 × 7 in (127 × 177.8 mm) · the QR code links to{" "}
+          One-page, print-ready PDF · exactly 5 × 6 in (127 × 152.4 mm) for 5 × 6 photo paper · the QR code links to{" "}
           <strong className="text-[var(--text-soft)]">{origin.origin ? origin.host : "the live site once configured"}</strong>. Free to
           download, print and share — no account needed.
         </p>

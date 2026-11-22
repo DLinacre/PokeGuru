@@ -1,7 +1,6 @@
 import { ExternalLink, Info } from "lucide-react";
 import { Link } from "react-router-dom";
 import { BuyMeAPackPanel } from "../UI/BuyMeAPack";
-import FlyerActions from "../Flyer/FlyerActions";
 import Brand from "./Brand";
 import { APP_VERSION } from "../../utils/version";
 
@@ -12,6 +11,7 @@ const LINKS = [
   { to: "/wiki", label: "UK set wiki" },
   { to: "/collection", label: "Collection vault" },
   { to: "/scanner", label: "Card scanner" },
+  { to: "/flyer", label: "Printable flyer" },
   { to: "/about", label: "About & sources" },
 ];
 
@@ -56,11 +56,6 @@ export default function Footer() {
             </svg>
             Source on GitHub
           </a>
-
-          <div className="mt-5 border-t border-[var(--border)] pt-4">
-            <h2 className="mb-2 text-[11px] font-black uppercase tracking-widest text-[var(--text)]">Share PokeGuru</h2>
-            <FlyerActions variant="compact" />
-          </div>
         </div>
 
         <nav aria-labelledby="footer-explore">

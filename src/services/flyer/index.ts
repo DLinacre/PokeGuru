@@ -1,7 +1,7 @@
 /**
  * Promotional flyer — public API used by the UI.
  *
- * The flyer is a 5 × 7 in, single-page, vector PDF with a QR code that points
+ * The flyer is a 5 × 6 in, single-page, vector PDF with a QR code that points
  * at the live production site. It is generated on demand (never bundled as a
  * static asset) so there is exactly one copy, it always matches the current
  * design, and the QR code can never go stale after a redeploy.
@@ -65,7 +65,7 @@ export async function downloadFlyer(): Promise<FlyerFile> {
  *
  * Browsers cannot print a PDF file for you, so the print view is the exact same
  * vector scene rendered as inline SVG on a page whose `@page` size is the flyer
- * itself (127 × 177.8 mm) — the dialogue therefore defaults to 5 × 7 in, and the
+ * itself (127 × 152.4 mm) — the dialogue therefore defaults to 5 × 6 in, and the
  * output stays vector. If the pop-up is blocked we download the PDF instead, so
  * the action never becomes a dead end.
  */
@@ -103,18 +103,18 @@ export async function printFlyer(): Promise<{ printed: boolean; downloaded: bool
   return { printed: true, downloaded: false };
 }
 
-/** Minimal print view: one 5 × 7 in sheet, no chrome, no scripts. */
+/** Minimal print view: one 5 × 6 in sheet, no chrome, no scripts. */
 function printDocument(svg: string): string {
   return `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>PokeGuru flyer — 5 × 7 in</title>
+<title>PokeGuru flyer — 5 × 6 in</title>
 <style>
-  @page { size: 127mm 177.8mm; margin: 0; }
+  @page { size: 127mm 152.4mm; margin: 0; }
   html, body { margin: 0; padding: 0; background: #ffffff; }
-  .sheet { width: 127mm; height: 177.8mm; }
-  .sheet svg { display: block; width: 127mm; height: 177.8mm; }
+  .sheet { width: 127mm; height: 152.4mm; }
+  .sheet svg { display: block; width: 127mm; height: 152.4mm; }
   .hint { font: 13px/1.4 system-ui, sans-serif; color: #4b5563; padding: 12px 16px; }
   .hint strong { color: #111827; }
   @media print { .hint { display: none; } .sheet { margin: 0; box-shadow: none; } }
@@ -122,7 +122,7 @@ function printDocument(svg: string): string {
 </style>
 </head>
 <body>
-<p class="hint"><strong>Print at 100% / Actual size</strong> for a true 5 × 7 in (127 × 177.8 mm) flyer. This window can be closed once printed.</p>
+<p class="hint"><strong>Print at 100% / Actual size</strong> on 5 × 6 in (127 × 152.4 mm) photo paper — borderless if your printer allows it. This window can be closed once printed.</p>
 <div class="sheet">${svg}</div>
 </body>
 </html>`;

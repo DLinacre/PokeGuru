@@ -53,6 +53,11 @@ and keeps a private collection vault in the browser.
   confirm the match; nothing is added silently.
 - **UK pricing** — EUR→GBP conversion uses live [Frankfurter](https://frankfurter.dev/)
   rates (cached for 12 h) with the rate date and marketplace update date shown.
+- **Cinematic pack opening** — a staged tear, then a growing pile of flipped
+  cards with a full-screen pull burst graded by rarity (common → nice → chase →
+  top), a spotlight banner naming each notable pull, a batch cheer for multi-pack
+  rips, and one-press “rip again”. Reduced motion removes the effects, not the
+  information, and rapid tapping is deliberately damped so it never strobes.
 - **Pack Opening Simulator** — open unlimited virtual boosters from every era,
   generated from the real card pool of the chosen expansion with era-specific
   pack structures. Every pack panel states whether its structure is documented
@@ -64,10 +69,11 @@ and keeps a private collection vault in the browser.
   source figure, the marketplace update date and the FX rate date. Cards without
   a real Cardmarket price are excluded; the page states exactly how much of the
   candidate pool has been priced and never pads the list.
-- **Printable 5 × 7 in flyer** — one-click, vector, print-ready PDF
-  (`PokeGuru-5x7-QR-Flyer.pdf`) with a QR code that always points at the live
-  production site, plus a Print option that opens your print dialogue. Linked
-  from the footer, the homepage “Share PokeGuru” panel and the About page.
+- **Printable 5 × 6 in flyer, on its own page** — `/flyer` has the live preview,
+  the download and a print view for standard 5 × 6 photo paper
+  (`PokeGuru-5x6-QR-Flyer.pdf`) with a QR code that always points at the live
+  production site. It lives on that one page only — the rest of the site just
+  links to it.
 - **Offline-tolerant PWA** — app shell cached, clearly labelled cached data, a
   safe update prompt that never traps you on an old version, and an optional
   install invitation (“Take PokeGuru with you!”).
@@ -134,13 +140,15 @@ so never put secrets in them.
 
 ## 🎴 Printable flyer
 
-Every page footer, the homepage “Share PokeGuru” panel and the About page offer
-**🎴 Download PokeGuru Flyer** (and **Print flyer**).
+The flyer has its own page at **`/flyer`** — preview, **🎴 Download PokeGuru
+Flyer** and **Print flyer** live there and nowhere else. The footer, the homepage
+“Share PokeGuru” panel and the About page each carry a single link to it, so the
+controls no longer follow you around the site.
 
-- **File:** `PokeGuru-5x7-QR-Flyer.pdf` — exactly one page, exactly **5 × 7 in
-  portrait (127 × 177.8 mm = 360 × 504 pt)**. The PDF is generated in the browser
-  on demand, so it is never a stale checked-in binary: one current design, one
-  download, no server work.
+- **File:** `PokeGuru-5x6-QR-Flyer.pdf` — exactly one page, exactly **5 × 6 in
+  portrait (127 × 152.4 mm = 360 × 432 pt)**, the standard 5 × 6 photo-paper
+  size. The PDF is generated in the browser on demand, so it is never a stale
+  checked-in binary: one current design, one download, no server work.
 - **Everything is vector** — text uses the standard Helvetica faces, the artwork
   is native PDF paths and the QR code is one rectangle per module, so it stays
   sharp at any print resolution.
@@ -156,10 +164,15 @@ Every page footer, the homepage “Share PokeGuru” panel and the About page of
   instead of generating a QR code that would not work once printed — no dummy
   URLs, ever.
 - **Print flyer** builds the same vector scene into a print view with
-  `@page { size: 127mm 177.8mm; margin: 0 }` and opens the browser’s print
-  dialogue, so the page defaults to 5 × 7 in and stays vector. Keep the scale at
-  100% / “Actual size” (never “Fit to page”). The design is full-bleed dark, so
-  a slightly heavier paper stock keeps it crisp.
+  `@page { size: 127mm 152.4mm; margin: 0 }` and opens the browser’s print
+  dialogue, so the page defaults to 5 × 6 in and stays vector. Choose 5 × 6 in
+  (or “borderless photo 127 × 152 mm”) photo paper and keep the scale at 100% /
+  “Actual size” (never “Fit to page”).
+- **Designed for photo stock:** nothing important sits within ~6 mm of the trim,
+  so borderless printing cannot clip the artwork; the QR panel is a generous
+  white block on a dark page, which keeps it scannable on gloss; and the layout
+  has a hard test (`tests/flyer.test.ts`) asserting no element falls outside the
+  5 × 6 in sheet.
 - **Wording:** the flyer advertises only shipped features (search, set archive,
   collection, real market prices, free virtual packs) and carries an unofficial
   fan-project disclaimer. No official artwork, logos, character images or
@@ -180,8 +193,23 @@ sitemap, canonical tags and the printed QR code all follow that one value.
 | Card-pool builder (rarity-filtered briefs) | `src/services/packPools.ts` |
 | Random generation engine + odds | `src/services/packEngine.ts` |
 | Simulated collection store | `src/services/simStore.ts` |
-| Opening experience | `src/components/Packs/*`, `src/pages/PackOpenPage.tsx` |
+| Opening experience (incl. the cinematic stage) | `src/components/Packs/*`, `src/pages/PackOpenPage.tsx` |
+| Pull bursts, drama grading & celebrations | `src/components/Packs/PullBurst.tsx` |
+| The pile of flipped cards | `src/components/Packs/RevealPile.tsx` |
+| Repeat-rip controls & pull highlights | `src/components/Packs/QuickRip.tsx`, `HighlightStrip.tsx` |
 | Catalogue & collection pages | `src/pages/PacksPage.tsx`, `src/pages/SimCollectionPage.tsx` |
+
+**The opening itself:** `PackOpening.tsx` runs a phase machine — sealed → tearing
+→ revealing → summary. The tear opens the wrapper, then every card sits in one
+fixed grid (four columns on a phone, five on larger screens) so the whole pack is
+always visible with no horizontal strip to swipe. Flipping pushes the card onto
+`RevealPile`, whose depth grows as you rip, and notable pulls raise a
+`PullBurst` graded by rarity with matching copy. Rapid taps switch to a shorter
+banner instead of the full-screen celebration, batch rips get a cheer, and
+`Reveal all`, skip and the sound/motion toggles are always available — nothing is
+auto-drawn, and the pack is only generated when the user opens it. On a first
+visit the OS “reduce motion” setting is honoured until the user makes their own
+choice with the toggle.
 
 **What is real:** card ids, names, images, expansion membership and rarity all
 come from TCGdex. Pools are built by asking for card briefs per rarity, so a

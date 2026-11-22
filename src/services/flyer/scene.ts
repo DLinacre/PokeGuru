@@ -12,8 +12,12 @@
  * and reads naturally when laying a poster out from the header down.
  */
 
-export const FLYER_PT = { width: 360, height: 504 } as const; // exactly 5 × 7 in
-export const FLYER_MM = { width: 127, height: 177.8 } as const;
+/**
+ * Exactly 5 × 6 in — the standard 5 × 6 photo-paper size, so the PDF prints
+ * borderless on photo stock without scaling or cropping.
+ */
+export const FLYER_PT = { width: 360, height: 432 } as const; // 5 in × 6 in at 72 pt/in
+export const FLYER_MM = { width: 127, height: 152.4 } as const;
 
 export type FontFace = "bold" | "regular" | "italic";
 
@@ -285,9 +289,9 @@ export function buildFlyerScene({ url, host, modules, quietZone = 4 }: FlyerScen
 
   // Background
   primitives.push(...verticalGradient(0, 0, width, height, "#141a26", "#07080c"));
-  primitives.push(...radialGlow(width - 26, 74, 150, FLYER_COLORS.accent, 0.5));
-  primitives.push(...radialGlow(22, height - 96, 140, FLYER_COLORS.gold, 0.34));
-  primitives.push(...radialGlow(width / 2, 250, 190, FLYER_COLORS.blue, 0.12));
+  primitives.push(...radialGlow(width - 26, 66, 140, FLYER_COLORS.accent, 0.5));
+  primitives.push(...radialGlow(22, height - 84, 130, FLYER_COLORS.gold, 0.34));
+  primitives.push(...radialGlow(width / 2, 210, 175, FLYER_COLORS.blue, 0.12));
 
   // Thin accent rule at the very top
   primitives.push({ type: "rect", x: 0, y: 0, w: width, h: 3, fill: FLYER_COLORS.accent });
@@ -333,42 +337,42 @@ export function buildFlyerScene({ url, host, modules, quietZone = 4 }: FlyerScen
   });
 
   /* ---------------- Hero artwork ---------------- */
-  primitives.push(...boosterPack(248, 62, 56, 82, 13));
+  primitives.push(...boosterPack(252, 60, 50, 74, 13));
   primitives.push(
-    ...cardFace(64, 96, 62, 86, -11, {
+    ...cardFace(70, 82, 56, 78, -11, {
       frame: "#e8566a",
       art: "#2a1220",
       glow: FLYER_COLORS.gold,
     })
   );
   primitives.push(
-    ...cardFace(150, 82, 76, 104, 2, {
+    ...cardFace(150, 70, 68, 94, 2, {
       frame: "#1d2740",
       art: "#0e1a2c",
       glow: FLYER_COLORS.blue,
     })
   );
   // Holo sheen sweeping across the centre card.
-  primitives.push({ type: "rect", x: 156, y: 96, w: 16, h: 84, r: 8, fill: "#ffffff", opacity: 0.07, rotate: 18 });
-  primitives.push({ type: "rect", x: 196, y: 96, w: 7, h: 84, r: 3.5, fill: FLYER_COLORS.blue, opacity: 0.12, rotate: 18 });
+  primitives.push({ type: "rect", x: 156, y: 82, w: 15, h: 76, r: 7.5, fill: "#ffffff", opacity: 0.07, rotate: 18 });
+  primitives.push({ type: "rect", x: 192, y: 82, w: 6.5, h: 76, r: 3.2, fill: FLYER_COLORS.blue, opacity: 0.12, rotate: 18 });
   primitives.push(
-    ...cardFace(236, 100, 62, 86, 12, {
+    ...cardFace(240, 86, 56, 78, 12, {
       frame: "#f0c05a",
       art: "#241a08",
       glow: FLYER_COLORS.green,
     })
   );
-  primitives.push(...sparkle(126, 92, 13, FLYER_COLORS.gold, 0.95));
-  primitives.push(...sparkle(300, 168, 10, FLYER_COLORS.blue, 0.9));
-  primitives.push(...sparkle(46, 176, 8, FLYER_COLORS.accent, 0.85));
+  primitives.push(...sparkle(128, 78, 12, FLYER_COLORS.gold, 0.95));
+  primitives.push(...sparkle(304, 148, 9, FLYER_COLORS.blue, 0.9));
+  primitives.push(...sparkle(48, 158, 8, FLYER_COLORS.accent, 0.85));
 
   /* ---------------- Headline ---------------- */
   primitives.push({
     type: "text",
     x: width / 2,
-    y: 236,
+    y: 196,
     text: "DISCOVER. COLLECT. OPEN.",
-    size: 18,
+    size: 17,
     font: "bold",
     color: FLYER_COLORS.gold,
     align: "center",
@@ -377,7 +381,7 @@ export function buildFlyerScene({ url, host, modules, quietZone = 4 }: FlyerScen
   primitives.push({
     type: "rect",
     x: width / 2 - 26,
-    y: 245,
+    y: 205,
     w: 52,
     h: 2,
     r: 1,
@@ -393,9 +397,9 @@ export function buildFlyerScene({ url, host, modules, quietZone = 4 }: FlyerScen
     primitives.push({
       type: "text",
       x: width / 2,
-      y: 264 + index * 12,
+      y: 222 + index * 11,
       text: line,
-      size: 9,
+      size: 8.6,
       font: "regular",
       color: FLYER_COLORS.muted,
       align: "center",
@@ -403,10 +407,12 @@ export function buildFlyerScene({ url, host, modules, quietZone = 4 }: FlyerScen
   });
 
   /* ---------------- QR code ---------------- */
-  const panelX = 62;
-  const panelY = 296;
+  // Photo paper is trimmed borderless, so the panel keeps a generous margin
+  // inside the 5 × 6 in sheet.
+  const panelX = 66;
+  const panelY = 252;
   const panelW = width - panelX * 2;
-  const panelH = 156;
+  const panelH = 132;
   primitives.push({
     type: "rect",
     x: panelX,
@@ -416,9 +422,9 @@ export function buildFlyerScene({ url, host, modules, quietZone = 4 }: FlyerScen
     r: 12,
     fill: FLYER_COLORS.white,
   });
-  const qrSize = 118;
+  const qrSize = 98;
   const qrX = width / 2 - qrSize / 2;
-  const qrY = panelY + 8;
+  const qrY = panelY + 7;
   primitives.push({
     type: "qr",
     x: qrX,
@@ -433,9 +439,9 @@ export function buildFlyerScene({ url, host, modules, quietZone = 4 }: FlyerScen
   primitives.push({
     type: "text",
     x: width / 2,
-    y: qrY + qrSize + 19,
+    y: qrY + qrSize + 17,
     text: host,
-    size: 13,
+    size: 12.5,
     font: "bold",
     color: "#0b0d12",
     align: "center",
@@ -444,35 +450,35 @@ export function buildFlyerScene({ url, host, modules, quietZone = 4 }: FlyerScen
 
   /* ---------------- Badge + footer ---------------- */
   const badgeText = "FREE TO EXPLORE · UNLIMITED VIRTUAL PACK OPENINGS";
-  const badgeW = 268;
+  const badgeW = 276;
   const badgeX = width / 2 - badgeW / 2;
   primitives.push({
     type: "rect",
     x: badgeX,
-    y: 458,
+    y: 390,
     w: badgeW,
-    h: 18,
-    r: 9,
+    h: 17,
+    r: 8.5,
     fill: FLYER_COLORS.gold,
   });
   primitives.push({
     type: "text",
     x: width / 2,
-    y: 466,
+    y: 398,
     text: badgeText,
-    size: 7.2,
+    size: 6.8,
     font: "bold",
     color: "#20160a",
     align: "center",
-    tracking: 0.55,
+    tracking: 0.42,
   });
 
   primitives.push({
     type: "text",
     x: width / 2,
-    y: 484,
+    y: 416,
     text: "Unofficial fan-made companion. No physical cards are supplied or sold.",
-    size: 5.6,
+    size: 5.2,
     font: "regular",
     color: FLYER_COLORS.mutedDim,
     align: "center",
@@ -480,9 +486,9 @@ export function buildFlyerScene({ url, host, modules, quietZone = 4 }: FlyerScen
   primitives.push({
     type: "text",
     x: width / 2,
-    y: 493,
+    y: 423,
     text: "Not affiliated with or endorsed by The Pokémon Company, Nintendo, Creatures Inc. or GAME FREAK.",
-    size: 5.6,
+    size: 5.2,
     font: "regular",
     color: FLYER_COLORS.mutedDim,
     align: "center",
