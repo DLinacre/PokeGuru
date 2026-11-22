@@ -1,12 +1,14 @@
 {
   "name": "pokeguru",
   "private": true,
-  "version": "1.8.0",
-  "description": "Pok\u00e9mon TCG card database with pricing, set browsing, card scanning and a pack opening simulator",
+  "version": "1.9.0",
+  "description": "PokeGuru — an open Pokémon TCG card database: card search, every set, GBP reference prices, a private collection vault and a free pack-opening simulator.",
   "author": "LIN4CRE",
   "license": "MIT",
-  "repository": "github:LIN4CRE/PokeGuru",
-  "bugs": "https://github.com/DLinacre/PokeGuru/issues",
+  "repository": "github:DLinacre/PokeGuru",
+  "bugs": {
+    "url": "https://github.com/DLinacre/PokeGuru/issues"
+  },
   "homepage": "https://pokeguru.vercel.app",
   "type": "module",
   "overrides": {
@@ -20,9 +22,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "icons": "node scripts/generate-icons.mjs",
-    "deploy": "npm run build:pages && npx gh-pages -d dist -m \"deploy: $(git log --oneline -1)\"",
-    "lint": "eslint ."
+    "icons": "node scripts/generate-brand-assets.mjs",
+    "lint": "eslint .",
+    "brand": "node scripts/generate-brand-assets.mjs"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.3.0",

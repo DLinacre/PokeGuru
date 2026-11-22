@@ -1,39 +1,66 @@
 <!doctype html>
-<html lang="en">
+<html lang="en-GB">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PokeGuru — The Pokémon Card Guru</title>
+    <title>PokeGuru — The Pokémon Card Guru | Pokémon TCG database</title>
     <meta
       name="description"
-      content="A fast, open Pokémon TCG card database: search every card, browse every set, check Cardmarket reference prices in GBP and track your collection privately."
+      content="An open Pokémon TCG card database: search every card, browse every set, check Cardmarket reference prices in GBP, keep a private collection and open free virtual booster packs."
     />
-    <meta name="keywords" content="pokemon, tcg, cards, database, pokemon cards, collector, pricing, cardmarket, sets" />
+    <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1" />
+    <meta name="googlebot" content="index,follow,max-image-preview:large,max-snippet:-1" />
     <meta name="theme-color" content="#08090d" />
     <meta name="color-scheme" content="dark" />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <meta name="application-name" content="PokeGuru" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="PokeGuru" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
-    <!-- Open Graph / Twitter (absolute URLs are added at runtime from the real origin) -->
+    <!--
+      Canonical + social defaults. The runtime hook (src/hooks/usePageMeta.ts)
+      rewrites these per route and always uses the official Vercel origin, so
+      the GitHub Pages mirror and preview URLs never canonicalise themselves.
+    -->
+    <link rel="canonical" href="https://pokeguru.vercel.app/" />
+
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="PokeGuru" />
-    <meta property="og:title" content="PokeGuru — The Pokémon Card Guru" />
+    <meta property="og:locale" content="en_GB" />
+    <meta property="og:url" content="https://pokeguru.vercel.app/" />
+    <meta property="og:title" content="PokeGuru — The Pokémon Card Guru | Pokémon TCG database" />
     <meta
       property="og:description"
-      content="Search Pokémon cards, browse sets and check Cardmarket reference prices in GBP — with a private, local-only collection vault."
+      content="An open Pokémon TCG card database with Cardmarket reference prices in GBP, set archives, a private collection vault and a free pack-opening simulator."
+    />
+    <meta property="og:image" content="https://pokeguru.vercel.app/og.png" />
+    <meta property="og:image:secure_url" content="https://pokeguru.vercel.app/og.png" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="PokeGuru social card: the PokeGuru logo with a holographic Pokémon card, and the words Search every card. Track every set. Rip virtual packs."
     />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="PokeGuru — The Pokémon Card Guru" />
+    <meta name="twitter:title" content="PokeGuru — The Pokémon Card Guru | Pokémon TCG database" />
     <meta
       name="twitter:description"
-      content="A fast, open Pokémon TCG database with dated GBP reference prices."
+      content="Search every Pokémon TCG card, track every set, check GBP reference prices and rip free virtual packs."
+    />
+    <meta name="twitter:image" content="https://pokeguru.vercel.app/og.png" />
+    <meta
+      name="twitter:image:alt"
+      content="PokeGuru social card: the PokeGuru logo with a holographic Pokémon card."
     />
 
     <link rel="icon" href="%BASE_URL%favicon.svg" type="image/svg+xml" />
-    <link rel="apple-touch-icon" href="%BASE_URL%icons/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="48x48" href="%BASE_URL%favicon-48.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="%BASE_URL%favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="%BASE_URL%favicon-16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="%BASE_URL%icons/apple-touch-icon.png" />
     <link rel="manifest" href="%BASE_URL%manifest.webmanifest" />
 
     <!-- Capture beforeinstallprompt before React loads (see public/pwa-capture.js).
@@ -67,7 +94,9 @@
     <div id="root"></div>
     <noscript>
       <p style="padding: 24px; font-family: system-ui, sans-serif; color: #e7e9ee; background: #0f1115">
-        PokeGuru needs JavaScript to search the Pokémon TCG card database.
+        PokeGuru is a Pokémon TCG card database with GBP reference prices, set archives, a private collection
+        vault and a free pack-opening simulator. It needs JavaScript to search the card database —
+        <a href="https://pokeguru.vercel.app/about" style="color: #ff8a92">read about the app and its data sources</a>.
       </p>
     </noscript>
     <script type="module" src="/src/main.tsx"></script>

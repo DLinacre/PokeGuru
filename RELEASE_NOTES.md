@@ -1,5 +1,83 @@
 # Release Notes
 
+## [1.9.0] - 2026-11-14
+
+A branding, SEO and repository-presentation release. No card, pricing, pack or
+collection logic changed.
+
+### Branding
+- **New logo mark** (`assets/logo-mark.svg`) — an ivory "chase" card with a
+  crimson header band and gold guru star, fanned over a deep-blue back card, on a
+  dark tile. Replaces the old icon set everywhere: favicon (SVG + 16/32/48/192
+  PNG), `apple-touch-icon`, PWA `192`/`512`, a 12 %-padded `maskable` icon, the
+  Open Graph image and the GitHub banner.
+- **`Brand.tsx` rebuilt** as an inline mirror of the mark with `useId`-scoped
+  gradient ids (no id collisions when several marks render), plus a
+  `BrandWordmark` and a `compact` variant.
+- **New social card** (`assets/social-card.svg` → `public/og.png`, 1200 × 630 and
+  a committed 1280 × 640 banner for GitHub) with the wordmark, a three-line
+  claim, six feature chips and the live URL.
+- **Empty states and loading now carry real artwork**: a new `BrandArtwork`
+  component (SVG, no extra request) replaces the generic dashed box, and the
+  route skeleton already shows the live mark.
+- One generator, `scripts/generate-brand-assets.mjs`, renders every icon and
+  social asset (`npm run brand`). The old `generate-icons.mjs` is gone.
+
+### SEO
+- **New `src/services/seo.ts`** is the single source of truth for the canonical
+  origin (Vercel), canonical-path normalisation, social image dimensions and
+  Schema.org builders.
+- **Canonicals always point at `https://pokeguru.vercel.app`**, including from
+  the GitHub Pages mirror and preview deployments. Query strings and hashes are
+  stripped, so `/search?q=…` never becomes a canonical URL.
+- **Titles** are formatted once: the site name is appended at most once, and long
+  titles are shortened rather than truncated by Google. Fixes the doubled
+  “Top 100 … · PokeGuru | PokeGuru” suffix.
+- **Indexing directives**: search result views and the 404 page are
+  `noindex,follow`; everything else is `index,follow` with
+  `max-image-preview:large`.
+- **Open Graph/Twitter**: `og:image`/`og:url` are now in the static HTML as well
+  as the runtime head, with `og:image:width/height/alt`, `og:image:type`,
+  `twitter:card=summary_large_image` and image alt text.
+- **Structured data**: `Organization`, `WebSite` (with `SearchAction`) and
+  `WebApplication` ship in the static shell; `WebPage` per route, `FAQPage` on the
+  home page (matching the new visible FAQ copy) and `ItemList` on Top 100. No
+  ratings, review counts or prices are invented.
+- **`sitemap.xml`** now carries `lastmod`, per-route `changefreq`/`priority` and
+  is generated even when `VITE_PUBLIC_SITE_URL` is unset (it defaults to the
+  production origin); `robots.txt` always points at the canonical sitemap.
+- `index.html` head rewritten: canonical, robots/googlebot, colour scheme,
+  referrer policy, PWA/apple meta, corrected icon paths, and a `<noscript>`
+  summary of what the app is.
+
+### Promotion
+- **New `ShareLinks` component** — real X/Facebook/Reddit/LinkedIn/WhatsApp/email
+  intent links plus a copy-link button, all pointing at the canonical origin. On
+  the home page and the flyer page.
+- The home page “Share PokeGuru” panel now pairs the share row with the printable
+  flyer CTA, and a new **six-question FAQ** gives search results (and readers)
+  straight answers about pricing sources, privacy and the simulator.
+
+### Repository
+- **README rewritten** around the live Vercel URL: brand banner, what the app is,
+  current feature set, tech stack, project structure, quick start, scripts,
+  configuration, Vercel deployment, SEO notes, testing, known limitations,
+  privacy, contributing and licence.
+- Repository metadata corrected: `bugs`/`repository` point at the real repo,
+  `homepage` at the live site, and the legacy `npm run deploy` (gh-pages) script
+  was removed — the manual workflow uses `build:pages`.
+- New `CHANGELOG.md`; version bumped to **1.9.0**.
+- GitHub Pages workflow now builds with the Vercel canonical origin, so the mirror
+  cannot publish a self-canonicalising sitemap.
+
+### Tests
+- New `tests/seo.test.ts` (13 assertions): canonical origin/path handling, asset
+  URLs, single site suffix, long-title shortening, `WebSite`/`WebApplication`
+  shape (and the absence of invented ratings), `FAQPage` mirroring, `ItemList`
+  numbering and the `@graph` envelope.
+- Full run for this release: `tsc --noEmit` clean, `eslint .` clean,
+  `vitest run` **229 passed / 26 files**, `vite build` clean.
+
 ## [1.8.0] - 2026-11-14
 
 ### Added

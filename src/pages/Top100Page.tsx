@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowUpDown, Info, RefreshCw, Search, TrendingUp, TriangleAlert, Wallet } from "lucide-react";
 import { usePageMeta } from "../hooks/usePageMeta";
+import { graph, itemListSchema, webPageSchema } from "../services/seo";
 import { useDebouncedValue } from "../hooks/useApi";
 import { useTopCards } from "../hooks/useTopCards";
 import { formatEur, formatGbp, formatUpdatedAt } from "../services/pricing";
@@ -91,11 +92,31 @@ export default function Top100Page() {
   const [sort, setSort] = useState<SortKey>("value-desc");
   const debouncedQuery = useDebouncedValue(query, 250);
 
+  // ItemList mirrors what is actually rendered: only priced cards are ranked,
+  // so the structured data can never claim a longer list than the page shows.
+  const listSchema = useMemo(
+    () =>
+      graph(
+        webPageSchema({
+          name: "Top 100 most valuable Pokémon cards",
+          description:
+            "The most valuable Pokémon cards by Cardmarket trend, with GBP and EUR reference prices and the marketplace update date.",
+          path: "/top-100",
+        }),
+        itemListSchema(
+          "Top 100 most valuable Pokémon cards",
+          entries.slice(0, 100).map((entry) => ({ name: entry.name, url: `/card/${entry.id}` }))
+        )
+      ),
+    [entries]
+  );
+
   usePageMeta({
-    title: "Top 100 most valuable Pokémon cards · PokeGuru",
+    title: "Top 100 most valuable Pokémon cards",
     description:
       "The 100 most valuable Pokémon cards by Cardmarket trend, with GBP and EUR reference prices, the printing each price belongs to and the marketplace update date.",
     path: "/top-100",
+    jsonLd: listSchema,
   });
 
   const rarities = useMemo(() => {

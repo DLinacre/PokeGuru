@@ -3,7 +3,12 @@ import { Home, Search } from "lucide-react";
 import { usePageMeta } from "../hooks/usePageMeta";
 
 export default function NotFoundPage() {
-  usePageMeta({ title: "Page not found", description: "This PokeGuru page does not exist.", path: "/404" });
+  usePageMeta({
+    title: "Page not found",
+    description: "This PokeGuru page does not exist. Use the search to find a Pokémon card or set instead.",
+    path: "/404",
+    robots: "noindex,follow",
+  });
 
   return (
     <div className="flex flex-col items-center justify-center py-20 text-center">
