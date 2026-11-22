@@ -3,6 +3,8 @@ import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, ArrowUpDown, CalendarDays, Layers, Search, Tag, Wallet } from "lucide-react";
 import { useExchangeRate, useSet } from "../hooks/useApi";
 import { usePageMeta } from "../hooks/usePageMeta";
+import Breadcrumbs from "../components/UI/Breadcrumbs";
+import { breadcrumbSchema, graph, webPageSchema } from "../services/seo";
 import { useCollection } from "../hooks/useCollection";
 import CardGrid from "../components/Cards/CardGrid";
 import ErrorMessage from "../components/UI/ErrorMessage";
@@ -101,12 +103,35 @@ export default function SetDetailPage() {
 
   const set = useMemo(() => (rawSet ? enrichSetWithWikiMeta(rawSet) : null), [rawSet]);
 
+  // Visible breadcrumbs, mirrored by BreadcrumbList markup.
+  const crumbs = useMemo(
+    () => [{ name: "Sets", path: "/sets" }, { name: set?.name ?? "Set" }],
+    [set?.name]
+  );
+
+  const pageLd = useMemo(() => {
+    if (!set) return null;
+    const count = set.cardCount.total ?? set.cardCount.official ?? set.cards?.length ?? 0;
+    return graph(
+      webPageSchema({
+        type: "CollectionPage",
+        name: `${set.name}${set.series ? ` (${set.series})` : ""}`,
+        description: `Every card in the Pokémon TCG set ${set.name}${
+          count ? ` (${count} cards)` : ""
+        }, with Cardmarket reference prices shown in GBP.`,
+        path: `/set/${set.id}`,
+      }),
+      breadcrumbSchema(crumbs)
+    );
+  }, [set, crumbs]);
+
   usePageMeta({
     title: set?.name ?? "Set details",
     description: set
       ? `${set.name}${set.series ? ` (${set.series})` : ""} — browse all ${set.cardCount.total ?? set.cardCount.official ?? ""} cards in this Pokémon TCG set.`
       : "Browse a Pokémon TCG set.",
     path: id ? `/set/${id}` : "/sets",
+    jsonLd: pageLd,
   });
 
   useEffect(() => {
@@ -153,6 +178,7 @@ export default function SetDetailPage() {
 
   return (
     <div>
+      <Breadcrumbs items={crumbs} />
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <Link
           to="/sets"

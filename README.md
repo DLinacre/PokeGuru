@@ -7,7 +7,7 @@
 
 <p align="center">
   <a href="https://pokeguru.vercel.app"><img src="https://img.shields.io/badge/live-pokeguru.vercel.app-F04452?style=for-the-badge&logo=vercel&logoColor=white" alt="Open the live PokeGuru app"></a>
-  <img src="https://img.shields.io/badge/version-1.9.0-F5A524?style=for-the-badge" alt="Version 1.9.0">
+  <img src="https://img.shields.io/badge/version-1.10.0-F5A524?style=for-the-badge" alt="Version 1.10.0">
   <img src="https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React 19">
   <img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript">
   <img src="https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white" alt="Vite">
@@ -146,7 +146,8 @@ you on an old build, and installing is optional.
 | OCR | [Tesseract.js 7](https://github.com/naptha/tesseract.js) (lazy, on demand) |
 | PDF / QR | `pdf-lib` + `qrcode-generator` (client-side only) |
 | Brand renders | `sharp` (dev-time script only) |
-| Tests | Vitest + Testing Library + jsdom |
+| Unit tests | Vitest + Testing Library + jsdom |
+| Browser tests | Playwright + `@axe-core/playwright` |
 | Hosting | **Vercel** (official), GitHub Pages (optional mirror) |
 
 No paid services, API keys or subscriptions are required to run or host it.
@@ -157,6 +158,9 @@ No paid services, API keys or subscriptions are required to run or host it.
 
 ```
 PokeGuru/
+├── build/
+│   └── seo-plugin.ts        # prerendering + sitemap index generation
+├── e2e/                     # Playwright browser + accessibility tests
 ├── assets/                  # vector brand sources + rendered social assets
 │   ├── logo-mark.svg        #   the mark, used for every icon
 │   ├── social-card.svg      #   1280 × 640 social layout
@@ -175,7 +179,8 @@ PokeGuru/
 │   └── utils/               # formatting, URLs, search params
 ├── tests/                   # Vitest suites (26 files)
 ├── index.html               # static head: canonical, OG/Twitter, JSON-LD
-├── vite.config.ts           # CSP, sitemap.xml, robots.txt, manifest, sw.js
+├── playwright.config.ts     # four device projects (2 phones, tablet, desktop)
+├── vite.config.ts           # CSP, robots.txt, manifest, sw.js, chunking
 └── vercel.json              # SPA rewrites + security headers
 ```
 
@@ -231,6 +236,11 @@ secret in one.
 To deploy your own copy: fork, import the repository into Vercel, and set
 `VITE_PUBLIC_SITE_URL` to your domain. Nothing else is needed.
 
+**Windows.** Every script is cross-platform: `npm ci`, `npm run dev`, `npm run
+build`, `npm test`, `npm run typecheck`, `npm run lint` and even the Pages mirror
+(`npm run build:pages`, a Node wrapper in `scripts/build-pages.mjs`) work in
+PowerShell and cmd without Unix-style `VAR=value` prefixes.
+
 ### GitHub Pages — optional mirror
 
 `.github/workflows/deploy.yml` can publish a `/PokeGuru/`-based mirror. It is
@@ -244,21 +254,38 @@ never shown two competing versions of the site.
 
 Search-engine plumbing is part of the build, not an afterthought:
 
+- **Prerendered HTML.** `build/seo-plugin.ts` writes a static file for each
+  public route (`dist/sets.html`, `dist/top-100.html`, …) containing that route's
+  title, description, canonical, Open Graph/Twitter tags, JSON-LD and a readable
+  `<main>`. Vercel serves those files before the SPA rewrite, so crawlers that do
+  not run JavaScript get the right page; React mounts over them as usual. The
+  route list, titles and copy live in one registry,
+  [`src/services/routes.ts`](src/services/routes.ts).
+- **Sitemap index.** `/sitemap.xml` lists `/sitemaps/pages.xml`,
+  `/sitemaps/sets.xml` and `/sitemaps/cards-N.xml`, built from real TCGdex set and
+  card identifiers, XML-escaped and chunked below Google's 50,000-URL limit. The
+  catalogue is cached for a day and bounded by a build deadline, and
+  `sitemap-coverage.json` records exactly how many URLs were retrieved — a failed
+  upstream fetch shows up as reduced coverage rather than a silent gap.
+  No `<lastmod>` is emitted, because a build timestamp is not a modification date.
 - **Unique titles and descriptions** per route, formatted in one place
   (`src/hooks/usePageMeta.ts`) so the site name is appended exactly once.
 - **Canonicals** on every route, always against the production origin; query
   strings, filters and hashes are stripped (`src/services/seo.ts`).
-- **Indexing directives** — search result views are `noindex,follow`, the 404
-  page is `noindex,follow`, everything else is indexable with
-  `max-image-preview:large`.
+- **Indexing directives** — filtered search views, the 404 page, the vault, the
+  scanner and simulated pulls are `noindex,follow`; everything else is indexable
+  with `max-image-preview:large`.
 - **Open Graph + Twitter cards** with a 1200 × 630 image, explicit dimensions,
   alt text and `twitter:card=summary_large_image`.
-- **Schema.org JSON-LD** — `Organization`, `WebSite` (with `SearchAction`),
-  `WebApplication` in the static shell, plus `WebPage`, `FAQPage` (home) and
-  `ItemList` (Top 100) per route. Only facts the app actually has are published;
-  there are no invented ratings, review counts or prices.
-- **`sitemap.xml`** generated at build time (static routes, plus every `/set/:id`
-  fetched from TCGdex) with `lastmod`, `changefreq` and priority.
+- **Schema.org JSON-LD** — `Organization`, `WebSite` (with `SearchAction`) and
+  `WebApplication` in the static shell; `WebPage`/`ItemPage`/`CollectionPage` per
+  route; `BreadcrumbList` on card and set pages (matching visible breadcrumbs);
+  `FAQPage` on the home page and `ItemList` on Top 100.
+- **No misleading commerce markup.** PokeGuru does not sell cards, so card pages
+  publish no `Offer`, `AggregateOffer`, availability or merchant data. A
+  Cardmarket reference valuation is never presented as a price you can buy from
+  us — which is why card pages are not eligible for Google's Product rich results.
+  That trade is deliberate: accuracy beats a badge.
 - **`robots.txt`** generated at build time, pointing at the canonical sitemap.
 - **Semantic landmarks**, one `h1` per page, `aria-labelledby` section headings,
   descriptive image alt text and a `<noscript>` explanation for crawlers that do
@@ -288,20 +315,31 @@ Submitting a sitemap is a request to crawl, not a promise of ranking.
 ## Testing
 
 ```bash
-npm run typecheck && npm run lint && npm test && npm run build
+npm run typecheck && npm run lint && npm test && npm run build   # unit + build
+npm run test:e2e:install                                         # once: Chromium
+npm run test:e2e                                                 # browser tests
 ```
 
-The suite covers pricing maths and confidence, cache behaviour, collection
-storage and migration, pack generation and rules, the flyer geometry and PDF, PWA
-manifest/service worker, routing, URL state and (since v1.9.0) canonical URLs,
-title formatting and structured data.
+- **Unit tests** (Vitest, jsdom) cover pricing maths and confidence, cache
+  behaviour, collection storage and migration, pack generation and rules, flyer
+  geometry and PDF, PWA manifest/service worker, routing, URL state, canonical
+  URLs, title formatting, structured data, and the prerender/sitemap generators.
+- **Browser tests** (Playwright) run the production build in four device
+  profiles — a 393 px Android phone, a 412 px Android phone, a tablet and a
+  1440 px desktop — and cover navigation, deep links, Back/Forward, search URL
+  state, card and set pages, the collection vault and JSON export, pack-simulator
+  isolation, PWA manifest/service worker/offline fallback, sitemaps, horizontal
+  overflow and image decoding. **axe-core** fails the suite on serious or
+  critical accessibility violations.
+- **CI** runs lint, typecheck, unit tests, a production build with build-output
+  assertions (prerendered files, sitemap index, manifest, no sourcemaps), the
+  Playwright suite, and a production dependency audit that fails on high or
+  critical vulnerabilities.
 
-Results for the 1.9.0 release are recorded in
+Results for the 1.10.0 release are recorded in
 [`RELEASE_NOTES.md`](RELEASE_NOTES.md) and summarised in
 [`CHANGELOG.md`](CHANGELOG.md) — including the numbers from the actual run, not
 estimates.
-
----
 
 ## Known limitations
 
@@ -317,11 +355,23 @@ estimates.
   JSON backup if it matters to you. There is no sync and no account.
 - **The scanner is assistive.** OCR quality depends on lighting and card
   condition, and every match must be confirmed by hand.
-- **No server-side rendering.** The HTML shell carries the metadata and JSON-LD;
-  card and set pages are rendered in the browser, which is why the sitemap lists
-  routes rather than pre-rendered pages.
-
----
+- **Card and set pages are client-rendered.** The eight public landing routes are
+  prerendered, but thousands of card pages are not: they ship the generic shell
+  and render in the browser. Their URLs are in the sitemap and their metadata is
+  correct once rendered, but a crawler that never executes JavaScript sees the
+  shell rather than card-specific HTML.
+- **Unknown deep links return HTTP 200.** A static host without a function cannot
+  know whether `/card/xyz` exists, so invalid card and set URLs render the
+  app's not-found state and carry a canonical URL, but the response status is
+  200 rather than 404.
+- **The Top 100 is a candidate pool, not the whole market.** It ranks the premium
+  rarity categories it can discover through the API, with the pool size and
+  category coverage shown on the page. A valuable card outside those categories,
+  or without a published Cardmarket trend, cannot appear.
+- **The sitemap depends on the API at build time.** If TCGdex is unreachable
+  during a deploy, the sitemap falls back to static pages and
+  `sitemap-coverage.json` reports the reduced coverage; the next successful build
+  restores the card URLs.
 
 ## Privacy
 

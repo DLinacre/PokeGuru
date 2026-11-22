@@ -100,3 +100,21 @@ Before submitting a PR:
 Feel free to open an issue for any questions about contributing.
 
 Thank you for helping make PokeGuru better! 🎴
+
+## Testing before a pull request
+
+```bash
+npm run typecheck && npm run lint && npm test && npm run build
+npm run test:e2e:install   # first time only: downloads Chromium
+npm run test:e2e           # Playwright, four device profiles + axe-core
+```
+
+Browser tests run against the production build served by `vite preview`. If the
+TCGdex API is unreachable they skip the data-dependent cases and say so rather
+than inventing fixtures.
+
+## Windows
+
+Everything runs in PowerShell: there are no Unix-only environment prefixes in any
+package script, and the GitHub Pages build is a Node wrapper
+(`scripts/build-pages.mjs`).

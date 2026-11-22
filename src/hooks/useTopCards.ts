@@ -7,6 +7,7 @@ import {
   enrichIndex,
   needsDiscovery,
   rankEntries,
+  rarityCoverage,
   readIndex,
   writeIndex,
   type TopCardEntry,
@@ -34,6 +35,8 @@ export interface UseTopCards {
   rate: ReturnType<typeof useExchangeRate>["rate"];
   continueScanning: () => void;
   rebuild: () => void;
+  /** Cards discovered per candidate category, so the page can show coverage. */
+  categories: { label: string; found: number }[];
 }
 
 /**
@@ -64,12 +67,13 @@ export function useTopCards(): UseTopCards {
     try {
       if (needsDiscovery(current)) {
         setStatus("discovering");
-        const { candidates, rarities } = await discoverCandidates(controller.signal);
+        const { candidates, rarities, counts } = await discoverCandidates(controller.signal);
         if (runRef.current !== runId) return;
         current = {
           ...current,
           candidates,
           candidateRarities: rarities,
+          rarityCounts: counts,
           candidatesBuiltAt: Date.now(),
           // Keep prices for cards that are still candidates; drop the rest.
           done: current.done?.filter((id) => candidates.includes(id)) ?? [],
@@ -146,6 +150,7 @@ export function useTopCards(): UseTopCards {
   }, []);
 
   const stats = coverage(index);
+  const categories = useMemo(() => rarityCoverage(index), [index]);
   const updatedAt = useMemo(() => {
     const times = Object.values(index.entries)
       .map((entry) => (entry.updatedAt ? Date.parse(entry.updatedAt) : Number.NaN))
@@ -167,5 +172,6 @@ export function useTopCards(): UseTopCards {
     rate,
     continueScanning,
     rebuild,
+    categories,
   };
 }

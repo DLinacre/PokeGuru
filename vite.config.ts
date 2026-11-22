@@ -5,6 +5,7 @@ import react from "@vitejs/plugin-react";
 import { defineConfig, loadEnv, type Plugin } from "vite";
 import fs from "node:fs";
 import { PRODUCTION_ORIGIN, organizationSchema, webApplicationSchema, webSiteSchema } from "./src/services/seo";
+import { seoFiles } from "./build/seo-plugin";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -23,20 +24,6 @@ const CSP = [
   "frame-ancestors 'none'",
 ].join("; ");
 
-const STATIC_ROUTES = [
-  "/",
-  "/search",
-  "/sets",
-  "/wiki",
-  "/collection",
-  "/scanner",
-  "/packs",
-  "/packs/collection",
-  "/top-100",
-  "/flyer",
-  "/about",
-];
-
 /**
  * Emits deployment assets that depend on the build target:
  *  - service worker (cache version + base path)
@@ -46,31 +33,9 @@ const STATIC_ROUTES = [
  */
 function deploymentFiles(options: { base: string; siteUrl: string; isPages: boolean; version: string }): Plugin {
   const { base, siteUrl, isPages, version } = options;
-  /** Set ids discovered from the public API at build time (never invented). */
-  let setIds: string[] = [];
-
   return {
     name: "pokeguru-deployment-files",
     apply: "build",
-    async buildStart() {
-      if (!siteUrl) return;
-      try {
-        const response = await fetch("https://api.tcgdex.net/v2/en/sets", {
-          signal: AbortSignal.timeout(8000),
-          headers: { accept: "application/json" },
-        });
-        if (!response.ok) return;
-        const data: unknown = await response.json();
-        if (Array.isArray(data)) {
-          setIds = data
-            .map((entry) => (entry && typeof entry === "object" ? (entry as { id?: unknown }).id : undefined))
-            .filter((id): id is string => typeof id === "string" && /^[a-z0-9.-]+$/i.test(id));
-          this.warn?.(`[sitemap] ${setIds.length} set pages included from TCGdex`);
-        }
-      } catch {
-        this.warn?.("[sitemap] TCGdex unavailable; sitemap will contain static routes only");
-      }
-    },
     transformIndexHtml(html) {
       let output = html;
       // Strict CSP for static hosts; identical to the Vercel header policy.
@@ -114,50 +79,16 @@ function deploymentFiles(options: { base: string; siteUrl: string; isPages: bool
         source: offlineTemplate.replace(/%BASE%/g, base),
       });
 
-      // One canonical host, one sitemap. `/search` result pages are crawlable
-      // but canonicalise to `/search` and are marked noindex at runtime, so
-      // there is no crawl trap in the query parameters.
-      // Sitemap and robots entries never include the mirror's base path: they
-      // always describe the canonical Vercel URLs, even when this build is being
-      // published to the GitHub Pages mirror.
+      // One canonical host, one sitemap index. Sitemap and robots entries never
+      // include the mirror's base path: they always describe the canonical
+      // Vercel URLs, even when this build is published to the GitHub Pages mirror.
       const robots = siteUrl
         ? `User-agent: *\nAllow: /\n\nSitemap: ${siteUrl}/sitemap.xml\n`
         : "User-agent: *\nAllow: /\nDisallow: /search?\n";
       this.emitFile({ type: "asset", fileName: "robots.txt", source: robots });
 
-      if (siteUrl) {
-        // lastmod is the build time: the content of every listed page is served
-        // from this build, so it is an honest "last changed" signal (we never
-        // claim a freshness we cannot back up).
-        const lastmod = new Date().toISOString().slice(0, 10);
-        const priorities: Record<string, { changefreq: string; priority: string }> = {
-          "/": { changefreq: "daily", priority: "1.0" },
-          "/search": { changefreq: "weekly", priority: "0.9" },
-          "/packs": { changefreq: "weekly", priority: "0.9" },
-          "/sets": { changefreq: "weekly", priority: "0.8" },
-          "/top-100": { changefreq: "daily", priority: "0.8" },
-          "/wiki": { changefreq: "weekly", priority: "0.8" },
-          "/flyer": { changefreq: "monthly", priority: "0.6" },
-          "/about": { changefreq: "monthly", priority: "0.6" },
-          "/collection": { changefreq: "monthly", priority: "0.4" },
-          "/scanner": { changefreq: "monthly", priority: "0.5" },
-          "/packs/collection": { changefreq: "monthly", priority: "0.3" },
-        };
-        const staticUrls = STATIC_ROUTES.map((route) => {
-          const meta = priorities[route] ?? { changefreq: "weekly", priority: "0.6" };
-          return `  <url><loc>${siteUrl}${route === "/" ? "/" : route}</loc><lastmod>${lastmod}</lastmod><changefreq>${meta.changefreq}</changefreq><priority>${meta.priority}</priority></url>`;
-        });
-        const setUrls = setIds.map(
-          (id) =>
-            `  <url><loc>${siteUrl}/set/${id}</loc><lastmod>${lastmod}</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>`
-        );
-        const urls = [...staticUrls, ...setUrls].join("\n");
-        this.emitFile({
-          type: "asset",
-          fileName: "sitemap.xml",
-          source: `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`,
-        });
-      }
+      // `sitemap.xml` (an index of pages/sets/cards sitemaps) and the prerendered
+      // per-route HTML are produced by the seo plugin in ./build/seo-plugin.ts.
 
       if (isPages) {
         const segments = base.split("/").filter(Boolean).length;
@@ -207,6 +138,7 @@ export default defineConfig(({ mode }) => {
       react(),
       tailwindcss(),
       deploymentFiles({ base, siteUrl, isPages, version }),
+      seoFiles({ siteUrl, enabled: siteUrl.length > 0, outDir: "dist" }),
     ],
     resolve: {
       alias: {
@@ -219,6 +151,25 @@ export default defineConfig(({ mode }) => {
       target: "es2020",
       cssCodeSplit: true,
       reportCompressedSize: true,
+      rollupOptions: {
+        output: {
+          /**
+           * Keep the React runtime in its own long-lived chunk. It changes far
+           * less often than app code, so a deploy only invalidates the app
+           * chunks and repeat visitors keep a warm cached runtime.
+           * Everything heavy (pdf-lib for the flyer, tesseract.js for the
+           * scanner) is already behind a dynamic import and stays out of this.
+           */
+          manualChunks(id: string) {
+            if (!id.includes("node_modules")) return undefined;
+            if (/[\\/]node_modules[\\/](react|react-dom|react-router|react-router-dom|scheduler)[\\/]/.test(id)) {
+              return "react-vendor";
+            }
+            if (id.includes("node_modules/lucide-react")) return "icons";
+            return undefined;
+          },
+        },
+      },
     },
     // Bind to all interfaces so sandbox previews/proxies can reach the server,
     // and accept proxied hostnames rather than only localhost.

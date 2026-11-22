@@ -1,5 +1,77 @@
 # Release Notes
 
+## [1.10.0] - 2026-11-14
+
+A technical release: prerendered HTML, a real card sitemap, accurate structured
+data, browser tests, CI and Windows fixes. No card, pricing, pack or collection
+logic changed.
+
+### Added
+- **Build-time prerendering** (`build/seo-plugin.ts`, driven by the new
+  `src/services/routes.ts` registry). `/`, `/search`, `/sets`, `/packs`,
+  `/top-100`, `/wiki`, `/about` and `/flyer` are written as static HTML with
+  their own title, description, canonical, Open Graph/Twitter tags, JSON-LD and a
+  readable `<main>` — so a crawler that never runs JavaScript sees the right page.
+  Vercel serves those files before the SPA rewrite; React still mounts over them
+  (`createRoot`, not hydration) and behaves exactly as before.
+- **Sitemap index + child sitemaps**: `/sitemap.xml` now lists
+  `/sitemaps/pages.xml`, `/sitemaps/sets.xml` and `/sitemaps/cards-N.xml`, built
+  from real TCGdex set and card IDs, XML-escaped, chunked below the 50,000-URL
+  limit, cached on disk for a day and bounded by a build deadline.
+  `sitemap-coverage.json` records how many sets and cards were actually retrieved.
+- **Visible breadcrumbs** on card and set pages, mirrored by `BreadcrumbList`
+  markup.
+- **Playwright browser tests** (`e2e/`) covering navigation, deep links, Back and
+  Forward, search URLs, card/set pages, the collection vault and export, pack
+  simulator isolation, PWA manifest/service worker/offline fallback, sitemaps,
+  responsive overflow at two phone widths, a tablet and desktop, and axe-core
+  accessibility checks.
+- New unit tests: `tests/prerender-sitemap.test.ts` (12) covering route registry
+  rules, head replacement, escaping, chunking and index generation.
+
+### Changed
+- **Card pages no longer publish an `Offer`.** A Cardmarket reference valuation
+  is not a price PokeGuru sells at, so the old `Product` + `offers` markup is
+  replaced with `ItemPage` + `BreadcrumbList` + `ImageObject` and a `Product`
+  entity that deliberately has no offers, reviews or availability. Set pages use
+  `CollectionPage`. Accuracy over rich-result eligibility.
+- **Top 100 candidate pool**: category list extended with further rarity values
+  the project already models, per-category discovery counts are stored, and the
+  coverage figure only counts candidates still in the current pool. The page now
+  states the candidate population, which categories returned nothing, and what
+  the list is not. Stored index version bumped to v3 (old caches are discarded).
+- **Service worker** no longer replays cached API responses older than 30
+  minutes: past that age it prefers the network and falls back to cache only when
+  offline, so prices cannot be frozen indefinitely.
+- **Entry chunk split**: React/React Router now ship in a long-lived
+  `react-vendor` chunk (entry 317 kB → 116 kB; vendor 221 kB cacheable across
+  deploys).
+- **CI** matches Vercel's Node 26 runtime, adds a Playwright job, and now fails on
+  high or critical *production* dependency vulnerabilities instead of allowing
+  the audit job to fail silently.
+- `npm run build:pages` is a cross-platform Node script (`scripts/build-pages.mjs`)
+  instead of `DEPLOY_TARGET=... vite build`, so PowerShell and cmd work.
+
+### Removed
+- `src/components/UI/JsonLd.tsx` (only existed to inject the misleading Product
+  offer markup).
+
+### Fixed
+- Prerendered routes and sitemap entries always point at
+  `https://pokeguru.vercel.app`, including from the GitHub Pages mirror.
+- `<lastmod>` entries were removed from the sitemap: the build cannot know when an
+  upstream card record changed, and a build timestamp is not a modification date.
+
+### Tests (actually run)
+- `tsc --noEmit` clean, `eslint .` clean, `vite build` clean.
+- `vitest run`: **243 passed / 27 files**.
+- Prerender and sitemap verified in the build output: eight static route files,
+  `sitemap.xml` index, `sitemaps/pages.xml`, `sitemap-coverage.json`, and a
+  JavaScript-disabled check of the served HTML is covered by the Playwright suite.
+- Playwright: authored and wired into CI; **not executed in this environment**
+  because browser binaries cannot be downloaded here. No browser or Lighthouse
+  numbers are claimed above.
+
 ## [1.9.0] - 2026-11-14
 
 A branding, SEO and repository-presentation release. No card, pricing, pack or

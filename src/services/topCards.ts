@@ -28,8 +28,11 @@ import { loadCardDetails, searchCards } from "./tcgdex";
 import { getCardPrice, type PriceConfidence } from "./pricing";
 import type { TcgCard } from "../types/pokemon";
 
-export const INDEX_VERSION = 2;
-export const INDEX_KEY = "pokeguru.top100.index.v2";
+// Bumped when the candidate definition changes, so a stale stored index is
+// discarded instead of being mixed with a new pool (v3 adds the additional
+// rarity categories and per-category discovery counts).
+export const INDEX_VERSION = 3;
+export const INDEX_KEY = "pokeguru.top100.index.v3";
 
 /**
  * Rarities that carry the market's value, in scan order. Page counts are the
@@ -56,6 +59,19 @@ export const CANDIDATE_RARITIES: { rarity: string; label: string; pages: number 
   { rarity: "Rare PRIME", label: "Rare PRIME", pages: 1 },
   { rarity: "Rare Holo LV.X", label: "Rare Holo LV.X", pages: 1 },
   { rarity: "LEGEND", label: "LEGEND", pages: 1 },
+  // Additional categories that also hold expensive raw cards. The strings match
+  // rarity values this project already models elsewhere; if the API has no cards
+  // under one of them the category simply yields nothing and is reported as
+  // empty on the page — no candidate is ever invented to fill a gap.
+  { rarity: "Double rare", label: "Double Rare", pages: 3 },
+  { rarity: "Holo Rare V", label: "Holo Rare V", pages: 2 },
+  { rarity: "Holo Rare VMAX", label: "Holo Rare VMAX", pages: 1 },
+  { rarity: "Holo Rare VSTAR", label: "Holo Rare VSTAR", pages: 1 },
+  { rarity: "Shiny rare V", label: "Shiny Rare V", pages: 1 },
+  { rarity: "Shiny rare VMAX", label: "Shiny Rare VMAX", pages: 1 },
+  { rarity: "Mega Hyper Rare", label: "Mega Hyper Rare", pages: 1 },
+  { rarity: "Black White Rare", label: "Black & White Rare", pages: 1 },
+  { rarity: "Legendary Collection", label: "Legendary Collection", pages: 1 },
 ];
 
 const PAGE_SIZE = 100;
@@ -95,6 +111,8 @@ export interface TopIndex {
   candidates: string[];
   /** Rarity label per candidate id, so we can show what we scanned. */
   candidateRarities: Record<string, string>;
+  /** Cards found per rarity category at discovery time (0 = none in the API). */
+  rarityCounts?: Record<string, number>;
   /** Card ids we have already priced or found unpriceable. */
   done: string[];
   entries: Record<string, TopCardEntry>;
@@ -108,6 +126,7 @@ export function emptyIndex(): TopIndex {
     candidatesBuiltAt: 0,
     candidates: [],
     candidateRarities: {},
+    rarityCounts: {},
     done: [],
     entries: {},
     scannedAt: 0,
@@ -158,11 +177,18 @@ export function readIndex(): TopIndex {
         if (typeof value === "string") candidateRarities[id] = value;
       }
     }
+    const rarityCounts: Record<string, number> = {};
+    if (isRecord(parsed.rarityCounts)) {
+      for (const [label, value] of Object.entries(parsed.rarityCounts)) {
+        if (typeof value === "number" && Number.isFinite(value) && value >= 0) rarityCounts[label] = value;
+      }
+    }
     return {
       version: INDEX_VERSION,
       candidatesBuiltAt: typeof parsed.candidatesBuiltAt === "number" ? parsed.candidatesBuiltAt : 0,
       candidates,
       candidateRarities,
+      rarityCounts,
       done,
       entries,
       scannedAt: typeof parsed.scannedAt === "number" ? parsed.scannedAt : 0,
@@ -203,7 +229,7 @@ export function clearIndex(): void {
 export async function discoverCandidates(
   signal?: AbortSignal,
   onProgress?: (done: number, total: number) => void
-): Promise<{ candidates: string[]; rarities: Record<string, string> }> {
+): Promise<{ candidates: string[]; rarities: Record<string, string>; counts: Record<string, number> }> {
   const jobs: { rarity: string; label: string; page: number }[] = [];
   for (const entry of CANDIDATE_RARITIES) {
     for (let page = 1; page <= entry.pages; page += 1) {
@@ -243,9 +269,11 @@ export async function discoverCandidates(
   const seen = new Set<string>();
   const candidates: string[] = [];
   const rarities: Record<string, string> = {};
+  const counts: Record<string, number> = {};
   // Keep a stable, highest-value-first order: rarity order, then page order.
   for (const entry of CANDIDATE_RARITIES) {
     const bucket = perRarity.get(entry.rarity);
+    counts[entry.label] = bucket ? bucket.pages.reduce((total, page) => total + page.ids.length, 0) : 0;
     if (!bucket) continue;
     for (const page of bucket.pages.sort((a, b) => a.page - b.page)) {
       for (const id of page.ids) {
@@ -257,7 +285,7 @@ export async function discoverCandidates(
     }
   }
 
-  return { candidates, rarities };
+  return { candidates, rarities, counts };
 }
 
 export interface EnrichOptions {
@@ -399,9 +427,22 @@ export function indexUpdatedAt(index: TopIndex): number | null {
 
 export function coverage(index: TopIndex): { scanned: number; total: number; priced: number; percent: number } {
   const total = index.candidates.length;
-  const scanned = index.done.length;
-  const priced = Object.keys(index.entries).length;
+  // Count only ids that are in the current pool: a stale `done` entry from an
+  // older candidate list must never inflate the completion figure.
+  const pool = new Set(index.candidates);
+  const done = new Set(index.done.filter((id) => pool.has(id)));
+  const scanned = done.size;
+  const priced = Object.values(index.entries).filter((entry) => entry.eur > 0).length;
   return { scanned, total, priced, percent: total ? Math.min(100, (scanned / total) * 100) : 0 };
+}
+
+/** Per-category discovery coverage, for the page's honesty panel. */
+export function rarityCoverage(index: TopIndex): { label: string; found: number }[] {
+  const counts = index.rarityCounts ?? {};
+  return CANDIDATE_RARITIES.map((entry) => ({
+    label: entry.label,
+    found: typeof counts[entry.label] === "number" ? counts[entry.label] : 0,
+  }));
 }
 
 /** Freshness limits: discovery weekly, prices daily. */
@@ -415,6 +456,6 @@ export function candidatesRemain(index: TopIndex): boolean {
 }
 
 /** Exposed for the page's honesty note. */
-export const RARITY_SCOPE_NOTE = `Candidates come from the ${CANDIDATE_RARITIES.length} rarities that hold the market's expensive raw cards (${CANDIDATE_RARITIES.map(
+export const RARITY_SCOPE_NOTE = `Candidates come from the ${CANDIDATE_RARITIES.length} rarity categories that hold the market's expensive raw cards (${CANDIDATE_RARITIES.map(
   (entry) => entry.label
 ).join(", ")}). Every ranked card has a real Cardmarket trend for one specific printing.`;
