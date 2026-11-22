@@ -84,7 +84,7 @@ function Row({ entry, rank }: { entry: TopCardEntry; rank: number }) {
 }
 
 export default function Top100Page() {
-  const { entries, status, error, priced, scanned, total, percent, remaining, updatedAt, rate, continueScanning, rebuild } =
+  const { entries, status, error, priced, scanned, total, percent, remaining, updatedAt, rate, continueScanning, rebuild, categories } =
     useTopCards();
   const [query, setQuery] = useState("");
   const [rarity, setRarity] = useState("all");
@@ -112,9 +112,9 @@ export default function Top100Page() {
   );
 
   usePageMeta({
-    title: "Top 100 most valuable Pokémon cards",
+    title: "Top 100 most valuable Pokémon cards by Cardmarket trend",
     description:
-      "The 100 most valuable Pokémon cards by Cardmarket trend, with GBP and EUR reference prices, the printing each price belongs to and the marketplace update date.",
+      "The most valuable Pokémon cards found in PokeGuru's assessed premium candidate pool, ranked by Cardmarket trend in GBP and EUR, with the printing and update date for every price.",
     path: "/top-100",
     jsonLd: listSchema,
   });
@@ -227,6 +227,53 @@ export default function Top100Page() {
             <div className="h-full rounded-full bg-[var(--accent)] transition-[width] duration-500" style={{ width: `${Math.max(2, percent)}%` }} />
           </div>
         )}
+      </section>
+      <section aria-labelledby="method-heading" className="surface p-5">
+        <h2 id="method-heading" className="flex items-center gap-2 text-sm font-black uppercase tracking-tight">
+          <Info size={14} aria-hidden="true" /> How this ranking is built
+        </h2>
+        <div className="mt-2 space-y-2 text-xsleading-relaxed text-[var(--muted)]">
+          <p className="text-xs leading-relaxed">
+            TCGdex's search API cannot sort by price, so PokeGuru builds a price index instead of guessing. It discovers a
+            candidate pool from {CANDIDATE_RARITIES.length} rarity categories that hold the market's expensive raw cards, then
+            prices candidates in bounded batches, caching every result so a repeat visit costs no requests.
+          </p>
+          <p className="text-xs leading-relaxed">
+            Only cards with a real, positive Cardmarket trend for one specific printing are ranked. Nothing is estimated,
+            interpolated or padded, and a card with no published price is excluded rather than treated as £0.
+          </p>
+          <p className="text-xs leading-relaxed">
+            <strong className="text-[var(--text)]">What this list is not:</strong> it is not every Pokémon card ever printed. It
+            covers the premium candidate pool below — English cards only, raw and ungraded — so a valuable card in an unscanned
+            category (or with no Cardmarket quote) cannot appear here.
+          </p>
+        </div>
+        {categories.some((category) => category.found > 0) && (
+          <div className="mt-3">
+            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[var(--muted-dim)]">
+              Candidate categories ({categories.filter((category) => category.found > 0).length} of {categories.length} returned
+              cards)
+            </p>
+            <ul className="mt-1.5 flex flex-wrap gap-1.5">
+              {categories.map((category) => (
+                <li
+                  key={category.label}
+                  className={cn(
+                    "rounded-full border px-2 py-0.5 text-[10px] font-semibold",
+                    category.found > 0
+                      ? "border-[var(--border)] bg-[var(--bg-soft)] text-[var(--muted)]"
+                      : "border-dashed border-[var(--border)] text-[var(--muted-dim)]"
+                  )}
+                  title={category.found > 0 ? `${category.found} candidates found` : "No cards in the current API data"}
+                >
+                  {category.label}
+                  {category.found > 0 ? ` · ${category.found}` : " · none"}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        <p className="mt-3 text-[11px] leading-relaxed text-[var(--muted-dim)]">{RARITY_SCOPE_NOTE}</p>
       </section>
 
       {error && (

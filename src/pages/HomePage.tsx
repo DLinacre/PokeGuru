@@ -5,6 +5,7 @@ import { useCardSearch, useExchangeRate, useSets } from "../hooks/useApi";
 
 import { usePageMeta } from "../hooks/usePageMeta";
 import { faqSchema, graph, webPageSchema } from "../services/seo";
+import { HOME_FAQ } from "../services/routes";
 import ShareLinks from "../components/Promo/ShareLinks";
 import { useCollection } from "../hooks/useCollection";
 import CardGrid from "../components/Cards/CardGrid";
@@ -41,44 +42,6 @@ const FEATURES = [
   { to: "/sets", icon: Layers, title: "Every expansion", copy: "Complete set index, ordered by real release dates." },
   { to: "/collection", icon: Wallet, title: "The vault", copy: "Track and value your cards privately in this browser." },
   { to: "/scanner", icon: Camera, title: "Scan a card", copy: "On-device OCR reads the card, you confirm the match." },
-];
-
-/**
- * Honest FAQ copy. Every answer describes something the app actually does, and
- * the same text is published as FAQPage structured data so search results can
- * quote it without the page contradicting itself.
- */
-const HOME_FAQ = [
-  {
-    question: "Is PokeGuru free to use?",
-    answer:
-      "Yes. Searching cards, browsing sets, checking reference prices, using the collection vault and opening virtual packs are all free, with no account, no ads and no subscription. Nothing in the app is locked behind a paywall.",
-  },
-  {
-    question: "Where do PokeGuru's Pokémon card prices come from?",
-    answer:
-      "Prices are Cardmarket marketplace snapshots supplied by TCGdex, converted from EUR to GBP with the daily Frankfurter exchange rate. Every figure shows the printing it belongs to, the marketplace update date and the FX rate date. They are reference values, not completed sales or financial advice.",
-  },
-  {
-    question: "Do I need an account to track my Pokémon card collection?",
-    answer:
-      "No. The collection vault stores your cards in your own browser's local storage, so there is no sign-up, no server-side copy and no tracking. You can export and re-import your collection as JSON at any time.",
-  },
-  {
-    question: "Are the booster pack openings real?",
-    answer:
-      "No. The pack simulator generates pulls from each expansion's real card pool using the documented (or clearly labelled estimated) pack structure. Nothing is purchased, no physical cards are supplied, and simulated pulls are kept separate from your real collection.",
-  },
-  {
-    question: "Does PokeGuru work on a phone?",
-    answer:
-      "Yes. The layout is responsive and PokeGuru is an installable progressive web app, so you can add it to your home screen on Android or iOS and it will keep working with cached data when your connection drops.",
-  },
-  {
-    question: "Is PokeGuru affiliated with The Pokémon Company?",
-    answer:
-      "No. PokeGuru is an unofficial, non-commercial fan project. Pokémon and all related names are trademarks of Nintendo, Creatures Inc. and The Pokémon Company; no official artwork or partnership is claimed.",
-  },
 ];
 
 export default function HomePage() {

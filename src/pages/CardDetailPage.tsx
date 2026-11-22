@@ -11,7 +11,9 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useCard, useCardSearch, useExchangeRate } from "../hooks/useApi";
-import { usePageMeta, siteOrigin } from "../hooks/usePageMeta";
+import { usePageMeta } from "../hooks/usePageMeta";
+import Breadcrumbs from "../components/UI/Breadcrumbs";
+import { breadcrumbSchema, canonicalUrl, graph, webPageSchema } from "../services/seo";
 import { useCollection } from "../hooks/useCollection";
 import {
   formatEur,
@@ -23,7 +25,6 @@ import {
 } from "../services/pricing";
 import PriceConfidenceBadge from "../components/UI/PriceBadge";
 import CardGrid from "../components/Cards/CardGrid";
-import JsonLd from "../components/UI/JsonLd";
 import ErrorMessage from "../components/UI/ErrorMessage";
 import PageSkeleton from "../components/UI/PageSkeleton";
 import { CachedBadge } from "../components/UI/DataBadges";
@@ -81,6 +82,58 @@ export default function CardDetailPage() {
   const { addToCollection, removeFromCollection, isInCollection } = useCollection();
   const [copied, setCopied] = useState(false);
 
+  // Visible breadcrumbs on the page, mirrored by BreadcrumbList markup.
+  const crumbs = useMemo(() => {
+    const items: { name: string; path?: string }[] = [{ name: "Sets", path: "/sets" }];
+    if (card?.set?.id) items.push({ name: card.set.name || card.set.id, path: `/set/${card.set.id}` });
+    items.push({ name: card?.name ?? "Card" });
+    return items;
+  }, [card]);
+
+  /**
+   * Page-level structured data.
+   *
+   * Deliberately **not** a Product with an `offers` entry: PokeGuru does not
+   * sell cards, and a Cardmarket reference valuation is not an offer, a price
+   * at which anyone can buy from us, nor a merchant listing. Publishing it as an
+   * Offer (as an earlier version did) would have been misleading, so card pages
+   * carry ItemPage + BreadcrumbList + the card image, with the card described as
+   * a Product entity that has no offers, reviews or availability.
+   */
+  const pageLd = useMemo(() => {
+    if (!card) return null;
+    const image = preferredCardImage(card, "full");
+    return graph(
+      webPageSchema({
+        type: "ItemPage",
+        name: `${card.name}${card.set?.name ? ` — ${card.set.name}` : ""}`,
+        description: `Pokémon TCG card details for ${card.name}${
+          card.set?.name ? ` from ${card.set.name}` : ""
+        }, with Cardmarket reference prices shown in GBP.`,
+        path: `/card/${card.id}`,
+      }),
+      breadcrumbSchema(crumbs),
+      {
+        "@type": "ImageObject",
+        url: image,
+        caption: `${card.name} card artwork`,
+      },
+      {
+        "@type": "Product",
+        name: card.name,
+        image,
+        url: canonicalUrl(`/card/${card.id}`),
+        category: "Trading Card Game > Pokémon TCG",
+        brand: { "@type": "Brand", name: "Pokémon TCG" },
+        additionalProperty: [
+          ...(card.set?.name ? [{ "@type": "PropertyValue", name: "Set", value: card.set.name }] : []),
+          ...(card.rarity ? [{ "@type": "PropertyValue", name: "Rarity", value: rarityLabel(card.rarity) }] : []),
+          ...(card.illustrator ? [{ "@type": "PropertyValue", name: "Illustrator", value: card.illustrator }] : []),
+        ],
+      }
+    );
+  }, [card, crumbs]);
+
   usePageMeta({
     title: card ? `${card.name} · ${card.set.name || "Pokémon card"}` : "Card details",
     description: card
@@ -89,6 +142,7 @@ export default function CardDetailPage() {
     path: id ? `/card/${id}` : "/search",
     type: "article",
     image: card ? preferredCardImage(card, "full") : undefined,
+    jsonLd: pageLd,
   });
 
   const related = useCardSearch({
@@ -102,7 +156,6 @@ export default function CardDetailPage() {
   });
 
   const price = card ? getCardPrice(card, rate) : null;
-  const gbp = price?.headlineGbp ?? null;
   const basisLabel = price?.basis ? BASIS_LABELS[price.basis] : null;
 
   const collected = card ? isInCollection(card.id) : false;
@@ -112,40 +165,6 @@ export default function CardDetailPage() {
     () => related.cards.filter((item: TcgCard) => item.id !== card?.id).slice(0, 6),
     [related.cards, card?.id]
   );
-
-  const productLd = useMemo(() => {
-    if (!card) return null;
-    const origin = siteOrigin();
-    const url = `${origin}/card/${card.id}`;
-    return {
-      "@context": "https://schema.org",
-      "@type": "Product",
-      name: `${card.name}${card.set.name ? ` — ${card.set.name}` : ""}`,
-      image: preferredCardImage(card, "full"),
-      category: "Trading Card Game > Pokémon TCG",
-      brand: { "@type": "Brand", name: "Pokémon TCG" },
-      url,
-      ...(card.rarity || card.illustrator
-        ? {
-            additionalProperty: [
-              ...(card.rarity ? [{ "@type": "PropertyValue", name: "Rarity", value: rarityLabel(card.rarity) }] : []),
-              ...(card.illustrator ? [{ "@type": "PropertyValue", name: "Illustrator", value: card.illustrator }] : []),
-            ],
-          }
-        : {}),
-      ...(gbp != null && price?.basis
-        ? {
-            offers: {
-              "@type": "Offer",
-              priceCurrency: "GBP",
-              price: gbp.toFixed(2),
-              url,
-              description: "Cardmarket reference price converted to GBP — not a live quote.",
-            },
-          }
-        : {}),
-    };
-  }, [card, gbp, price?.basis]);
 
   const handleShare = async () => {
     if (!card) return;
@@ -179,7 +198,7 @@ export default function CardDetailPage() {
 
   return (
     <div>
-      {productLd && <JsonLd id="product" data={productLd} />}
+      <Breadcrumbs items={crumbs} />
 
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <button

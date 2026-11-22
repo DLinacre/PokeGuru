@@ -171,15 +171,39 @@ export function itemListSchema(name: string, items: { name: string; url: string 
   };
 }
 
-/** A generic page entity so each route can be described precisely. */
-export function webPageSchema(options: { name: string; description: string; path: string }): JsonLd {
+/** A page entity so each route can be described precisely. */
+export function webPageSchema(options: {
+  name: string;
+  description: string;
+  path: string;
+  /** Schema.org page subtype, e.g. "ItemPage" or "CollectionPage". */
+  type?: "WebPage" | "ItemPage" | "CollectionPage" | "AboutPage";
+}): JsonLd {
   return {
-    "@type": "WebPage",
+    "@type": options.type ?? "WebPage",
     name: options.name,
     description: options.description,
     url: canonicalUrl(options.path),
     inLanguage: "en-GB",
     isPartOf: { "@id": SITE_ID },
+  };
+}
+
+/**
+ * A visible breadcrumb trail.
+ *
+ * Only emitted where the page actually renders breadcrumbs (`Breadcrumbs`).
+ * Positions start at 1 and the last crumb omits `item`, as Google expects.
+ */
+export function breadcrumbSchema(items: { name: string; path?: string }[]): JsonLd {
+  return {
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.name,
+      ...(item.path ? { item: canonicalUrl(item.path) } : {}),
+    })),
   };
 }
 

@@ -33,6 +33,19 @@ const PRECACHE = [
 
 const DATA_HOSTS = new Set(["api.tcgdex.net", "api.frankfurter.dev", "cdn.jsdelivr.net", "tessdata.projectnaptha.com"]);
 
+/**
+ * How long a cached API response may be replayed without a successful refresh.
+ * Prices must not be frozen forever: past this age the worker tries the network
+ * first and only falls back to the cached body when the network fails.
+ */
+const DATA_MAX_AGE_MS = 30 * 60 * 1000;
+
+function ageOf(response) {
+  const header = response && response.headers.get("date");
+  const parsed = header ? Date.parse(header) : Number.NaN;
+  return Number.isFinite(parsed) ? Date.now() - parsed : Number.POSITIVE_INFINITY;
+}
+
 /** Hosts serving card artwork and other binary media — always straight to network. */
 const MEDIA_HOSTS = new Set(["assets.tcgdex.net", "images.tcgdex.net"]);
 
@@ -133,9 +146,16 @@ async function staleWhileRevalidate(request) {
     })
     .catch(() => null);
   if (cached) {
-    // Refresh in the background; never block on the network.
-    network.catch(() => {});
-    return cached;
+    const stale = ageOf(cached) > DATA_MAX_AGE_MS;
+    if (!stale) {
+      // Fresh enough: refresh in the background, never block on the network.
+      network.catch(() => {});
+      return cached;
+    }
+    // Too old to replay blindly: prefer a successful network response, but
+    // still fall back to the cached body when the network is unavailable.
+    const fresh = await network;
+    return fresh || cached;
   }
   const response = await network;
   if (response) return response;

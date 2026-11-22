@@ -7,6 +7,32 @@ All notable changes to PokeGuru. The format follows
 Detailed prose for each release — including the tests that were actually run —
 lives in [RELEASE_NOTES.md](RELEASE_NOTES.md).
 
+## [1.10.0] - 2026-11-14
+
+### Added
+- Build-time prerendering of the eight public routes, driven by a single route
+  registry (`src/services/routes.ts`).
+- Sitemap index with page, set and real card-ID child sitemaps plus a
+  `sitemap-coverage.json` report.
+- Visible breadcrumbs on card and set pages, with `BreadcrumbList` markup.
+- Playwright + axe-core browser test suite and a CI job for it.
+- `tests/prerender-sitemap.test.ts`.
+
+### Changed
+- Card structured data: `ItemPage` + `BreadcrumbList` instead of `Product` with an
+  `Offer` (a Cardmarket reference value is not a PokeGuru price).
+- Top 100: more candidate categories, per-category discovery counts, corrected
+  coverage maths, index version 3, clearer methodology panel.
+- Service worker: cached API responses older than 30 minutes prefer the network.
+- Entry bundle split into app + `react-vendor` chunks.
+- CI runs on Node 26, adds browser tests, fails on high/critical production
+  vulnerabilities.
+- `build:pages` is a cross-platform Node script.
+
+### Removed
+- `src/components/UI/JsonLd.tsx`.
+- `<lastmod>` from the sitemap (not knowable, so not claimed).
+
 ## [Unreleased]
 
 ## [1.9.0] - 2026-11-14

@@ -13,9 +13,14 @@ concurrency:
 permissions:
   contents: read
 
+env:
+  # Vercel builds this project on Node.js 26.x, so CI must match the runtime
+  # that production actually uses rather than an older floor.
+  NODE_VERSION: "26"
+
 jobs:
   verify:
-    name: Lint, typecheck, test, build
+    name: Lint, typecheck, unit tests, build
     runs-on: ubuntu-latest
 
     steps:
@@ -23,7 +28,7 @@ jobs:
 
       - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
 
       - name: Install dependencies
@@ -42,11 +47,13 @@ jobs:
         run: npm run build
         env:
           # Mirrors the Vercel project so robots.txt/sitemap.xml are generated
-          # and verified in CI.
+          # and verified here. SEO_OFFLINE keeps the build hermetic and fast:
+          # the deployed build fills the sitemap from the live TCGdex API.
           VITE_PUBLIC_SITE_URL: https://pokeguru.vercel.app
+          SEO_OFFLINE: "1"
 
       - name: Check build output
-        run: |
+        run: |-
           set -euo pipefail
           test -f dist/index.html
           test -f dist/sw.js
@@ -57,6 +64,18 @@ jobs:
           test -f dist/icons/icon-512.png
           test -f dist/robots.txt
           test -f dist/sitemap.xml
+          test -f dist/sitemap-coverage.json
+          # Prerendered routes must exist, with their own canonical URL.
+          for route in search sets packs top-100 wiki about flyer; do
+            test -f "dist/$route.html"
+            grep -q "pokeguru.vercel.app/$route\"" "dist/$route.html"
+          done
+          # The home page shell keeps its prerendered content too.
+          grep -q '<div id="root"><main' dist/index.html
+          # Sitemap index + at least one child sitemap.
+          grep -q '<sitemapindex' dist/sitemap.xml
+          test -f dist/sitemaps/pages.xml
+          grep -q '<urlset' dist/sitemaps/pages.xml
           # The manifest must be installable: name, 192 + 512 icons, and an
           # id/start_url/scope that agree (all inside the deployment base).
           node -e "const m=JSON.parse(require('node:fs').readFileSync('dist/manifest.webmanifest','utf8')); const sizes=m.icons.map(i=>i.sizes); if(!m.name||!m.short_name) throw new Error('manifest name missing'); if(!sizes.includes('192x192')||!sizes.includes('512x512')) throw new Error('manifest icons missing'); if(m.id!==m.start_url||m.start_url!==m.scope) throw new Error('manifest id/start_url/scope mismatch'); for (const i of m.icons) if(!i.src.startsWith(m.scope)) throw new Error('icon outside scope: '+i.src); console.log('manifest ok:', m.id)"
@@ -66,15 +85,52 @@ jobs:
             exit 1
           fi
 
-  audit:
-    name: Dependency audit
+  e2e:
+    name: Browser tests (Playwright + axe)
     runs-on: ubuntu-latest
-    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Build
+        run: npm run build
+        env:
+          VITE_PUBLIC_SITE_URL: https://pokeguru.vercel.app
+          SEO_OFFLINE: "1"
+
+      - name: Run browser tests
+        run: npx playwright test
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14
+
+  audit:
+    name: Production dependency audit (high and critical)
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - run: npm ci
-      - run: npm audit --omit=dev
+      # A high or critical vulnerability in a *production* dependency fails the
+      # build. Dev-only advisories are reported but do not block a release, and
+      # nothing is force-upgraded here: fixes land as reviewed pull requests.
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high

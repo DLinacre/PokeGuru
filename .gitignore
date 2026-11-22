@@ -28,3 +28,10 @@ out/
 # Coverage / test artifacts
 coverage/
 *.tsbuildinfo
+
+# Playwright
+playwright-report/
+test-results/
+
+# Build-time TCGdex catalogue cache (see build/seo-plugin.ts)
+.cache/
