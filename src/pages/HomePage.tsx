@@ -1,6 +1,6 @@
 import { lazy, Suspense, useMemo, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowRight, Book, Camera, Layers, PackageOpen, Search, Sparkles, Wallet } from "lucide-react";
+import { ArrowRight, Book, Camera, Layers, PackageOpen, Printer, Search, Sparkles, Wallet } from "lucide-react";
 import { useCardSearch, useExchangeRate, useSets } from "../hooks/useApi";
 
 import { usePageMeta } from "../hooks/usePageMeta";
@@ -10,8 +10,6 @@ import SkeletonGrid from "../components/UI/SkeletonGrid";
 import ErrorMessage from "../components/UI/ErrorMessage";
 import SetTile from "../components/Sets/SetTile";
 import Brand from "../components/Layout/Brand";
-import FlyerActions from "../components/Flyer/FlyerActions";
-import FlyerPreview from "../components/Flyer/FlyerPreview";
 import { getTotalSetCount } from "../data/ukSets";
 import { enrichSetWithWikiMeta } from "../utils/setMeta";
 import { formatGbp, getCardValueGbp } from "../services/pricing";
@@ -294,19 +292,21 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section aria-labelledby="share-heading" className="surface overflow-hidden">
-        <div className="grid gap-6 p-5 sm:p-6 lg:grid-cols-[minmax(0,180px)_minmax(0,1fr)] lg:items-center">
-          <FlyerPreview className="mx-auto max-w-[180px]" />
-          <div>
+      <section aria-labelledby="share-heading" className="surface p-5 sm:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="max-w-xl">
             <h2 id="share-heading" className="text-lg font-black uppercase tracking-wide">
               Share PokeGuru
             </h2>
-            <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-[var(--muted)]">
-              Printed a flyer for your local card shop, league night or binder? Download the official 5 × 7 in poster, print it at
-              100% and pin it up — the QR code takes anyone straight to PokeGuru.
+            <p className="mt-1.5 text-sm leading-relaxed text-[var(--muted)]">
+              There is a printable flyer for card-shop counters, league nights and trade binders — one page, exactly 5 × 6 in on
+              photo paper, with a QR code straight to the live site.
             </p>
-            <FlyerActions className="mt-4" />
           </div>
+          <Link to="/flyer" className="btn btn-secondary no-underline hover:no-underline">
+            <Printer size={15} aria-hidden="true" />
+            Get the printable flyer
+          </Link>
         </div>
       </section>
     </div>

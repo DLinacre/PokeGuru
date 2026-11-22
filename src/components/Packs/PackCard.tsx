@@ -62,6 +62,15 @@ export default function PackCard({
         />
       )}
 
+      {revealed && motion && chase && (
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden rounded-[10px]">
+          <span
+            className="absolute -inset-y-8 left-0 w-1/3 bg-[linear-gradient(100deg,transparent,rgba(255,255,255,0.55),transparent)] mix-blend-screen"
+            style={{ animation: "holo-sweep 2.4s ease-in-out 0.35s infinite" }}
+          />
+        </div>
+      )}
+
       {chase && (
         <span className="absolute left-1 top-1 rounded bg-black/70 px-1 py-0.5 text-[7px] font-black uppercase tracking-widest text-[var(--accent-2)]">
           {TIER_LABELS[pull.tier]}

@@ -130,6 +130,43 @@ describe("pack opening experience", () => {
     expect(onComplete).not.toHaveBeenCalled();
   });
 
+  it("plays the tear beat, then reveals card by card with live announcements", async () => {
+    const { onComplete } = renderOpening({ reduceMotion: false });
+    fireEvent.click(screen.getByRole("button", { name: "Open pack" }));
+
+    // The tear is a real beat, and it can always be skipped.
+    expect(screen.getByText(/Tearing the wrapper/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /Skip the theatre/ }));
+
+    await waitFor(() => expect(onComplete).toHaveBeenCalledTimes(1));
+    const [pack] = onComplete.mock.calls[0][0];
+    const firstCard = pack.cards[0];
+
+    // The stage starts with a face-down card that can be turned over.
+    const faceDown = await screen.findByRole("button", { name: `Reveal card ${firstCard.name}` });
+    fireEvent.click(faceDown);
+
+    await waitFor(() => expect(screen.getByText(/Card 1 of 10:/)).toBeTruthy(), { timeout: 3000 });
+    expect(screen.getByText(new RegExp(`^Card 1 of ${pack.cards.length}:`))).toBeTruthy();
+    // Progress is exposed as a list of revealed segments.
+    expect(screen.getByText("Revealed")).toBeTruthy();
+
+    // "Reveal all" is the honest shortcut: no extra draws, just the rest shown.
+    fireEvent.click(screen.getByRole("button", { name: /Reveal all/ }));
+    expect(await screen.findByRole("heading", { name: "Your Test Set pack" }, { timeout: 4000 })).toBeTruthy();
+  });
+
+  it("can skip the tear with a swipe and still generates only one pack", async () => {
+    const { onComplete } = renderOpening({ reduceMotion: false });
+    const pack = screen.getByRole("button", { name: /Open this Test Set pack/ });
+    fireEvent.pointerDown(pack, { clientX: 10, clientY: 10 });
+    fireEvent.pointerUp(pack, { clientX: 80, clientY: 24 });
+
+    expect(screen.getByText(/Tearing the wrapper/)).toBeTruthy();
+    await waitFor(() => expect(onComplete).toHaveBeenCalledTimes(1), { timeout: 4000 });
+    expect(onComplete.mock.calls[0][0]).toHaveLength(1);
+  });
+
   it("offers sound and motion controls", () => {
     renderOpening();
     expect(screen.getByRole("button", { name: /Muted/ })).toBeTruthy();

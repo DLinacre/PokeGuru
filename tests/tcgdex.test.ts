@@ -194,18 +194,26 @@ describe("TCGdex adapter", () => {
     expect(card.pricing?.tcgplayer?.variants.holofoil.market).toBe(19.43);
 
     const { getCardPrice } = await import("../src/services/pricing");
-    const price = getCardPrice(card, {
-      rate: 0.86,
-      date: "2026-11-14",
-      base: "EUR",
-      quote: "GBP",
-      fetchedAt: Date.now(),
-      source: "network",
-    });
-    expect(price?.basis).toBe("trend");
-    expect(price?.variant).toBe("holo");
-    expect(price?.headlineGbp).toBeCloseTo(15.61 * 0.86, 4);
-    expect(price?.confidence).toBe("verified");
+    // Confidence is derived from the age of the marketplace snapshot, so pin
+    // "now" to the day after the fixture was captured instead of reading the
+    // wall clock (which made this test drift into "indicative" days later).
+    const clock = vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-11-14T09:00:00Z"));
+    try {
+      const price = getCardPrice(card, {
+        rate: 0.86,
+        date: "2026-11-14",
+        base: "EUR",
+        quote: "GBP",
+        fetchedAt: Date.now(),
+        source: "network",
+      });
+      expect(price?.basis).toBe("trend");
+      expect(price?.variant).toBe("holo");
+      expect(price?.headlineGbp).toBeCloseTo(15.61 * 0.86, 4);
+      expect(price?.confidence).toBe("verified");
+    } finally {
+      clock.mockRestore();
+    }
   });
 
   it("surfaces 404s as a not-found API error", async () => {

@@ -10,7 +10,7 @@
  */
 
 /** Filename used for every download, on every platform. */
-export const FLYER_FILE_NAME = "PokeGuru-5x7-QR-Flyer.pdf";
+export const FLYER_FILE_NAME = "PokeGuru-5x6-QR-Flyer.pdf";
 
 export interface FlyerOrigin {
   /** Absolute origin with no trailing slash, e.g. https://pokeguru.vercel.app */

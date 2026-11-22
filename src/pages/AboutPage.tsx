@@ -9,12 +9,12 @@ import {
   LineChart,
   Lock,
   PackageOpen,
+  Printer,
   Smartphone,
   Zap,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import { usePageMeta } from "../hooks/usePageMeta";
-import FlyerActions from "../components/Flyer/FlyerActions";
-import FlyerPreview from "../components/Flyer/FlyerPreview";
 import { BuyMeAPackPanel } from "../components/UI/BuyMeAPack";
 import { APP_VERSION } from "../utils/version";
 
@@ -295,11 +295,13 @@ export default function AboutPage() {
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-5" id="flyer">
             <h2 className="mb-3 text-sm font-black uppercase tracking-tight">Share PokeGuru</h2>
             <p className="mb-3 text-xs leading-relaxed text-[var(--muted)]">
-              A printable 5 × 7 in flyer with a QR code to the live site — perfect for card shops, league nights and
-              trade binders.
+              There is a printable one-page flyer — exactly 5 × 6 in (127 × 152.4 mm) for photo paper — with a QR code that
+              always points at the live site. Preview, download and print it on its own page.
             </p>
-            <FlyerPreview className="mb-4" label="Preview of the printable 5 × 7 in PokeGuru flyer" />
-            <FlyerActions variant="compact" />
+            <Link to="/flyer" className="btn btn-secondary no-underline hover:no-underline">
+              <Printer size={14} aria-hidden="true" />
+              Open the printable flyer
+            </Link>
           </div>
 
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-5">

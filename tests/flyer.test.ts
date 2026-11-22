@@ -3,6 +3,7 @@ import jsQR from "jsqr";
 import { PDFDocument } from "pdf-lib";
 import { FLYER_FILE_NAME, buildFlyerFile, buildFlyerSvg, printFlyer, resolveFlyerOrigin } from "../src/services/flyer";
 import { buildQrMatrix, isPublicOrigin } from "../src/services/flyer/qr";
+import { FLYER_MM, FLYER_PT, buildFlyerScene, type ScenePrimitive } from "../src/services/flyer/scene";
 
 const PRODUCTION_URL = "https://pokeguru.vercel.app";
 
@@ -77,6 +78,50 @@ describe("production address resolution", () => {
   });
 });
 
+describe("5 × 6 in photo-paper layout", () => {
+  it("describes a 127 × 152.4 mm sheet in points and millimetres", () => {
+    expect(FLYER_PT).toEqual({ width: 360, height: 432 });
+    expect(FLYER_MM).toEqual({ width: 127, height: 152.4 });
+    expect(FLYER_PT.height / 72).toBe(6);
+    expect(FLYER_MM.height / 25.4).toBeCloseTo(6, 6);
+  });
+
+  it("keeps every element inside the sheet, with a safe margin for borderless trimming", () => {
+    const modules = Array.from({ length: 21 }, () => Array.from({ length: 21 }, () => false));
+    const scene = buildFlyerScene({
+      url: PRODUCTION_URL,
+      host: "pokeguru.vercel.app",
+      modules,
+      quietZone: 4,
+    });
+
+    const bottomOf = (primitive: ScenePrimitive): number => {
+      switch (primitive.type) {
+        case "rect":
+          // Rotated cards swing a little past their height; allow for the corners.
+          return primitive.y + primitive.h + (primitive.rotate ? 8 : 0);
+        // Radial glows are intentionally oversized background washes and are
+        // clipped by the page box, so they are not layout elements.
+        case "circle":
+          return 0;
+        case "text":
+          // `y` is the baseline; allow for descenders rather than a full em box.
+          return primitive.y + primitive.size * 0.4;
+        case "qr":
+          return primitive.y + primitive.size;
+      }
+    };
+
+    expect(scene.width).toBe(360);
+    expect(scene.height).toBe(432);
+    // 0.6 pt of slack: the background gradient overlaps its bands by a hair so
+    // that no seams show when the PDF is rasterised.
+    for (const primitive of scene.primitives) {
+      expect(bottomOf(primitive)).toBeLessThanOrEqual(scene.height + 0.6);
+    }
+  });
+});
+
 describe("QR code", () => {
   it("decodes back to the production URL with an independent decoder", async () => {
     const matrix = await buildQrMatrix(PRODUCTION_URL);
@@ -99,7 +144,7 @@ function makePrintWindow() {
 }
 
 describe("print view", () => {
-  it("opens the print dialogue on a true 5 × 7 in page", async () => {
+  it("opens the print dialogue on a true 5 × 6 in photo-paper page", async () => {
     stubSite(PRODUCTION_URL);
     const printWindow = makePrintWindow();
     const open = vi.spyOn(window, "open").mockReturnValue(printWindow as unknown as Window);
@@ -109,8 +154,8 @@ describe("print view", () => {
     expect(result).toEqual({ printed: true, downloaded: false });
     expect(open).toHaveBeenCalledTimes(1);
     const html = printWindow.document.write.mock.calls[0][0] as string;
-    expect(html).toContain("@page { size: 127mm 177.8mm");
-    expect(html).toContain("width: 127mm; height: 177.8mm");
+    expect(html).toContain("@page { size: 127mm 152.4mm");
+    expect(html).toContain("width: 127mm; height: 152.4mm");
     expect(html).toContain("pokeguru.vercel.app");
     expect(html).toContain("<svg");
     expect(printWindow.print).toHaveBeenCalledTimes(1);
@@ -118,11 +163,11 @@ describe("print view", () => {
 });
 
 describe("flyer PDF", () => {
-  it("is a single 5 × 7 inch portrait page named PokeGuru-5x7-QR-Flyer.pdf", async () => {
+  it("is a single 5 × 6 inch portrait page named PokeGuru-5x6-QR-Flyer.pdf", async () => {
     stubSite(PRODUCTION_URL);
     const file = await buildFlyerFile();
 
-    expect(file.fileName).toBe("PokeGuru-5x7-QR-Flyer.pdf");
+    expect(file.fileName).toBe("PokeGuru-5x6-QR-Flyer.pdf");
     expect(file.fileName).toBe(FLYER_FILE_NAME);
 
     const doc = await PDFDocument.load(await file.blob.arrayBuffer());
@@ -131,16 +176,16 @@ describe("flyer PDF", () => {
     const [page] = doc.getPages();
     const { width, height } = page.getSize();
     expect(width).toBeCloseTo(360, 3); // 5 in × 72 pt
-    expect(height).toBeCloseTo(504, 3); // 7 in × 72 pt
+    expect(height).toBeCloseTo(432, 3); // 6 in × 72 pt
     expect(width / 72).toBeCloseTo(5, 6);
-    expect(height / 72).toBeCloseTo(7, 6);
+    expect(height / 72).toBeCloseTo(6, 6);
     expect(height).toBeGreaterThan(width); // portrait
 
-    expect(page.getMediaBox()).toMatchObject({ x: 0, y: 0, width: 360, height: 504 });
-    expect(page.getCropBox()).toMatchObject({ x: 0, y: 0, width: 360, height: 504 });
+    expect(page.getMediaBox()).toMatchObject({ x: 0, y: 0, width: 360, height: 432 });
+    expect(page.getCropBox()).toMatchObject({ x: 0, y: 0, width: 360, height: 432 });
 
     expect(file.millimetres.width).toBeCloseTo(127, 1);
-    expect(file.millimetres.height).toBeCloseTo(177.8, 1);
+    expect(file.millimetres.height).toBeCloseTo(152.4, 1);
     expect(file.blob.type).toBe("application/pdf");
   });
 
@@ -153,7 +198,7 @@ describe("flyer PDF", () => {
     const svg = await buildFlyerSvg();
     expect(svg).toContain("pokeguru.vercel.app");
     expect(svg).toContain("<desc>");
-    expect(svg).toContain('viewBox="0 0 360 504"');
+    expect(svg).toContain('viewBox="0 0 360 432"');
   });
 
   it("refuses to render when no public address is configured", async () => {

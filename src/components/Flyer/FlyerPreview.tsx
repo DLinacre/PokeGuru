@@ -12,7 +12,7 @@ interface FlyerPreviewProps {
  * Live vector preview of the printable flyer, rendered from exactly the same
  * scene as the PDF so what visitors see is what the printer gets.
  */
-export default function FlyerPreview({ className, label = "Preview of the printable PokeGuru 5 × 7 in flyer" }: FlyerPreviewProps) {
+export default function FlyerPreview({ className, label = "Preview of the printable PokeGuru 5 × 6 in flyer" }: FlyerPreviewProps) {
   const [src, setSrc] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
 
@@ -38,7 +38,7 @@ export default function FlyerPreview({ className, label = "Preview of the printa
   return (
     <div
       className={cn(
-        "relative aspect-[5/7] w-full overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-inset)]",
+        "relative aspect-[5/6] w-full overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-inset)]",
         className
       )}
     >
