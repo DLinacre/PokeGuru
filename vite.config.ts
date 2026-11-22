@@ -4,6 +4,7 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig, loadEnv, type Plugin } from "vite";
 import fs from "node:fs";
+import { PRODUCTION_ORIGIN, organizationSchema, webApplicationSchema, webSiteSchema } from "./src/services/seo";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -77,19 +78,13 @@ function deploymentFiles(options: { base: string; siteUrl: string; isPages: bool
         "</head>",
         `    <meta http-equiv="Content-Security-Policy" content="${CSP}" />\n  </head>`
       );
-      const siteJsonLd = siteUrl
-        ? `<script type="application/ld+json">${JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "WebSite",
-            name: "PokeGuru",
-            url: `${siteUrl}${base}`,
-            potentialAction: {
-              "@type": "SearchAction",
-              target: { "@type": "EntryPoint", urlTemplate: `${siteUrl}${base}search?q={query}` },
-              "query-input": "required name=query",
-            },
-          })}</script>`
-        : "";
+      // Site-wide structured data (organisation + site + application). Page-level
+      // schema is added at runtime by usePageMeta(); this is the shell that ships
+      // in the HTML so crawlers that do not run JavaScript still see it.
+      const siteJsonLd = `<script type="application/ld+json">${JSON.stringify({
+        "@context": "https://schema.org",
+        "@graph": [organizationSchema(), webSiteSchema(), webApplicationSchema()],
+      })}</script>`;
       return output.replace("<!--SITE_JSONLD-->", siteJsonLd);
     },
     generateBundle() {
@@ -119,21 +114,42 @@ function deploymentFiles(options: { base: string; siteUrl: string; isPages: bool
         source: offlineTemplate.replace(/%BASE%/g, base),
       });
 
+      // One canonical host, one sitemap. `/search` result pages are crawlable
+      // but canonicalise to `/search` and are marked noindex at runtime, so
+      // there is no crawl trap in the query parameters.
+      // Sitemap and robots entries never include the mirror's base path: they
+      // always describe the canonical Vercel URLs, even when this build is being
+      // published to the GitHub Pages mirror.
       const robots = siteUrl
-        ? `User-agent: *\nAllow: /\n\nSitemap: ${siteUrl}${base}sitemap.xml\n`
-        : "User-agent: *\nAllow: /\n";
+        ? `User-agent: *\nAllow: /\n\nSitemap: ${siteUrl}/sitemap.xml\n`
+        : "User-agent: *\nAllow: /\nDisallow: /search?\n";
       this.emitFile({ type: "asset", fileName: "robots.txt", source: robots });
 
       if (siteUrl) {
-        const staticUrls = STATIC_ROUTES.map(
-          (route) =>
-            `  <url><loc>${siteUrl}${base}${route.replace(/^\//, "")}</loc><changefreq>${
-              route === "/" ? "daily" : "weekly"
-            }</changefreq><priority>${route === "/" ? "1.0" : "0.7"}</priority></url>`
-        );
+        // lastmod is the build time: the content of every listed page is served
+        // from this build, so it is an honest "last changed" signal (we never
+        // claim a freshness we cannot back up).
+        const lastmod = new Date().toISOString().slice(0, 10);
+        const priorities: Record<string, { changefreq: string; priority: string }> = {
+          "/": { changefreq: "daily", priority: "1.0" },
+          "/search": { changefreq: "weekly", priority: "0.9" },
+          "/packs": { changefreq: "weekly", priority: "0.9" },
+          "/sets": { changefreq: "weekly", priority: "0.8" },
+          "/top-100": { changefreq: "daily", priority: "0.8" },
+          "/wiki": { changefreq: "weekly", priority: "0.8" },
+          "/flyer": { changefreq: "monthly", priority: "0.6" },
+          "/about": { changefreq: "monthly", priority: "0.6" },
+          "/collection": { changefreq: "monthly", priority: "0.4" },
+          "/scanner": { changefreq: "monthly", priority: "0.5" },
+          "/packs/collection": { changefreq: "monthly", priority: "0.3" },
+        };
+        const staticUrls = STATIC_ROUTES.map((route) => {
+          const meta = priorities[route] ?? { changefreq: "weekly", priority: "0.6" };
+          return `  <url><loc>${siteUrl}${route === "/" ? "/" : route}</loc><lastmod>${lastmod}</lastmod><changefreq>${meta.changefreq}</changefreq><priority>${meta.priority}</priority></url>`;
+        });
         const setUrls = setIds.map(
           (id) =>
-            `  <url><loc>${siteUrl}${base}set/${id}</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>`
+            `  <url><loc>${siteUrl}/set/${id}</loc><lastmod>${lastmod}</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>`
         );
         const urls = [...staticUrls, ...setUrls].join("\n");
         this.emitFile({
@@ -174,7 +190,9 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   const isPages = env.DEPLOY_TARGET === "github-pages";
   const base = isPages ? "/PokeGuru/" : env.VITE_BASE_PATH || "/";
-  const siteUrl = (env.VITE_PUBLIC_SITE_URL || "").replace(/\/+$/, "");
+  // Default to the official Vercel origin: the sitemap and robots.txt must
+  // always describe the canonical host, including local and GitHub Pages builds.
+  const siteUrl = (env.VITE_PUBLIC_SITE_URL || PRODUCTION_ORIGIN).replace(/\/+$/, "");
   // The service worker cache version is a build stamp; the *app* version shown
   // in the UI is package.json's version so there is one source of truth.
   const version = `${Date.now()}`;

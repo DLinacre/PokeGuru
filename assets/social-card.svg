@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  PokeGuru social card master (1280 × 640).
+  `npm run social` renders it to:
+    • public/og.png         1200 × 630  (Open Graph / Twitter/X large card)
+    • assets/social-preview.png 1280 × 640 (GitHub repository social preview)
+  Text is set in the app's own brand fonts (Space Grotesk + Inter), which the
+  generator loads from @fontsource so the card cannot drift from the UI.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="1280" height="640" role="img" aria-labelledby="socialTitle">
+  <title id="socialTitle">PokeGuru — the Pokémon card guru: search every card, track every set, rip virtual packs</title>
+  <defs>
+    <linearGradient id="bg" x1="0.1" y1="0" x2="0.9" y2="1">
+      <stop offset="0" stop-color="#11151E" />
+      <stop offset="0.5" stop-color="#0A0C12" />
+      <stop offset="1" stop-color="#05060A" />
+    </linearGradient>
+    <radialGradient id="glowRight" cx="0.82" cy="0.42" r="0.52">
+      <stop offset="0" stop-color="#F04452" stop-opacity="0.42" />
+      <stop offset="1" stop-color="#F04452" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="glowLeft" cx="0.06" cy="0.9" r="0.5">
+      <stop offset="0" stop-color="#4F7BFF" stop-opacity="0.26" />
+      <stop offset="1" stop-color="#4F7BFF" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="glowGold" cx="0.95" cy="0.95" r="0.42">
+      <stop offset="0" stop-color="#F5A524" stop-opacity="0.22" />
+      <stop offset="1" stop-color="#F5A524" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="holoBand" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8ED0FF" stop-opacity="0" />
+      <stop offset="0.35" stop-color="#8ED0FF" stop-opacity="0.35" />
+      <stop offset="0.5" stop-color="#FFFFFF" stop-opacity="0.55" />
+      <stop offset="0.65" stop-color="#E9B8FF" stop-opacity="0.3" />
+      <stop offset="1" stop-color="#FFD166" stop-opacity="0" />
+    </linearGradient>
+    <linearGradient id="chipBorder" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.22" />
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0.06" />
+    </linearGradient>
+    <linearGradient id="rule" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#F04452" />
+      <stop offset="0.55" stop-color="#F5A524" />
+      <stop offset="1" stop-color="#8ED0FF" stop-opacity="0" />
+    </linearGradient>
+    <radialGradient id="spot" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.16" />
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1280" height="640" fill="url(#bg)" />
+  <rect width="1280" height="640" fill="url(#glowRight)" />
+  <rect width="1280" height="640" fill="url(#glowLeft)" />
+  <rect width="1280" height="640" fill="url(#glowGold)" />
+  <rect x="0" y="0" width="1280" height="6" fill="url(#rule)" />
+  <g opacity="0.5">
+    <rect x="700" y="-160" width="150" height="980" fill="url(#holoBand)" transform="rotate(18 775 320)" opacity="0.16" />
+    <rect x="1130" y="-160" width="54" height="980" fill="url(#holoBand)" transform="rotate(18 1157 320)" opacity="0.12" />
+  </g>
+
+  <!-- Spotlight behind the artwork -->
+  <ellipse cx="985" cy="318" rx="290" ry="250" fill="url(#spot)" />
+
+  <!-- Left column -->
+  <g font-family="Space Grotesk" fill="#F4F6FA">
+    <text x="96" y="196" font-size="86" font-weight="700" letter-spacing="-2.5">Poke<tspan fill="#FF7A7E">Guru</tspan></text>
+  </g>
+  <text x="96" y="240" font-family="Inter" font-size="25" fill="#9AA4B6">
+    The Pokémon card guru · open TCG database
+  </text>
+
+  <text x="96" y="330" font-family="Space Grotesk" font-size="46" font-weight="700" fill="#FFFFFF" letter-spacing="-0.8">
+    Search every card.
+  </text>
+  <text x="96" y="386" font-family="Space Grotesk" font-size="46" font-weight="700" fill="#FFFFFF" letter-spacing="-0.8">
+    Track every set.
+  </text>
+  <text x="96" y="442" font-family="Space Grotesk" font-size="46" font-weight="700" fill="#FFB04A" letter-spacing="-0.8">
+    Rip virtual packs.
+  </text>
+
+  <!-- Feature chips -->
+  <g font-family="Inter" font-size="21" fill="#C7CEDB">
+    <g>
+      <rect x="96" y="484" width="150" height="46" rx="23" fill="#FFFFFF" fill-opacity="0.05" stroke="url(#chipBorder)" />
+      <text x="122" y="513">Card search</text>
+    </g>
+    <g>
+      <rect x="258" y="484" width="148" height="46" rx="23" fill="#FFFFFF" fill-opacity="0.05" stroke="url(#chipBorder)" />
+      <text x="284" y="513">Set archive</text>
+    </g>
+    <g>
+      <rect x="418" y="484" width="158" height="46" rx="23" fill="#FFFFFF" fill-opacity="0.05" stroke="url(#chipBorder)" />
+      <text x="444" y="513">GBP prices</text>
+    </g>
+    <g>
+      <rect x="96" y="544" width="150" height="46" rx="23" fill="#FFFFFF" fill-opacity="0.05" stroke="url(#chipBorder)" />
+      <text x="122" y="573">Top 100</text>
+    </g>
+    <g>
+      <rect x="258" y="544" width="196" height="46" rx="23" fill="#FFFFFF" fill-opacity="0.05" stroke="url(#chipBorder)" />
+      <text x="284" y="573">Pack simulator</text>
+    </g>
+    <g>
+      <rect x="466" y="544" width="188" height="46" rx="23" fill="#FFFFFF" fill-opacity="0.05" stroke="url(#chipBorder)" />
+      <text x="492" y="573">Private vault</text>
+    </g>
+  </g>
+
+  <!-- URL + honesty line -->
+  <g font-family="Inter">
+    <rect x="96" y="24" width="268" height="40" rx="20" fill="#FFFFFF" fill-opacity="0.06" stroke="url(#chipBorder)" />
+    <circle cx="120" cy="44" r="5" fill="#22C55E" />
+    <text x="136" y="51" font-size="19" font-weight="600" fill="#E7EAF1">pokeguru.vercel.app</text>
+  </g>
+
+  <!-- Sparkles -->
+  <path d="M1090 92c4 21 12.6 29.6 34 34-21.4 4.4-30 13-34 34-4-21-12.6-29.6-34-34 21.4-4.4 30-13 34-34Z" fill="#FFD166" fill-opacity="0.85" />
+  <path d="M1206 462c2.6 13.4 8 18.8 21 21.4-13 2.6-18.4 8-21 21.4-2.6-13.4-8-18.8-21-21.4 13-2.6 18.4-8 21-21.4Z" fill="#8ED0FF" fill-opacity="0.8" />
+  <circle cx="1214" cy="196" r="6" fill="#FFFFFF" fill-opacity="0.6" />
+  <circle cx="836" cy="512" r="4" fill="#FFFFFF" fill-opacity="0.45" />
+
+  <!-- Footer rule -->
+  <rect x="96" y="612" width="520" height="3" rx="1.5" fill="url(#rule)" />
+</svg>

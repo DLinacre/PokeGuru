@@ -4,6 +4,8 @@ import { ArrowRight, Book, Camera, Layers, PackageOpen, Printer, Search, Sparkle
 import { useCardSearch, useExchangeRate, useSets } from "../hooks/useApi";
 
 import { usePageMeta } from "../hooks/usePageMeta";
+import { faqSchema, graph, webPageSchema } from "../services/seo";
+import ShareLinks from "../components/Promo/ShareLinks";
 import { useCollection } from "../hooks/useCollection";
 import CardGrid from "../components/Cards/CardGrid";
 import SkeletonGrid from "../components/UI/SkeletonGrid";
@@ -41,11 +43,59 @@ const FEATURES = [
   { to: "/scanner", icon: Camera, title: "Scan a card", copy: "On-device OCR reads the card, you confirm the match." },
 ];
 
+/**
+ * Honest FAQ copy. Every answer describes something the app actually does, and
+ * the same text is published as FAQPage structured data so search results can
+ * quote it without the page contradicting itself.
+ */
+const HOME_FAQ = [
+  {
+    question: "Is PokeGuru free to use?",
+    answer:
+      "Yes. Searching cards, browsing sets, checking reference prices, using the collection vault and opening virtual packs are all free, with no account, no ads and no subscription. Nothing in the app is locked behind a paywall.",
+  },
+  {
+    question: "Where do PokeGuru's Pokémon card prices come from?",
+    answer:
+      "Prices are Cardmarket marketplace snapshots supplied by TCGdex, converted from EUR to GBP with the daily Frankfurter exchange rate. Every figure shows the printing it belongs to, the marketplace update date and the FX rate date. They are reference values, not completed sales or financial advice.",
+  },
+  {
+    question: "Do I need an account to track my Pokémon card collection?",
+    answer:
+      "No. The collection vault stores your cards in your own browser's local storage, so there is no sign-up, no server-side copy and no tracking. You can export and re-import your collection as JSON at any time.",
+  },
+  {
+    question: "Are the booster pack openings real?",
+    answer:
+      "No. The pack simulator generates pulls from each expansion's real card pool using the documented (or clearly labelled estimated) pack structure. Nothing is purchased, no physical cards are supplied, and simulated pulls are kept separate from your real collection.",
+  },
+  {
+    question: "Does PokeGuru work on a phone?",
+    answer:
+      "Yes. The layout is responsive and PokeGuru is an installable progressive web app, so you can add it to your home screen on Android or iOS and it will keep working with cached data when your connection drops.",
+  },
+  {
+    question: "Is PokeGuru affiliated with The Pokémon Company?",
+    answer:
+      "No. PokeGuru is an unofficial, non-commercial fan project. Pokémon and all related names are trademarks of Nintendo, Creatures Inc. and The Pokémon Company; no official artwork or partnership is claimed.",
+  },
+];
+
 export default function HomePage() {
   usePageMeta({
+    title: "Pokémon TCG card database, GBP prices & pack simulator",
     description:
-      "Search Pokémon TCG cards, explore every set, check Cardmarket reference prices in GBP with dated exchange rates, and track your collection privately in your browser.",
+      "Search every Pokémon TCG card, browse every set, check Cardmarket reference prices in GBP with dated exchange rates, track your collection privately and open free virtual booster packs.",
     path: "/",
+    jsonLd: graph(
+      webPageSchema({
+        name: "PokeGuru — Pokémon TCG card database, GBP prices and pack simulator",
+        description:
+          "An open Pokémon TCG card database with printing-aware Cardmarket reference prices in GBP, every expansion, a private collection vault and a free pack-opening simulator.",
+        path: "/",
+      }),
+      faqSchema(HOME_FAQ)
+    ),
   });
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -292,16 +342,34 @@ export default function HomePage() {
         </div>
       </section>
 
+      <section aria-labelledby="faq-heading" className="mb-10">
+        <h2 id="faq-heading" className="text-xl font-bold tracking-tight">
+          Pokémon card collecting, answered
+        </h2>
+        <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-[var(--muted)]">
+          What PokeGuru does, where its data comes from and what it deliberately does not claim.
+        </p>
+        <dl className="mt-5 grid gap-3 sm:grid-cols-2">
+          {HOME_FAQ.map((item) => (
+            <div key={item.question} className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)]/60 p-4">
+              <dt className="text-sm font-bold text-[var(--text)]">{item.question}</dt>
+              <dd className="mt-1.5 text-xs leading-relaxed text-[var(--muted)]">{item.answer}</dd>
+            </div>
+          ))}
+        </dl>
+      </section>
+
       <section aria-labelledby="share-heading" className="surface p-5 sm:p-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="max-w-xl">
             <h2 id="share-heading" className="text-lg font-black uppercase tracking-wide">
               Share PokeGuru
             </h2>
             <p className="mt-1.5 text-sm leading-relaxed text-[var(--muted)]">
-              There is a printable flyer for card-shop counters, league nights and trade binders — one page, exactly 5 × 6 in on
-              photo paper, with a QR code straight to the live site.
+              Know a collector who would use this? Send them the live app — or print the one-page flyer (exactly 5 × 6 in on
+              photo paper) for a card-shop counter, league night or trade binder.
             </p>
+            <ShareLinks className="mt-4" />
           </div>
           <Link to="/flyer" className="btn btn-secondary no-underline hover:no-underline">
             <Printer size={15} aria-hidden="true" />

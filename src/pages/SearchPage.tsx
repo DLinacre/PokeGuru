@@ -39,12 +39,17 @@ export default function SearchPage() {
   const debouncedIllustrator = useDebouncedValue(illustratorInput, 450);
 
   const metaTitle = filters.query ? `Search: ${filters.query}` : "Card search";
+  // Search results are a *view* of /search, not distinct pages: the canonical
+  // URL drops the query string and result views are noindex,follow so Google
+  // does not index thousands of near-duplicate parameter URLs.
+  const filtered = Array.from(searchParams.keys()).length > 0;
   usePageMeta({
     title: metaTitle,
     description: filters.query
       ? `Pokémon TCG cards matching “${filters.query}” with Cardmarket reference prices in GBP.`
       : "Search the Pokémon TCG card database by name, set, rarity and category.",
-    path: `/search${searchParams.toString() ? `?${searchParams.toString()}` : ""}`,
+    path: "/search",
+    robots: filtered ? "noindex,follow" : undefined,
   });
 
   // Keep the input in sync when navigation changes the URL (e.g. header search).

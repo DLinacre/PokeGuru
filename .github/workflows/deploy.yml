@@ -27,7 +27,9 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     env:
       DEPLOY_TARGET: github-pages
-      VITE_PUBLIC_SITE_URL: https://dlinacre.github.io/PokeGuru
+      # Canonical origin stays the official Vercel deployment: the mirror must
+      # never canonicalise itself or publish a mirror-scoped sitemap.
+      VITE_PUBLIC_SITE_URL: https://pokeguru.vercel.app
     steps:
       - name: Checkout
         uses: actions/checkout@v7

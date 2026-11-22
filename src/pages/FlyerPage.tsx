@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { usePageMeta } from "../hooks/usePageMeta";
 import FlyerActions from "../components/Flyer/FlyerActions";
+import ShareLinks from "../components/Promo/ShareLinks";
 import FlyerPreview from "../components/Flyer/FlyerPreview";
 import { FLYER_MM, FLYER_PT } from "../services/flyer/scene";
 import { FLYER_FILE_NAME } from "../services/flyer/qr";
@@ -119,6 +120,17 @@ export default function FlyerPage() {
                 </li>
               ))}
             </ul>
+          </section>
+
+          <section aria-labelledby="flyer-share-heading" className="surface p-5">
+            <h2 id="flyer-share-heading" className="text-sm font-black uppercase tracking-tight">
+              Share the live app
+            </h2>
+            <p className="mt-2 text-xs leading-relaxed text-[var(--muted)]">
+              No flyer to hand? Send the app itself — every link points at the official address, so the preview shows the same
+              card you see here.
+            </p>
+            <ShareLinks className="mt-3" path="/" compact />
           </section>
 
           <section aria-labelledby="flyer-test-heading" className="surface p-5">

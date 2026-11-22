@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import type { ReactNode } from "react";
 import { cn } from "../../utils/cn";
+import BrandArtwork from "./BrandArtwork";
 
 export function EmptyState({
   icon,
@@ -18,11 +19,15 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-[var(--border)] bg-[var(--bg-card)]/40 px-6 py-16 text-center",
+        "flex flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-[var(--border)] bg-[var(--bg-card)]/40 px-6 py-12 text-center",
         className
       )}
     >
-      {icon && <div className="text-[var(--muted)] opacity-60">{icon}</div>}
+      {icon ? (
+        <div className="text-[var(--muted)] opacity-60">{icon}</div>
+      ) : (
+        <BrandArtwork className="-mt-2 mb-1" />
+      )}
       <h2 className="text-lg font-bold text-[var(--text)]">{title}</h2>
       {description && <p className="max-w-md text-sm leading-relaxed text-[var(--muted)]">{description}</p>}
       {action &&

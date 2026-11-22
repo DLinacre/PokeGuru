@@ -1,55 +1,110 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="pgTitle">
-  <title id="pgTitle">PokeGuru logo mark</title>
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  PokeGuru logo mark — the single vector source of truth.
+  Rasterised by `npm run icons` into the favicon, PWA icons and Apple touch icon,
+  and mirrored inline by <BrandMark> so the site header never drifts from it.
+  Deliberately bold: an ivory "chase" card with a crimson header and a gold guru
+  star, fanned over a deep-blue card, so it still reads at 16px.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-labelledby="pgMarkTitle">
+  <title id="pgMarkTitle">PokeGuru logo mark</title>
   <defs>
-    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#171B24" />
-      <stop offset="1" stop-color="#0A0C11" />
+    <linearGradient id="pgTile" x1="0.15" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#1D2431" />
+      <stop offset="0.55" stop-color="#12161F" />
+      <stop offset="1" stop-color="#07080C" />
     </linearGradient>
-    <linearGradient id="crimson" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#FF5A5F" />
-      <stop offset="1" stop-color="#D62F3B" />
+    <radialGradient id="pgGlowA" cx="0.82" cy="0.1" r="0.72">
+      <stop offset="0" stop-color="#F04452" stop-opacity="0.5" />
+      <stop offset="1" stop-color="#F04452" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="pgGlowB" cx="0.1" cy="0.96" r="0.68">
+      <stop offset="0" stop-color="#F5A524" stop-opacity="0.3" />
+      <stop offset="1" stop-color="#F5A524" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="pgBlue" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4F7BFF" />
+      <stop offset="0.55" stop-color="#2A3F8F" />
+      <stop offset="1" stop-color="#131A33" />
     </linearGradient>
-    <linearGradient id="amber" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#FFD166" />
-      <stop offset="1" stop-color="#F59E0B" />
+    <linearGradient id="pgCrimson" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FF7A7E" />
+      <stop offset="0.5" stop-color="#E5484D" />
+      <stop offset="1" stop-color="#B31E2B" />
     </linearGradient>
-    <linearGradient id="bone" x1="0" y1="0" x2="0.4" y2="1">
-      <stop offset="0" stop-color="#FFFDF8" />
-      <stop offset="1" stop-color="#E9E4D8" />
+    <linearGradient id="pgIvory" x1="0.1" y1="0" x2="0.9" y2="1">
+      <stop offset="0" stop-color="#FFFDF7" />
+      <stop offset="0.6" stop-color="#F5F0E4" />
+      <stop offset="1" stop-color="#DED5C4" />
     </linearGradient>
+    <linearGradient id="pgGold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFE7A8" />
+      <stop offset="0.5" stop-color="#F5A524" />
+      <stop offset="1" stop-color="#D97706" />
+    </linearGradient>
+    <linearGradient id="pgHolo" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8ED0FF" stop-opacity="0.9" />
+      <stop offset="0.5" stop-color="#FFFFFF" stop-opacity="0.65" />
+      <stop offset="0.78" stop-color="#E9B8FF" stop-opacity="0.55" />
+      <stop offset="1" stop-color="#FFD166" stop-opacity="0.25" />
+    </linearGradient>
+    <clipPath id="pgFrontClip">
+      <rect x="188" y="104" width="212" height="294" rx="28" />
+    </clipPath>
   </defs>
 
-  <rect width="512" height="512" rx="112" fill="url(#tile)" />
-  <rect x="8" y="8" width="496" height="496" rx="106" fill="none" stroke="#FFFFFF" stroke-opacity="0.06" stroke-width="4" />
+  <!-- Tile -->
+  <rect width="512" height="512" rx="112" fill="url(#pgTile)" />
+  <rect width="512" height="512" rx="112" fill="url(#pgGlowA)" />
+  <rect width="512" height="512" rx="112" fill="url(#pgGlowB)" />
+  <rect x="7" y="7" width="498" height="498" rx="106" fill="none" stroke="#FFFFFF" stroke-opacity="0.08" stroke-width="4" />
 
-  <!-- back card -->
-  <g transform="rotate(-12 256 268)">
-    <rect x="150" y="126" width="196" height="272" rx="26" fill="url(#crimson)" />
-    <rect x="150" y="126" width="196" height="272" rx="26" fill="none" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="3" />
-    <path d="M170 336h156" stroke="#FFFFFF" stroke-opacity="0.30" stroke-width="6" stroke-linecap="round" />
-    <path d="M170 360h108" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="6" stroke-linecap="round" />
+  <!-- Contact shadow -->
+  <ellipse cx="268" cy="432" rx="146" ry="30" fill="#000000" fill-opacity="0.45" />
+
+  <!-- Back card: cool blue, fanned behind and to the left -->
+  <g transform="rotate(-16 214 256)">
+    <rect x="104" y="132" width="188" height="266" rx="26" fill="url(#pgBlue)" />
+    <rect x="104" y="132" width="188" height="266" rx="26" fill="none" stroke="#FFFFFF" stroke-opacity="0.2" stroke-width="3" />
+    <rect x="128" y="160" width="140" height="92" rx="14" fill="#06080F" fill-opacity="0.42" />
+    <path d="M128 300h140" stroke="#FFFFFF" stroke-opacity="0.28" stroke-width="7" stroke-linecap="round" />
+    <path d="M128 324h96" stroke="#FFFFFF" stroke-opacity="0.15" stroke-width="7" stroke-linecap="round" />
   </g>
 
-  <!-- front card -->
-  <g transform="rotate(6 256 268)">
-    <rect x="184" y="118" width="196" height="272" rx="26" fill="url(#bone)" />
-    <rect x="184" y="118" width="196" height="272" rx="26" fill="none" stroke="#0A0C11" stroke-opacity="0.22" stroke-width="4" />
-    <rect x="184" y="118" width="196" height="52" rx="26" fill="url(#crimson)" />
-    <rect x="184" y="144" width="196" height="26" fill="url(#crimson)" />
-    <circle cx="200" cy="144" r="6" fill="#FFFDF8" fill-opacity="0.85" />
+  <!-- Front card: the "chase" pull -->
+  <g transform="rotate(7 268 256)">
+    <rect x="188" y="104" width="212" height="294" rx="28" fill="url(#pgIvory)" />
 
-    <!-- guru star -->
+    <g clip-path="url(#pgFrontClip)">
+      <!-- Holo sheen across the face -->
+      <rect x="150" y="60" width="78" height="384" fill="url(#pgHolo)" fill-opacity="0.3" transform="rotate(24 294 256)" />
+      <rect x="300" y="60" width="26" height="384" fill="url(#pgHolo)" fill-opacity="0.18" transform="rotate(24 294 256)" />
+      <!-- Crimson header band -->
+      <rect x="188" y="104" width="212" height="62" fill="url(#pgCrimson)" />
+      <rect x="188" y="104" width="212" height="62" fill="url(#pgHolo)" fill-opacity="0.2" />
+      <circle cx="210" cy="135" r="7.5" fill="#FFFDF7" fill-opacity="0.92" />
+      <circle cx="235" cy="135" r="5" fill="#FFFDF7" fill-opacity="0.45" />
+    </g>
+
+    <!-- Guru star -->
     <path
-      d="M282 198c6 30 18 42 48 48-30 6-42 18-48 48-6-30-18-42-48-48 30-6 42-18 48-48Z"
-      fill="url(#amber)"
+      d="M294 190c7.4 36 21 49.6 57 57-36 7.4-49.6 21-57 57-7.4-36-21-49.6-57-57 36-7.4 49.6-21 57-57Z"
+      fill="url(#pgGold)"
     />
-    <circle cx="282" cy="246" r="13" fill="#0A0C11" />
-    <circle cx="282" cy="246" r="6" fill="url(#amber)" />
+    <circle cx="294" cy="247" r="15" fill="#0B0D12" />
+    <circle cx="294" cy="247" r="6.5" fill="url(#pgGold)" />
 
-    <!-- rarity pips -->
-    <circle cx="222" cy="332" r="9" fill="#0A0C11" fill-opacity="0.55" />
-    <circle cx="252" cy="332" r="9" fill="#0A0C11" fill-opacity="0.28" />
-    <circle cx="282" cy="332" r="9" fill="#0A0C11" fill-opacity="0.14" />
-    <path d="M216 366h96" stroke="#0A0C11" stroke-opacity="0.20" stroke-width="8" stroke-linecap="round" />
+    <!-- Rarity pips + footer bar -->
+    <circle cx="232" cy="330" r="9.5" fill="#0B0D12" fill-opacity="0.62" />
+    <circle cx="263" cy="330" r="9.5" fill="#0B0D12" fill-opacity="0.3" />
+    <circle cx="294" cy="330" r="9.5" fill="#0B0D12" fill-opacity="0.15" />
+    <path d="M226 364h110" stroke="#0B0D12" stroke-opacity="0.2" stroke-width="10" stroke-linecap="round" />
+
+    <rect x="188" y="104" width="212" height="294" rx="28" fill="none" stroke="#0B0D12" stroke-opacity="0.16" stroke-width="4" />
   </g>
+
+  <!-- Sparkles -->
+  <path d="M116 118c3 15.6 9.4 22 25 25-15.6 3-22 9.4-25 25-3-15.6-9.4-22-25-25 15.6-3 22-9.4 25-25Z" fill="#FFD166" />
+  <path d="M414 356c2.6 13 7.4 17.8 20 20-12.6 2.6-17.4 7.4-20 20-2.6-12.6-7.4-17.4-20-20 12.6-2.2 17.4-7 20-20Z" fill="#8ED0FF" fill-opacity="0.92" />
+  <circle cx="404" cy="120" r="5" fill="#FFFFFF" fill-opacity="0.68" />
 </svg>
