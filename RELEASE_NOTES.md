@@ -3,23 +3,6 @@
 ## [1.8.0] - 2026-11-14
 
 ### Added
-- **Cinematic pack opening.** The simulator is now a small piece of theatre
-  instead of a row of thumbnails:
-  - **Sealed:** the wrapper floats in a spotlit room with a warm halo, a foil
-    shine sweep and drifting dust, and still opens by tap, click or swipe.
-  - **Tear:** a 1.2 s rip with a glowing seam, thrown embers and a light flash,
-    announced to screen readers and skippable with **Skip the theatre**.
-  - **Reveal:** one card at a time on a spotlit stage, stacked behind a fan of
-    sealed cards, with a short suspense beat before each flip (a longer beat for
-    chase rarities), a tier-coloured progress row, live announcements of every
-    pull, and a sheen that keeps moving across chase cards.
-  - **Payoff:** chase pulls get a gold flare, confetti and a brief shake; the
-    final card gets a bigger burst and a “Pack complete” finale before the
-    summary.
-  - **Honest controls:** `Reveal all`, `Skip to summary` and the existing sound
-    and motion toggles keep working. Reduced motion removes every animation and
-    lands straight on the results — no information is motion-only. All effects
-    are CSS-only, so nothing new is fetched and the CSP is unchanged.
 - **The flyer has its own page (`/flyer`).** Live preview, download and print
   controls, a three-step “printing it on 5 × 6 photo paper” guide, a “what is on
   it” checklist and a “does the QR scan?” note. Linked from the footer nav, the
@@ -42,11 +25,37 @@
   CSS, SVG viewBox) and for the layout staying inside the sheet.
 - New coverage for the flyer’s dedicated page and for the footer *not* embedding
   the controls.
-- New coverage for the cinematic flow: tear beat, skip, card-by-card reveal with
-  live announcements, `Reveal all`, and swipe-to-open.
 - The price-confidence test now pins `Date.now()` to the day after its fixture,
-  so it no longer turns "verified" into "indicative" purely as wall-clock time
+  so it no longer turns “verified” into “indicative” purely as wall-clock time
   passes (it had started failing for that reason alone).
+
+## [1.7.2] - 2026-11-14
+
+### Fixed
+- **PWA installability ("no installable PWA available").** Three causes fixed:
+  - The web app manifest is now emitted per build target (like the service
+    worker) so `id`, `start_url`, `scope`, icon and shortcut URLs always sit
+    inside the deployment base. The old static manifest had `id: "/"`, which
+    is outside the `/PokeGuru/` scope on the GitHub Pages build and made that
+    build non-installable. The manifest template lives in
+    `src/pwa/manifest-template.json`.
+  - `beforeinstallprompt` is now captured in `<head>` before React loads
+    (`public/pwa-capture.js`, an external script so the strict CSP allows
+    it). Chrome fires the event once; if it fired before React mounted, the
+    in-app "Install PokeGuru" invitation could never appear. The component
+    now picks up the stashed event on mount and via a re-broadcast event.
+  - The GitHub Pages mirror (`dlinacre.github.io/PokeGuru`) was a stale
+    August build with no manifest or service worker at all (every path,
+    including `/manifest.webmanifest` and `/sw.js`, served the old
+    `index.html`). It has been rebuilt from current `main`, so both live
+    addresses now serve the current, installable app. Vercel remains the
+    primary host.
+
+### Changed
+- `package.json` `homepage` and the GitHub repository website link now point
+  at the primary Vercel address (`https://pokeguru.vercel.app`), and the
+  README carries an explicit "Open the live app" link, so visitors land on
+  the current version instead of the mirror.
 
 ## [1.7.1] - 2026-11-14
 

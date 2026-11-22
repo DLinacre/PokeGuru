@@ -12,6 +12,21 @@ interface BeforeInstallPromptEvent extends Event {
   userChoice?: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
 
+/**
+ * Set by `public/pwa-capture.js`, which runs in <head> before React. Chrome
+ * fires `beforeinstallprompt` once; without that early listener the event is
+ * lost if it fires before this component mounts.
+ */
+interface PwaCaptureWindow extends Window {
+  __pokeguruInstallPrompt?: BeforeInstallPromptEvent | null;
+  __pokeguruInstalled?: boolean;
+}
+
+function captureWindow(): PwaCaptureWindow | null {
+  if (typeof window === "undefined") return null;
+  return window as unknown as PwaCaptureWindow;
+}
+
 type Platform = "native" | "ios" | "unsupported";
 
 function isStandalone(): boolean {
@@ -80,8 +95,31 @@ export default function InstallPrompt() {
       setVisible(false);
     };
 
+    // The event may already have fired before React mounted (captured by
+    // pwa-capture.js in <head>). Pick up the stashed event first, then keep
+    // listening for later ones via both the native event and the capture
+    // script's re-broadcast.
+    const early = captureWindow();
+    if (early?.__pokeguruInstalled) {
+      setInstalled(true);
+      return;
+    }
+    if (early?.__pokeguruInstallPrompt) {
+      setDeferredPrompt(early.__pokeguruInstallPrompt);
+    }
+    const onEarlyBeforeInstall = () => {
+      const prompt = captureWindow()?.__pokeguruInstallPrompt;
+      if (prompt) setDeferredPrompt(prompt);
+    };
+    const onEarlyInstalled = () => {
+      setInstalled(true);
+      setVisible(false);
+    };
+
     window.addEventListener("beforeinstallprompt", onBeforeInstall);
     window.addEventListener("appinstalled", onInstalled);
+    window.addEventListener("pokeguru:beforeinstallprompt", onEarlyBeforeInstall);
+    window.addEventListener("pokeguru:appinstalled", onEarlyInstalled);
 
     const timer = window.setTimeout(() => setVisible(true), SHOW_DELAY_MS);
 
@@ -89,6 +127,8 @@ export default function InstallPrompt() {
       window.clearTimeout(timer);
       window.removeEventListener("beforeinstallprompt", onBeforeInstall);
       window.removeEventListener("appinstalled", onInstalled);
+      window.removeEventListener("pokeguru:beforeinstallprompt", onEarlyBeforeInstall);
+      window.removeEventListener("pokeguru:appinstalled", onEarlyInstalled);
     };
   }, []);
 

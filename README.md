@@ -16,6 +16,7 @@
 
 <h1 align="center">PokeGuru</h1>
 <p align="center"><strong>Every card. Every set. Honest GBP pricing.</strong></p>
+<p align="center"><a href="https://pokeguru.vercel.app"><strong>▶ Open the live app: pokeguru.vercel.app</strong></a> — install it from your browser menu (see “Install app” on the About page). The GitHub Pages address is only a secondary mirror.</p>
 
 PokeGuru is a fast, installable Pokémon TCG web app for UK collectors. It searches
 the full English card database from [TCGdex](https://tcgdex.dev/), shows
@@ -52,10 +53,11 @@ and keeps a private collection vault in the browser.
   confirm the match; nothing is added silently.
 - **UK pricing** — EUR→GBP conversion uses live [Frankfurter](https://frankfurter.dev/)
   rates (cached for 12 h) with the rate date and marketplace update date shown.
-- **Cinematic pack opening** — a staged tear with a bright seam, embers and a
-  light flash, then one card at a time in a spotlit theatre with a chase flare,
-  confetti and a finale. Every beat can be skipped, and the sound/motion toggles
-  are honest: reduced motion removes the animation, not the information.
+- **Cinematic pack opening** — a staged tear, then a growing pile of flipped
+  cards with a full-screen pull burst graded by rarity (common → nice → chase →
+  top), a spotlight banner naming each notable pull, a batch cheer for multi-pack
+  rips, and one-press “rip again”. Reduced motion removes the effects, not the
+  information, and rapid tapping is deliberately damped so it never strobes.
 - **Pack Opening Simulator** — open unlimited virtual boosters from every era,
   generated from the real card pool of the chosen expansion with era-specific
   pack structures. Every pack panel states whether its structure is documented
@@ -192,18 +194,22 @@ sitemap, canonical tags and the printed QR code all follow that one value.
 | Random generation engine + odds | `src/services/packEngine.ts` |
 | Simulated collection store | `src/services/simStore.ts` |
 | Opening experience (incl. the cinematic stage) | `src/components/Packs/*`, `src/pages/PackOpenPage.tsx` |
-| Cinematic effects (CSS-only, no assets) | `src/components/Packs/PackStageEffects.tsx` |
+| Pull bursts, drama grading & celebrations | `src/components/Packs/PullBurst.tsx` |
+| The pile of flipped cards | `src/components/Packs/RevealPile.tsx` |
+| Repeat-rip controls & pull highlights | `src/components/Packs/QuickRip.tsx`, `HighlightStrip.tsx` |
 | Catalogue & collection pages | `src/pages/PacksPage.tsx`, `src/pages/SimCollectionPage.tsx` |
 
-**The opening itself:** `PackOpening.tsx` runs a small phase machine — sealed →
-tearing (a 1.2 s tear with a glowing seam, embers and a flash, skippable at any
-point) → revealing → summary. Cards are turned over one at a time on a spotlit
-stage, with a short suspense beat before each flip (longer for chase rarities),
-a tier-coloured progress row, a chase flare and confetti on big pulls, and a
-finale before the summary. `Reveal all` and `Skip to summary` are always
-available, nothing is auto-drawn, and the pack is still generated only when the
-user opens it. `prefers-reduced-motion` and the in-app motion toggle remove every
-effect while keeping the same card-by-card information.
+**The opening itself:** `PackOpening.tsx` runs a phase machine — sealed → tearing
+→ revealing → summary. The tear opens the wrapper, then every card sits in one
+fixed grid (four columns on a phone, five on larger screens) so the whole pack is
+always visible with no horizontal strip to swipe. Flipping pushes the card onto
+`RevealPile`, whose depth grows as you rip, and notable pulls raise a
+`PullBurst` graded by rarity with matching copy. Rapid taps switch to a shorter
+banner instead of the full-screen celebration, batch rips get a cheer, and
+`Reveal all`, skip and the sound/motion toggles are always available — nothing is
+auto-drawn, and the pack is only generated when the user opens it. On a first
+visit the OS “reduce motion” setting is honoured until the user makes their own
+choice with the toggle.
 
 **What is real:** card ids, names, images, expansion membership and rarity all
 come from TCGdex. Pools are built by asking for card briefs per rarity, so a

@@ -38,7 +38,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ["src/pwa/**/*.js", "scripts/**/*.mjs"],
+    files: ["src/pwa/**/*.js", "scripts/**/*.mjs", "public/pwa-capture.js"],
     languageOptions: { globals: { ...globals.browser, ...globals.serviceworker, ...globals.node } },
   }
 );

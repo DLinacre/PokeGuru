@@ -7,7 +7,7 @@
   "license": "MIT",
   "repository": "github:LIN4CRE/PokeGuru",
   "bugs": "https://github.com/DLinacre/PokeGuru/issues",
-  "homepage": "https://dlinacre.github.io/PokeGuru",
+  "homepage": "https://pokeguru.vercel.app",
   "type": "module",
   "overrides": {
     "esbuild": "0.28.1"
