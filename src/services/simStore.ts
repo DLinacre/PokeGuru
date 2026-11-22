@@ -325,7 +325,10 @@ export function parseSimState(raw: string | null): SimState {
   }
   // A v1 payload has no `openings`; keep its pull history visible as legacy
   // entries with no recorded values rather than pretending it never happened.
-  if (!state.openings.length && state.history.length) {
+  // …but only when the payload has no openings array at all. A v2 payload whose
+  // openings the visitor deliberately cleared also arrives here with an empty
+  // array, and re-deriving entries from `history` would undelete them.
+  if (!Array.isArray(value.openings) && state.history.length) {
     state.openings = migrateLegacyHistory(state.history);
   }
 

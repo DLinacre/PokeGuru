@@ -92,9 +92,8 @@ export default function PackHistoryPage() {
             Opening history
           </h1>
           <p className="mt-1 max-w-prose text-sm text-[var(--muted)]">
-            The last {openings.length || ""} openings, each with the Cardmarket
-            values that were current at the time. Totals are frozen: they do not
-            follow today&apos;s market.
+            Each opening keeps the Cardmarket values that were current at the
+            time. Totals are frozen: they do not follow today&apos;s market.
           </p>
         </div>
         {openings.length > 0 && (
@@ -160,6 +159,7 @@ export default function PackHistoryPage() {
                   type="button"
                   onClick={() => setOpen(expanded ? null : session.id)}
                   aria-expanded={expanded}
+                  aria-controls={`opening-${session.id}`}
                   className="flex w-full items-center justify-between gap-3 px-3.5 py-3 text-left transition-colors hover:bg-white/[0.03]"
                 >
                   <span className="min-w-0">
@@ -198,7 +198,10 @@ export default function PackHistoryPage() {
                 </button>
 
                 {expanded && (
-                  <div className="border-t border-[var(--border)] px-3.5 py-3">
+                  <div
+                    id={`opening-${session.id}`}
+                    className="border-t border-[var(--border)] px-3.5 py-3"
+                  >
                     <div className="grid grid-cols-3 gap-2 text-center">
                       <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-soft)]/50 py-1.5">
                         <p className="text-[9px] font-black uppercase tracking-[0.12em] text-[var(--muted-dim)]">
@@ -238,8 +241,8 @@ export default function PackHistoryPage() {
                             <p className="min-w-0 truncate text-xs font-semibold">
                               Pack {index + 1}
                               <span className="font-normal text-[var(--muted)]">
-                                {" "}
-                               · {formatStamp(pack.openedAt)}
+                                {" · "}
+                                {formatStamp(pack.openedAt)}
                               </span>
                             </p>
                             <p className="shrink-0 text-xs font-bold tabular-nums text-[#6fe3a5]">
@@ -257,9 +260,9 @@ export default function PackHistoryPage() {
                           </p>
                           {pack.pulls.length > 0 && (
                             <ul className="mt-1.5 flex flex-wrap gap-1">
-                              {pack.pulls.map((pull) => (
+                              {pack.pulls.map((pull, pullIndex) => (
                                 <li
-                                  key={`${pull.key}-${pull.cardId}`}
+                                  key={`${pull.key}-${pullIndex}`}
                                   className={cn(
                                     "rounded border px-1.5 py-0.5 text-[10px] tabular-nums",
                                     pull.status === "priced"

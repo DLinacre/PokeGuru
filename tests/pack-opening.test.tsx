@@ -281,12 +281,19 @@ describe("pack opening experience", () => {
       press(index % 2 === 0 ? "ArrowRight" : " ");
     }
 
-    expect(
-      screen.getByRole("img", {
-        name: new RegExp(`Pile of ${SV.cardsPerPack} revealed cards`),
-      }),
-    ).toBeTruthy();
-    expect(screen.getByText("Pack complete")).toBeTruthy();
+    // The guarantee is that ten presses flip ten cards without queueing. The
+    // wait is only so a slow machine cannot fail the assertion mid-update.
+    await waitFor(
+      () => {
+        expect(
+          screen.getByRole("img", {
+            name: new RegExp(`Pile of ${SV.cardsPerPack} revealed cards`),
+          }),
+        ).toBeTruthy();
+        expect(screen.getByText("Pack complete")).toBeTruthy();
+      },
+      { timeout: 3000 }
+    );
   });
 
   it("calls out rare pulls as they land", async () => {

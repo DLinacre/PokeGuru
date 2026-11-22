@@ -7,6 +7,29 @@ All notable changes to PokeGuru. The format follows
 Detailed prose for each release — including the tests that were actually run —
 lives in [RELEASE_NOTES.md](RELEASE_NOTES.md).
 
+## [1.11.1] - 2026-11-14
+
+### Changed
+- `/packs` no longer claims simulated pulls are "never valued", which stopped
+  being true in 1.11.0. It now describes the figures as Cardmarket reference
+  prices for the printing that was opened, not appraisals or offers, and says
+  plainly that an unpriced printing is reported rather than guessed. The route
+  description used for prerendered copy matches.
+
+### Fixed
+- A pulled card whose price lookup failed said *No price*, implying Cardmarket
+  had none. It now reads *No data*, and the pack bar says the prices could not be
+  loaded instead of claiming nothing is published.
+- Clearing the opening history stayed cleared: the v2 loader rebuilt legacy
+  entries from pull history on the next visit. Migration now runs only for
+  payloads that never had an openings array.
+- The running total's screen-reader announcement shared `role="status"` with the
+  opening callout; only the callout owns it now, so the announcement is
+  unambiguous (and `tests/pack-opening.test.tsx` is green again).
+- Opening history listed duplicate pulls under duplicate React keys.
+- The keyboard reveal test waited on a synchronous assertion, so it could fail
+  mid-update on a loaded machine.
+
 ## [1.11.0] - 2026-11-14
 
 ### Added

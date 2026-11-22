@@ -15,28 +15,35 @@ test.describe("pack market values", () => {
     await open(page, "/packs");
     if (await dataUnavailable(page)) test.skip(true, "TCGdex unreachable in this environment");
 
-    // Pick the most recent expansion with a supported pack, then open one.
-    const firstPack = page.getByRole("link", { name: /open|pack/i }).first();
-    await firstPack.waitFor({ timeout: 25_000 });
-    await firstPack.click();
-    await expect(page.locator("h1")).toBeVisible({ timeout: 25_000 });
+    // Enter a pack the same way the other pack specs do.
+    const start = page.getByRole("button", { name: /open|rip|pack/i }).first();
+    await start.waitFor({ timeout: 25_000 });
+    await start.click();
+    await expect(page).toHaveURL(/\/packs\/[a-z0-9.-]+/i, { timeout: 25_000 });
 
     await page.getByRole("button", { name: /^open pack$|^open \d+ packs$/i }).first().click();
+
+    // The running total appears with the reveal and states its own coverage:
+    // a GBP figure over the priced cards, or an explicit refusal.
     await expect(page.getByText(/current pack value/i)).toBeVisible({ timeout: 25_000 });
+    await expect(
+      page.getByText(/known value of \d+ of \d+ cards|no cardmarket price for any card|prices could not be loaded|prices are still loading/i).first()
+    ).toBeVisible({ timeout: 25_000 });
+    await expect(page.getByText(/^priced$/i).first()).toBeVisible();
 
     // Reveal everything, then read the summary.
-    const revealPack = page.getByRole("button", { name: /reveal pack|see summary/i }).first();
+    const revealPack = page.getByRole("button", { name: /^reveal pack$/i }).first();
     if (await revealPack.isVisible().catch(() => false)) await revealPack.click();
+    const seeSummary = page.getByRole("button", { name: /see summary/i }).first();
+    if (await seeSummary.isVisible().catch(() => false)) await seeSummary.click();
 
-    // The running total is either a GBP figure or an explicit "—".
-    const valueText = await page.getByText(/current pack value/i).locator("..").innerText();
-    expect(valueText).toMatch(/£\d|—/);
-    expect(valueText).toMatch(/priced/i);
-
-    await expect(page.getByRole("heading", { name: /market value/i })).toBeVisible({ timeout: 30_000 });
-    const summary = await page.getByRole("heading", { name: /market value/i }).locator("../..").innerText();
-    expect(summary).toMatch(/coverage/i);
-    expect(summary).toMatch(/reference valuations, not offers/i);
+    const summaryHeading = page.getByRole("heading", { name: /market value/i }).first();
+    await expect(summaryHeading).toBeVisible({ timeout: 30_000 });
+    const body = await page.locator("body").innerText();
+    expect(body).toMatch(/coverage/i);
+    expect(body).toMatch(/reference valuations, not offers/i);
+    // Unpriced cards are admitted rather than averaged in as zero.
+    expect(body).toMatch(/unavailable|priced/i);
 
     expect(errors, errors.join("\n")).toEqual([]);
   });

@@ -359,14 +359,15 @@ export default function PacksPage() {
             every tier percentage is either taken from documented product information or clearly labelled as a PokeGuru estimate.
           </li>
           <li>
-            <strong className="text-[var(--text-soft)]">No value claimed.</strong> Simulated pulls are never added to your real collection,
-            never valued, and never sold.
+            <strong className="text-[var(--text-soft)]">Reference values, not appraisals.</strong> Simulated pulls are never added
+            to your real collection and never sold. Where Cardmarket publishes a price for the printing that was opened, the pull shows that
+            figure in GBP; where it does not, it says so rather than guessing.
           </li>
         </ul>
         <p className="text-[11px] leading-relaxed text-[var(--muted-dim)]">
           PokeGuru is an unofficial fan-made Pokémon TCG companion. Pack openings are virtual simulations for entertainment only. No physical
-          cards or products are supplied, and simulated pulls have no real-world ownership or monetary value. Pull rates are estimates unless
-          explicitly identified otherwise. PokeGuru is not affiliated with or endorsed by The Pokémon Company, Nintendo, Creatures Inc. or
+          cards or products are supplied and simulated pulls confer no real-world ownership. Any figure shown is a Cardmarket reference price for
+          the printing we opened, not an offer to buy or sell. Pull rates are estimates unless explicitly identified otherwise. PokeGuru is not affiliated with or endorsed by The Pokémon Company, Nintendo, Creatures Inc. or
           GAME FREAK.
         </p>
         <Link to="/about" className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-widest text-[var(--link)] no-underline">
