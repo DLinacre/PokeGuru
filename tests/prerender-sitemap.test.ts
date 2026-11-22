@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   MAX_URLS_PER_FILE,
@@ -96,6 +98,26 @@ describe("prerendered HTML", () => {
     const html = prerenderHtml(shell, route, SITE);
     expect(html).not.toContain("<script>alert");
     expect(html).toContain("&lt;script&gt;");
+  });
+});
+
+describe("Vercel routing for prerendered routes", () => {
+  const vercel = JSON.parse(
+    readFileSync(path.resolve(process.cwd(), "vercel.json"), "utf8")
+  ) as { rewrites: { source: string; destination: string }[] };
+
+  it("serves every prerendered file before the SPA fallback", () => {
+    for (const route of PRERENDER_ROUTES) {
+      if (route.path === "/") continue;
+      const rewrite = vercel.rewrites.find((entry) => entry.source === route.path);
+      expect(rewrite, `missing rewrite for ${route.path}`).toBeTruthy();
+      expect(rewrite?.destination).toBe(`${route.path}.html`);
+    }
+  });
+
+  it("keeps the SPA catch-all last so deep links still work", () => {
+    const last = vercel.rewrites[vercel.rewrites.length - 1];
+    expect(last).toEqual({ source: "/(.*)", destination: "/index.html" });
   });
 });
 

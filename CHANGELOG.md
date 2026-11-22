@@ -28,6 +28,8 @@ lives in [RELEASE_NOTES.md](RELEASE_NOTES.md).
 - CI runs on Node 26, adds browser tests, fails on high/critical production
   vulnerabilities.
 - `build:pages` is a cross-platform Node script.
+- `vercel.json` rewrites prerendered routes to their static files ahead of the
+  SPA catch-all.
 
 ### Removed
 - `src/components/UI/JsonLd.tsx`.
