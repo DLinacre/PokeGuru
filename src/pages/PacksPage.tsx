@@ -9,6 +9,7 @@ import {
   ShieldCheck,
   Sparkles,
   TriangleAlert,
+  History,
   Wallet,
 } from "lucide-react";
 import { usePageMeta } from "../hooks/usePageMeta";
@@ -178,6 +179,10 @@ export default function PacksPage() {
             <Link to="/packs/collection" className="btn btn-secondary no-underline hover:no-underline">
               <Wallet size={14} aria-hidden="true" />
               Simulated collection
+            </Link>
+            <Link to="/packs/history" className="btn btn-ghost no-underline hover:no-underline">
+              <History size={14} aria-hidden="true" />
+              Opening history
             </Link>
           </div>
         </div>

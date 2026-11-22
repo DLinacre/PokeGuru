@@ -7,6 +7,30 @@ All notable changes to PokeGuru. The format follows
 Detailed prose for each release — including the tests that were actually run —
 lives in [RELEASE_NOTES.md](RELEASE_NOTES.md).
 
+## [1.11.0] - 2026-11-14
+
+### Added
+- Market values for every pulled card, with a running pack total, per-card
+  prices and an opening summary (`src/services/packValues.ts`,
+  `src/hooks/usePackValues.ts`, `PackValueBar`, `PackValueSummary`).
+- Finish-aware price matching: a price is used only for the finish that was
+  pulled; reverse holofoils report *No price* instead of borrowing another
+  printing's value.
+- Opening history at `/packs/history` with frozen price snapshots.
+- Simulator storage schema v2 with migration from v1.
+- `tests/pack-values*.test.*`, `tests/opening-history.test.tsx`,
+  `e2e/pack-values.spec.ts`.
+
+### Changed
+- Pack prices load progressively (4 concurrent lookups, one per unique card id,
+  only for the pack reached) and never block the reveal.
+- Summary button reachable with reduced motion enabled.
+- Build-time TCGdex requests retry transient failures (3 attempts).
+- GitHub Pages and release workflows run on Node 26.
+
+### Fixed
+- An opening could be recorded before its prices resolved.
+
 ## [1.10.0] - 2026-11-14
 
 ### Added
@@ -34,8 +58,6 @@ lives in [RELEASE_NOTES.md](RELEASE_NOTES.md).
 ### Removed
 - `src/components/UI/JsonLd.tsx`.
 - `<lastmod>` from the sitemap (not knowable, so not claimed).
-
-## [Unreleased]
 
 ## [1.9.0] - 2026-11-14
 

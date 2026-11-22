@@ -10,10 +10,27 @@
  */
 
 import { useSyncExternalStore } from "react";
-import type { PackResult, PulledCard, SimCard, SimSettings, SimState } from "../types/packs";
+import type {
+  OpeningPackRecord,
+  OpeningSession,
+  PackResult,
+  PackValueTotals,
+  PulledCard,
+  PullValuation,
+  SimCard,
+  SimSettings,
+  SimState,
+} from "../types/packs";
 
+/**
+ * The storage key is deliberately unchanged from 1.10: keeping it means an
+ * existing simulator collection and pull history survive the upgrade. The
+ * payload carries its own `version`, which is what migrates.
+ */
 export const SIM_STORAGE_KEY = "pokeguru_pack_sim_v1";
 const HISTORY_LIMIT = 40;
+/** Newest openings kept in full. Each one stores frozen price snapshots. */
+export const OPENING_LIMIT = 12;
 
 const DEFAULT_SETTINGS: SimSettings = {
   sound: true,
@@ -23,10 +40,11 @@ const DEFAULT_SETTINGS: SimSettings = {
 
 export function emptySimState(): SimState {
   return {
-    version: 1,
+    version: 2,
     cards: {},
     packsOpened: 0,
     history: [],
+    openings: [],
     settings: { ...DEFAULT_SETTINGS },
   };
 }
@@ -41,6 +59,7 @@ function clone(state: SimState): SimState {
     ...state,
     cards: { ...state.cards },
     history: [...state.history],
+    openings: [...state.openings],
     settings: { ...state.settings },
   };
 }
@@ -90,6 +109,168 @@ function normaliseResult(raw: unknown): PackResult | null {
   };
 }
 
+const FINISHES = new Set(["normal", "reverse", "holo"]);
+const BASES = new Set(["trend", "avg", "low", "avg30"]);
+
+const asNumber = (value: unknown): number | null =>
+  typeof value === "number" && Number.isFinite(value) ? value : null;
+
+const asString = (value: unknown): string | undefined =>
+  typeof value === "string" && value ? value : undefined;
+
+/** Defensive read of one frozen pull value. Returns null when unusable. */
+function normaliseValuation(raw: unknown): PullValuation | null {
+  if (!raw || typeof raw !== "object") return null;
+  const value = raw as Record<string, unknown>;
+  const cardId = asString(value.cardId);
+  const name = asString(value.name);
+  if (!cardId || !name) return null;
+  const finish = FINISHES.has(String(value.finish)) ? (value.finish as PullValuation["finish"]) : "normal";
+  const status = value.status === "priced" && asNumber(value.gbp) != null ? "priced" : "unavailable";
+  const basis = typeof value.basis === "string" && BASES.has(value.basis) ? (value.basis as PullValuation["basis"]) : null;
+  const variant = value.variant === "holo" || value.variant === "normal" ? value.variant : null;
+  return {
+    key: asString(value.key) ?? `${cardId}|${finish}`,
+    cardId,
+    name,
+    localId: asString(value.localId) ?? "",
+    setId: asString(value.setId) ?? "",
+    setName: asString(value.setName) ?? "",
+    finish,
+    tier: (asString(value.tier) ?? "other") as PullValuation["tier"],
+    status,
+    eur: asNumber(value.eur),
+    gbp: status === "priced" ? asNumber(value.gbp) : null,
+    basis,
+    variant,
+    printing: asString(value.printing) ?? "",
+    source: value.source === "cardmarket" ? "cardmarket" : null,
+    priceUpdatedAt: asString(value.priceUpdatedAt),
+    fxDate: asString(value.fxDate),
+    fxRate: asNumber(value.fxRate) ?? undefined,
+    retrievedAt: asNumber(value.retrievedAt) ?? Date.now(),
+    reason: asString(value.reason),
+    flags: Array.isArray(value.flags) ? value.flags.filter((flag): flag is string => typeof flag === "string") : [],
+  };
+}
+
+function normaliseTotals(raw: unknown): PackValueTotals {
+  const value = (raw ?? {}) as Record<string, unknown>;
+  const count = (key: string): number => {
+    const parsed = asNumber(value[key]);
+    return parsed != null && parsed >= 0 ? Math.floor(parsed) : 0;
+  };
+  const extreme = (key: "highest" | "lowest"): PackValueTotals["highest"] => {
+    const entry = value[key];
+    if (!entry || typeof entry !== "object") return null;
+    const record = entry as Record<string, unknown>;
+    const cardId = asString(record.cardId);
+    const name = asString(record.name);
+    const gbp = asNumber(record.gbp);
+    return cardId && name && gbp != null ? { cardId, name, gbp } : null;
+  };
+  return {
+    cards: count("cards"),
+    priced: count("priced"),
+    unavailable: count("unavailable"),
+    pending: count("pending"),
+    totalGbp: asNumber(value.totalGbp) ?? 0,
+    totalEur: asNumber(value.totalEur) ?? 0,
+    averageGbp: asNumber(value.averageGbp),
+    highest: extreme("highest"),
+    lowest: extreme("lowest"),
+  };
+}
+
+function normaliseOpeningPack(raw: unknown): OpeningPackRecord | null {
+  if (!raw || typeof raw !== "object") return null;
+  const value = raw as Record<string, unknown>;
+  const packId = asString(value.packId);
+  if (!packId) return null;
+  const pulls = Array.isArray(value.pulls)
+    ? value.pulls.map(normaliseValuation).filter((pull): pull is PullValuation => Boolean(pull))
+    : [];
+  return {
+    packId,
+    openedAt: asNumber(value.openedAt) ?? Date.now(),
+    seed: asString(value.seed) ?? "",
+    bestTier: (asString(value.bestTier) ?? null) as OpeningPackRecord["bestTier"],
+    pulls,
+    totals: normaliseTotals(value.totals),
+  };
+}
+
+function normaliseOpening(raw: unknown): OpeningSession | null {
+  if (!raw || typeof raw !== "object") return null;
+  const value = raw as Record<string, unknown>;
+  const id = asString(value.id);
+  if (!id) return null;
+  const packs = Array.isArray(value.packs)
+    ? value.packs.map(normaliseOpeningPack).filter((pack): pack is OpeningPackRecord => Boolean(pack))
+    : [];
+  return {
+    id,
+    setId: asString(value.setId) ?? "",
+    setName: asString(value.setName) ?? "",
+    seriesId: asString(value.seriesId) ?? "",
+    startedAt: asNumber(value.startedAt) ?? Date.now(),
+    completedAt: asNumber(value.completedAt) ?? Date.now(),
+    packs,
+    totals: normaliseTotals(value.totals),
+    valuesRecorded: value.valuesRecorded === true,
+    legacy: value.legacy === true ? true : undefined,
+  };
+}
+
+/**
+ * Packs saved before opening-session records existed are migrated one pack per
+ * entry, explicitly marked legacy and without values. Grouping them into
+ * invented sessions, or inventing prices for them, would both be dishonest.
+ */
+function migrateLegacyHistory(history: PackResult[]): OpeningSession[] {
+  return history.slice(0, OPENING_LIMIT).map((result) => ({
+    id: `legacy:${result.id}`,
+    setId: result.setId,
+    setName: result.setName,
+    seriesId: result.seriesId,
+    startedAt: result.openedAt,
+    completedAt: result.openedAt,
+    packs: [
+      {
+        packId: result.id,
+        openedAt: result.openedAt,
+        seed: result.seed,
+        bestTier: result.bestTier,
+        pulls: [],
+        totals: {
+          cards: result.cards.length,
+          priced: 0,
+          unavailable: 0,
+          pending: 0,
+          totalGbp: 0,
+          totalEur: 0,
+          averageGbp: null,
+          highest: null,
+          lowest: null,
+        },
+      },
+    ],
+    totals: {
+      cards: result.cards.length,
+      priced: 0,
+      unavailable: 0,
+      pending: 0,
+      totalGbp: 0,
+      totalEur: 0,
+      averageGbp: null,
+      highest: null,
+      lowest: null,
+    },
+    valuesRecorded: false,
+    legacy: true,
+  }));
+}
+
 export function parseSimState(raw: string | null): SimState {
   if (!raw) return emptySimState();
   let parsed: unknown;
@@ -136,6 +317,18 @@ export function parseSimState(raw: string | null): SimState {
       .slice(0, HISTORY_LIMIT);
   }
 
+  if (Array.isArray(value.openings)) {
+    state.openings = value.openings
+      .map(normaliseOpening)
+      .filter((opening): opening is OpeningSession => Boolean(opening))
+      .slice(0, OPENING_LIMIT);
+  }
+  // A v1 payload has no `openings`; keep its pull history visible as legacy
+  // entries with no recorded values rather than pretending it never happened.
+  if (!state.openings.length && state.history.length) {
+    state.openings = migrateLegacyHistory(state.history);
+  }
+
   // Older payloads may predate the counter; history is the only evidence we
   // have, so it becomes a lower bound rather than a fabricated total.
   state.packsOpened =
@@ -167,7 +360,22 @@ function persist(state: SimState): void {
   if (!storageAvailable()) return;
   try {
     window.localStorage.setItem(SIM_STORAGE_KEY, JSON.stringify(state));
+    return;
   } catch (err) {
+    // Opening records carry price snapshots and are the largest part of the
+    // payload, so drop the oldest few before giving up on saving everything
+    // else (collection totals, settings, pull history).
+    if (state.openings.length > 1) {
+      try {
+        const trimmed = JSON.parse(JSON.stringify(state)) as SimState;
+        trimmed.openings = trimmed.openings.slice(0, Math.max(1, Math.floor(trimmed.openings.length / 2)));
+        window.localStorage.setItem(SIM_STORAGE_KEY, JSON.stringify(trimmed));
+        snapshot = trimmed;
+        return;
+      } catch {
+        /* fall through to the warning below */
+      }
+    }
     console.warn("PokeGuru: simulated pulls could not be saved (storage full or unavailable).", err);
   }
 }
@@ -229,6 +437,28 @@ export function recordPacks(results: PackResult[]): SimState {
   current.cards = cards;
   current.history = current.history.slice(0, HISTORY_LIMIT);
   current.packsOpened += results.length;
+  setState(current);
+  return current;
+}
+
+/**
+ * Save one opening session with the prices that were current at the time.
+ *
+ * Written once, then never recomputed: the market moving tomorrow must not
+ * change what a past opening was worth. Re-recording the same session id is a
+ * no-op, so a double render cannot duplicate an entry.
+ */
+export function recordOpening(session: OpeningSession): SimState {
+  const current = clone(getSnapshot());
+  if (current.openings.some((entry) => entry.id === session.id)) return current;
+  current.openings = [session, ...current.openings].slice(0, OPENING_LIMIT);
+  setState(current);
+  return current;
+}
+
+export function clearOpenings(): SimState {
+  const current = clone(getSnapshot());
+  current.openings = [];
   setState(current);
   return current;
 }
@@ -333,6 +563,8 @@ export function useSim() {
     state,
     stats: summariseSim(state),
     record: recordPacks,
+    recordOpening,
+    clearOpenings,
     reset: resetSim,
     setSettings: updateSimSettings,
   };

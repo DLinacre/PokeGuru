@@ -274,9 +274,15 @@ export function getCardPrice(card: TcgCard, rate: ExchangeRate | null): CardPric
     };
   }
 
-  const headline = quote.trend ?? quote.average ?? quote.average30 ?? quote.low ?? null;
-  const basis: CardPrice["basis"] =
-    quote.trend != null ? "trend" : quote.average != null ? "avg" : quote.average30 != null ? "avg30" : quote.low != null ? "low" : null;
+  // One headline rule for the whole app: trend → average → 30-day → lowest.
+  const headlineBand = bandHeadline({
+    trend: quote.trend,
+    avg: quote.average,
+    avg30: quote.average30,
+    low: quote.low,
+  });
+  const headline = headlineBand?.value ?? null;
+  const basis: CardPrice["basis"] = headlineBand?.basis ?? null;
 
   const ageDays = priceAgeDays(quote.updatedAt);
   const flags: string[] = [];
@@ -366,6 +372,125 @@ export function getCardPrice(card: TcgCard, rate: ExchangeRate | null): CardPric
     rate,
     tcgplayer,
   };
+}
+
+/* ------------------------------------------------------------------ */
+/* Finish-aware quotes (pack openings)                                 */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The finish a card was physically pulled in. The pack engine records this;
+ * it is *not* inferred from the price data (doing so would let a normal card
+ * be valued as a reverse holo).
+ */
+export type PullFinish = "normal" | "reverse" | "holo";
+
+export interface FinishQuote {
+  /** Which Cardmarket band supplied the value. */
+  variant: PriceVariant;
+  /** Human description of the printing the value belongs to. */
+  printing: string;
+  /** EUR headline. */
+  eur: number;
+  basis: NonNullable<CardPrice["basis"]>;
+  updatedAt?: string;
+  /**
+   * True when the marketplace publishes only one band for this card, so the
+   * value is for the card's only recorded printing rather than a band that
+   * provably matches the finish that was pulled.
+   */
+  assumedPrinting: boolean;
+  /** Machine-readable caveats for the UI. */
+  flags: string[];
+}
+
+const FINISH_LABELS: Record<PullFinish, string> = {
+  normal: "Standard",
+  reverse: "Reverse holofoil",
+  holo: "Holofoil",
+};
+
+export function pullFinishLabel(finish: PullFinish): string {
+  return FINISH_LABELS[finish];
+}
+
+/** Headline value of a Cardmarket band, preferring trend → average → 30d → low. */
+export function bandHeadline(band?: CardmarketBand): { value: number; basis: NonNullable<CardPrice["basis"]> } | null {
+  if (!band) return null;
+  const trend = positive(band.trend);
+  if (trend !== undefined) return { value: trend, basis: "trend" };
+  const average = positive(band.avg);
+  if (average !== undefined) return { value: average, basis: "avg" };
+  const avg30 = positive(band.avg30);
+  if (avg30 !== undefined) return { value: avg30, basis: "avg30" };
+  const low = positive(band.low);
+  if (low !== undefined) return { value: low, basis: "low" };
+  return null;
+}
+
+/**
+ * Price a card for the finish it was actually pulled in.
+ *
+ * The rule is deliberately strict, because a wrong finish is a wrong number:
+ *
+ *  - **Reverse holo** — TCGdex's Cardmarket payload only carries `normal` and
+ *    `holo` bands, so there is no reverse-holofoil price to show. We return
+ *    `null` instead of borrowing the standard price, which would overstate a
+ *    reverse pull's value (or understate it) with someone else's number.
+ *  - **Normal / holo** — only the band for that finish is used. The single
+ *    documented exception is a card that exists in one printing only, where
+ *    the sole published band *is* that printing's price; those are marked
+ *    `assumedPrinting` so the UI can say so.
+ *
+ * Returns `null` when there is no defensible price for this finish.
+ */
+export function resolveFinishQuote(
+  pricing: CardPricing | undefined,
+  card: Pick<TcgCard, "variants" | "rarity"> | undefined,
+  finish: PullFinish
+): FinishQuote | null {
+  const cm = pricing?.cardmarket;
+  if (!cm) return null;
+  // Cardmarket does not publish a reverse-holofoil band through TCGdex.
+  if (finish === "reverse") return null;
+
+  const normalBand = bandHasData(cm.normal) ? cm.normal : undefined;
+  const holoBand = bandHasData(cm.holo) ? cm.holo : undefined;
+  const wanted = finish === "holo" ? holoBand : normalBand;
+  const other = finish === "holo" ? normalBand : holoBand;
+
+  const build = (band: CardmarketBand | undefined, variant: PriceVariant, assumedPrinting: boolean): FinishQuote | null => {
+    const headline = bandHeadline(band);
+    if (!headline) return null;
+    const flags: string[] = [];
+    if (assumedPrinting) flags.push("finish-assumed");
+    if (headline.basis === "low" || headline.basis === "avg30") flags.push("indicative-basis");
+    if (!cm.updatedAt) flags.push("no-update-date");
+    return {
+      variant,
+      printing: assumedPrinting
+        ? `${pullFinishLabel(variant === "holo" ? "holo" : "normal")} printing — the only one TCGdex records for this card`
+        : `${pullFinishLabel(finish)} printing`,
+      eur: headline.value,
+      basis: headline.basis,
+      updatedAt: cm.updatedAt,
+      assumedPrinting,
+      flags,
+    };
+  };
+
+  if (wanted) return build(wanted, finish, false);
+
+  // The requested band is missing. Borrow the other band *only* when the
+  // card's own printing data says this is the card's single printing.
+  if (!other) return null;
+  const variants = card?.variants;
+  const onlyPrinting =
+    (finish === "normal" && variants && !variants.normal && Boolean(variants.holo)) ||
+    (finish === "holo" && variants && !variants.holo && Boolean(variants.normal)) ||
+    (!variants && Boolean(card));
+  if (!onlyPrinting) return null;
+  return build(other, finish === "holo" ? "normal" : "holo", true);
 }
 
 /** Best GBP reference value for a card, or null when there is no real data. */

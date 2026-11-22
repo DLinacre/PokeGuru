@@ -164,6 +164,104 @@ export interface PackResult {
   bestTier: RarityTier | null;
 }
 
+/* ------------------------------------------------------------------ */
+/* Market values for pulls                                             */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The finish a card was pulled in. Recorded by the pack engine and never
+ * inferred from price data.
+ */
+export type PullFinish = "normal" | "reverse" | "holo";
+
+/** Why a pull does or does not carry a value. */
+export type PullValueStatus = "priced" | "unavailable";
+
+/**
+ * One card's value at the moment it was opened. This is a *snapshot*: the
+ * amounts, source, marketplace date and FX rate are frozen so a historical
+ * opening never changes when the market moves.
+ */
+export interface PullValuation {
+  /** `${cardId}|${finish}` — unique within a pack session. */
+  key: string;
+  cardId: string;
+  name: string;
+  localId: string;
+  setId: string;
+  setName: string;
+  finish: PullFinish;
+  tier: RarityTier;
+  status: PullValueStatus;
+  /** Cardmarket value in EUR, exactly as published. */
+  eur: number | null;
+  /** EUR converted at `fxRate` and rounded to 2dp, or null when no rate. */
+  gbp: number | null;
+  basis: "trend" | "avg" | "low" | "avg30" | null;
+  /** Which marketplace band the value came from. */
+  variant: "normal" | "holo" | null;
+  /** Human description of the printing the value belongs to. */
+  printing: string;
+  source: "cardmarket" | null;
+  /** Marketplace update timestamp, ISO. */
+  priceUpdatedAt?: string;
+  /** FX rate date (YYYY-MM-DD) and the rate itself. */
+  fxDate?: string;
+  fxRate?: number;
+  /** When PokeGuru resolved this value. */
+  retrievedAt: number;
+  /** Plain-English explanation when `status` is unavailable. */
+  reason?: string;
+  /** Machine-readable caveats (e.g. `finish-assumed`). */
+  flags: string[];
+}
+
+/** Aggregated value of a set of pulls. Never mixes known and unknown values. */
+export interface PackValueTotals {
+  cards: number;
+  priced: number;
+  unavailable: number;
+  /** Cards whose value has not resolved yet (live openings only). */
+  pending: number;
+  /** Sum of the *rounded* GBP values of priced cards. */
+  totalGbp: number;
+  /** Sum of the EUR values of priced cards. */
+  totalEur: number;
+  /** Average known GBP value per priced card, or null when nothing is priced. */
+  averageGbp: number | null;
+  highest: { cardId: string; name: string; gbp: number } | null;
+  lowest: { cardId: string; name: string; gbp: number } | null;
+}
+
+/** A pack as it was opened, with the values frozen at that moment. */
+export interface OpeningPackRecord {
+  packId: string;
+  openedAt: number;
+  seed: string;
+  bestTier: RarityTier | null;
+  pulls: PullValuation[];
+  totals: PackValueTotals;
+}
+
+/**
+ * One opening session (one "Open 5 packs" action). `valuesRecorded` is false
+ * for sessions saved before value tracking existed, or when every price
+ * lookup failed — those show "not recorded" instead of a fabricated total.
+ */
+export interface OpeningSession {
+  id: string;
+  setId: string;
+  setName: string;
+  seriesId: string;
+  startedAt: number;
+  completedAt: number;
+  packs: OpeningPackRecord[];
+  totals: PackValueTotals;
+  valuesRecorded: boolean;
+  /** True for entries migrated from the pre-1.11 pull history. */
+  legacy?: boolean;
+}
+
 /** A stored simulated card with duplicate count. */
 export interface SimCard {
   card: PulledCard;
@@ -172,11 +270,14 @@ export interface SimCard {
 }
 
 export interface SimState {
-  version: 1;
+  /** 2 added `openings` (value snapshots). 1 is migrated on read. */
+  version: 2;
   cards: Record<string, SimCard>;
   packsOpened: number;
-  /** Newest first, capped. */
+  /** Newest first, capped. Card-level history without values. */
   history: PackResult[];
+  /** Newest first, capped. Opening sessions with frozen value snapshots. */
+  openings: OpeningSession[];
   settings: SimSettings;
 }
 

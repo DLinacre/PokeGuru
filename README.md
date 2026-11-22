@@ -113,6 +113,18 @@ opening is staged — a tear, a growing pile of flipped cards, a pull burst grad
 by rarity and a one-press “rip again” — and reduced-motion users get the
 information without the effects.
 
+**Every pull carries a market value.** Prices come from the same Cardmarket
+snapshot the card pages use (EUR, converted to GBP at the ECB rate) and are
+matched to the finish that was actually pulled. A running total sits next to the
+reveal, each card shows its own price underneath it, and the summary breaks the
+result down honestly: known value, cards priced, cards with no price, highest and
+lowest priced pull, average per priced card and — for a batch — the average and
+best pack. A card with no Cardmarket price for its finish (reverse holofoils,
+mostly) is shown as *No price* and excluded from every total, never counted as
+£0. Completed openings are saved to the opening history
+(`/packs/history`) with the amounts, source, marketplace date and FX rate frozen
+at the moment of opening, so today's market never rewrites a past pull.
+
 ### Top 100 by value
 
 A ranked list of the most valuable cards by Cardmarket trend: one printing per
@@ -351,6 +363,14 @@ estimates.
 - **The pack simulator is a model.** Pack structures are documented where the
   community has documented them and clearly labelled as estimates where it has
   not; pulls are simulated and carry no monetary value.
+- **Pack values cover the finishes Cardmarket publishes.** TCGdex exposes
+  `normal` and `holo` Cardmarket bands only, so a reverse-holofoil pull has no
+  matching price and is listed as *No price* rather than borrowing the standard
+  printing's figure. Pack totals are therefore *known* values: the UI always
+  states how many cards the total covers.
+- **Opening history is local and capped.** The last 12 openings are kept in this
+  browser (each with its frozen price snapshot); clearing site data removes them,
+  and older openings are dropped rather than thinned out.
 - **The vault is local.** Clearing browser data clears the collection — export a
   JSON backup if it matters to you. There is no sync and no account.
 - **The scanner is assistive.** OCR quality depends on lighting and card

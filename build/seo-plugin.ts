@@ -46,6 +46,8 @@ export const MAX_URLS_PER_FILE = 45_000;
 const FETCH_CONCURRENCY = 6;
 const FETCH_TIMEOUT_MS = 10_000;
 const BUILD_BUDGET_MS = 120_000;
+const FETCH_ATTEMPTS = 3;
+const RETRY_BASE_MS = 500;
 
 interface SetRef {
   id: string;
@@ -98,16 +100,28 @@ function writeCache(file: string, data: unknown): void {
   }
 }
 
-async function fetchJson<T>(url: string, signal?: AbortSignal): Promise<T | null> {
-  const timeout = AbortSignal.timeout(FETCH_TIMEOUT_MS);
-  const combined = signal ? AbortSignal.any([signal, timeout]) : timeout;
-  try {
-    const response = await fetch(url, { signal: combined, headers: { accept: "application/json" } });
-    if (!response.ok) return null;
-    return (await response.json()) as T;
-  } catch {
-    return null;
+/**
+ * Fetches JSON, retrying transient failures. A single dropped connection during
+ * a build used to collapse the whole sitemap to static pages only, which is a
+ * much worse outcome than spending a couple of extra seconds here. 4xx responses
+ * other than 429 are treated as permanent: a bad id should fail fast.
+ */
+async function fetchJson<T>(url: string, signal?: AbortSignal, attempts = FETCH_ATTEMPTS): Promise<T | null> {
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    const timeout = AbortSignal.timeout(FETCH_TIMEOUT_MS);
+    const combined = signal ? AbortSignal.any([signal, timeout]) : timeout;
+    let retryable: boolean;
+    try {
+      const response = await fetch(url, { signal: combined, headers: { accept: "application/json" } });
+      if (response.ok) return (await response.json()) as T;
+      retryable = response.status === 429 || response.status >= 500;
+    } catch {
+      retryable = true;
+    }
+    if (!retryable || attempt === attempts) return null;
+    await new Promise((resolve) => setTimeout(resolve, RETRY_BASE_MS * attempt));
   }
+  return null;
 }
 
 /**

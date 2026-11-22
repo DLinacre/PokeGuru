@@ -6,6 +6,7 @@ import {
   Copy,
   Download,
   ExternalLink,
+  History,
   Layers,
   Share2,
   RotateCcw,
@@ -31,6 +32,12 @@ import {
 import HighlightStrip from "./HighlightStrip";
 import QuickRip from "./QuickRip";
 import type { PackCatalogueEntry } from "../../hooks/usePacks";
+import type { PackValuesApi } from "../../hooks/usePackValues";
+import type { ExchangeRate } from "../../services/currency";
+import { summariseSession } from "../../services/packValues";
+import { formatGbp } from "../../services/pricing";
+import PackValueSummary from "./PackValueSummary";
+import PullValueLine from "./PullValueLine";
 import { cn } from "../../utils/cn";
 
 interface PullSummaryProps {
@@ -50,6 +57,9 @@ interface PullSummaryProps {
    * there a holo rare is not a separate chase tier to count.
    */
   hasSeparateHolo?: boolean;
+  /** Live valuations; omitted by tests and by embedded previews. */
+  values?: PackValuesApi;
+  rate?: ExchangeRate | null;
 }
 
 /**
@@ -68,6 +78,8 @@ export default function PullSummary({
   quantity = results.length,
   activeSetId = results[0]?.setId ?? "",
   hasSeparateHolo = true,
+  values,
+  rate = null,
 }: PullSummaryProps) {
   const [copied, setCopied] = useState<"summary" | "link" | null>(null);
   const [openPack, setOpenPack] = useState<string | null>(null);
@@ -99,6 +111,19 @@ export default function PullSummary({
   const highlights = useMemo(
     () => resultHighlights(results, { hasSeparateHolo }),
     [results, hasSeparateHolo],
+  );
+
+  /**
+   * Every money figure on this page comes from the same calculation layer as
+   * the running total, over the same frozen valuations.
+   */
+  const packTotals = useMemo(
+    () => (values ? results.map((pack) => values.totalsFor(pack.cards)) : []),
+    [results, values],
+  );
+  const valueSummary = useMemo(
+    () => (packTotals.length ? summariseSession(packTotals) : null),
+    [packTotals],
   );
 
   const flashCopied = (kind: "summary" | "link") => {
@@ -187,6 +212,17 @@ export default function PullSummary({
         </button>
       </div>
 
+      {values && valueSummary && (
+        <PackValueSummary
+          packTotals={packTotals}
+          summary={valueSummary}
+          loading={values.loading}
+          failures={values.failures}
+          onRetry={values.retry}
+          rate={rate}
+        />
+      )}
+
       {single ? (
         <>
           {topPull && (
@@ -221,6 +257,16 @@ export default function PullSummary({
                         ? " · Holofoil"
                         : ""}
                   </p>
+                  {values && (
+                    <p className="mt-1 text-base">
+                      <PullValueLine
+                        value={values.valueFor(topPull)}
+                        pending={!values.valueFor(topPull) && values.loading}
+                        size="sm"
+                        className="text-left"
+                      />
+                    </p>
+                  )}
                   <div className="mt-3 flex flex-wrap gap-2">
                     <Link
                       to={`/card/${topPull.id}`}
@@ -244,14 +290,26 @@ export default function PullSummary({
 
           <div className={PACK_GRID}>
             {result.cards.map((card, index) => (
-              <PackCard
-                key={`${card.id}-${card.slot}-${index}`}
-                pull={card}
-                revealed
-                motion={false}
-                priority={index < 6}
-                compact
-              />
+              <div key={`${card.id}-${card.slot}-${index}`} className="min-w-0">
+                <PackCard
+                  pull={card}
+                  revealed
+                  motion={false}
+                  priority={index < 6}
+                  compact
+                />
+                <p className="mt-0.5 h-3 truncate text-center text-[9px] leading-3 text-[var(--text-soft)]" title={card.name}>
+                  {card.name}
+                </p>
+                <div className="h-3.5">
+                  {values && (
+                    <PullValueLine
+                      value={values.valueFor(card)}
+                      pending={!values.valueFor(card) && values.loading}
+                    />
+                  )}
+                </div>
+              </div>
             ))}
           </div>
         </>
@@ -339,6 +397,21 @@ export default function PullSummary({
                             return notable > 0 ? ` · ${notable} notable` : "";
                           })()}
                         </span>
+                        {values && packTotals[index] && (
+                          <span className="mt-0.5 flex flex-wrap items-baseline gap-x-1.5 text-[11px]">
+                            <span className="font-bold tabular-nums text-[#6fe3a5]">
+                              {packTotals[index].priced > 0
+                                ? formatGbp(packTotals[index].totalGbp)
+                                : "No price"}
+                            </span>
+                            <span className="tabular-nums text-[var(--muted-dim)]">
+                              {packTotals[index].priced} of {pack.cards.length} priced
+                              {packTotals[index].unavailable > 0
+                                ? ` · ${packTotals[index].unavailable} unavailable`
+                                : ""}
+                            </span>
+                          </span>
+                        )}
                       </span>
                     </span>
                     <ChevronDown
@@ -382,13 +455,22 @@ export default function PullSummary({
                   {expanded && (
                     <div className={cn(PACK_GRID, "px-3 pb-3")}>
                       {pack.cards.map((card, cardIndex) => (
-                        <PackCard
-                          key={`${card.id}-${cardIndex}`}
-                          pull={card}
-                          revealed
-                          motion={false}
-                          compact
-                        />
+                        <div key={`${card.id}-${cardIndex}`} className="min-w-0">
+                          <PackCard
+                            pull={card}
+                            revealed
+                            motion={false}
+                            compact
+                          />
+                          <div className="mt-0.5 h-3.5">
+                            {values && (
+                              <PullValueLine
+                                value={values.valueFor(card)}
+                                pending={!values.valueFor(card) && values.loading}
+                              />
+                            )}
+                          </div>
+                        </div>
                       ))}
                     </div>
                   )}
@@ -425,6 +507,12 @@ export default function PullSummary({
             className="btn btn-ghost no-underline hover:no-underline"
           >
             <Wallet size={14} aria-hidden="true" /> Simulated collection
+          </Link>
+          <Link
+            to="/packs/history"
+            className="btn btn-ghost no-underline hover:no-underline"
+          >
+            <History size={14} aria-hidden="true" /> Opening history
           </Link>
         </div>
 

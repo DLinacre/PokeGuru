@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ChevronRight,
   FastForward,
@@ -41,6 +41,12 @@ import PullBurst, {
 import RevealPile from "./RevealPile";
 import PullSummary from "./PullSummary";
 import type { PackCatalogueEntry } from "../../hooks/usePacks";
+import { useExchangeRate } from "../../hooks/useApi";
+import { usePackValues } from "../../hooks/usePackValues";
+import { toOpeningSession } from "../../services/packValues";
+import { recordOpening } from "../../services/simStore";
+import PackValueBar from "./PackValueBar";
+import PullValueLine from "./PullValueLine";
 import { cn } from "../../utils/cn";
 
 type Phase = "sealed" | "tearing" | "revealing" | "summary";
@@ -116,6 +122,15 @@ export default function PackOpening({
    */
   const [fastFlip, setFastFlip] = useState(false);
 
+  /**
+   * Prices. `useExchangeRate` is the same GBP rate every other page uses, and
+   * `usePackValues` streams card prices in the background — the cards flip
+   * immediately whether or not a single price has arrived.
+   */
+  const { rate } = useExchangeRate();
+  /** Session ids already written to the opening history. */
+  const savedSessionsRef = useRef(new Set<string>());
+
   const timerRef = useRef<number | null>(null);
   const spotlightRef = useRef<number | null>(null);
   const fastRef = useRef<number | null>(null);
@@ -174,6 +189,80 @@ export default function PackOpening({
   const packComplete = Boolean(current) && revealedCount >= cards.length;
   const isLastPack = packIndex >= results.length - 1;
   const sealedLabel = quantity > 1 ? `Open ${quantity} packs` : "Open pack";
+
+  /** Live valuations for every pack opened in this session. */
+  const packValues = usePackValues({
+    results,
+    rate,
+    activeIndex: packIndex,
+    all: phase === "summary",
+    enabled: results.length > 0,
+  });
+
+  const cardsKnown = Math.min(revealedCount, cards.length);
+  const packTotals = useMemo(
+    () =>
+      results.map((pack) => {
+        // A pack's total counts only the cards already turned over, so the
+        // running figure matches what is on screen.
+        if (pack.id !== current?.id) return packValues.totalsFor(pack.cards);
+        return packValues.totalsFor(pack.cards.slice(0, cardsKnown));
+      }),
+    [results, packValues, current?.id, cardsKnown],
+  );
+
+  const activeTotals = packTotals[packIndex] ?? packValues.totalsFor([]);
+
+  /** Cards still without a resolved price anywhere in the session. */
+  const unresolved = useMemo(
+    () => results.reduce((sum, pack) => sum + packValues.totalsFor(pack.cards).pending, 0),
+    [results, packValues],
+  );
+
+  /**
+   * Freeze the session's prices the first time the opening completes. This is
+   * the record the history view shows; it is written once so a later market
+   * move cannot rewrite what this opening was worth.
+   */
+  const persistSession = useCallback(() => {
+    if (!results.length) return;
+    const id = results[0].id;
+    if (savedSessionsRef.current.has(id)) return;
+    savedSessionsRef.current.add(id);
+    recordOpening(
+      toOpeningSession(
+        id,
+        results,
+        results.map((pack) => pack.cards.map((card) => packValues.valueFor(card))),
+        { setId: meta.setId, setName: meta.setName, seriesId: meta.seriesId },
+      ),
+    );
+  }, [results, packValues, meta.setId, meta.setName, meta.seriesId]);
+
+  useEffect(() => {
+    if (phase !== "summary" || !results.length) return;
+    // Wait for every price that is still in flight so the saved record is as
+    // complete as the session allowed, but never block the UI on them: the
+    // timer below writes whatever is known if anything stays unresolved.
+    if (packValues.loading || unresolved > 0) return;
+    persistSession();
+  }, [phase, results.length, packValues.loading, unresolved, persistSession]);
+
+  useEffect(() => {
+    if (phase !== "summary" || !results.length) return;
+    const timer = window.setTimeout(persistSession, 9000);
+    return () => window.clearTimeout(timer);
+  }, [phase, results.length, persistSession]);
+
+  /**
+   * Leaving mid-opening keeps whatever was known: a partial record is honest,
+   * a missing one is not. The latest writer is held in a ref so this effect
+   * runs once on unmount instead of after every render (which would snapshot
+   * the opening before a single price had arrived).
+   */
+  const persistRef = useRef(persistSession);
+  persistRef.current = persistSession;
+  useEffect(() => () => persistRef.current(), []);
 
   /**
    * Announce a notable pull and play the cue that matches how good it is.
@@ -415,6 +504,8 @@ export default function PackOpening({
         quantity={quantity}
         activeSetId={meta.setId}
         hasSeparateHolo={Boolean(pool.tiers.holoRare?.length)}
+        values={packValues}
+        rate={rate}
       />
     );
   }
@@ -642,6 +733,15 @@ export default function PackOpening({
               </div>
             </div>
 
+            <PackValueBar
+              totals={activeTotals}
+              loading={packValues.loading}
+              failures={packValues.failures}
+              onRetry={packValues.retry}
+              reduceMotion={reduceMotion}
+              className="mb-2"
+            />
+
             {/* The pile: every flip lands on top of the last one. */}
             <div className="relative mb-2 flex min-h-[128px] items-center rounded-xl border border-[var(--border)] bg-[var(--bg-inset)]/70 p-2.5">
               <RevealPile
@@ -752,6 +852,15 @@ export default function PackOpening({
                     >
                       {isFlipped ? card.name : isNext ? "Tap to reveal" : ""}
                     </p>
+                    {/* Fixed height: prices arriving never move the grid. */}
+                    <div className="h-3.5">
+                      {isFlipped && (
+                        <PullValueLine
+                          value={packValues.valueFor(card)}
+                          pending={!packValues.valueFor(card) && packValues.loading}
+                        />
+                      )}
+                    </div>
                   </div>
                 );
               })}
@@ -799,11 +908,12 @@ export default function PackOpening({
                   </span>
                 </p>
               </div>
+              {/* Always enabled: with reduced motion the pack is revealed at
+                  once, so this is the only route to the summary. */}
               <button
                 type="button"
                 className="btn btn-primary btn-compact shrink-0 text-xs"
                 onClick={advance}
-                disabled={packComplete && isLastPack}
               >
                 {!packComplete ? (
                   <>

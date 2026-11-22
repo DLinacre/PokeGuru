@@ -584,6 +584,22 @@ a:hover {
   animation: card-land 320ms cubic-bezier(0.2, 0.8, 0.3, 1) both;
 }
 
+/* The running pack total: a short, subtle lift when a price lands. */
+@keyframes value-pop {
+  from {
+    opacity: 0.72;
+    transform: translateY(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-value-pop {
+  animation: value-pop 260ms ease-out both;
+}
+
 .animate-callout {
   animation: callout-pop 1.6s ease-out both;
 }
