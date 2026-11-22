@@ -93,9 +93,9 @@ function PackTile({ pack }: { pack: PackCatalogueEntry }) {
 
 export default function PacksPage() {
   usePageMeta({
-    title: "Pack Opening Simulator",
+    title: "Free Pokémon card opening simulator",
     description:
-      "Open virtual Pokémon TCG booster packs from every era, generated from the real card pools of each expansion with documented or clearly estimated pack structures.",
+      "Open unlimited free virtual Pokémon card packs from every era, generated from each expansion's real card pool, with documented or clearly estimated pack structures.",
     path: "/packs",
   });
 
